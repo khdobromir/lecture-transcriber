@@ -6,50 +6,82 @@ if (( EUID == 0 )); then
   exit 1
 fi
 selection="${1:-medium}"
+if (( $# > 1 )); then
+  printf 'Использование: bash install.sh small|medium|turbo\n' >&2
+  exit 2
+fi
 case "$selection" in small|medium|turbo) ;; *) printf 'Использование: bash install.sh small|medium|turbo\n' >&2; exit 2 ;; esac
+jobs="${TRANSCRIBE_BUILD_JOBS:-2}"
+[[ "$jobs" =~ ^[1-9][0-9]*$ ]] || { printf 'TRANSCRIBE_BUILD_JOBS должен быть положительным целым\n' >&2; exit 2; }
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-root="${VKLECTURE_HOME:-$HOME/.local/share/vklecture}"
-bin_dir="$HOME/.local/bin"
-for tool in g++ cmake git curl ffmpeg yt-dlp; do
-  if ! command -v "$tool" >/dev/null 2>&1; then
-    printf 'Нет %s. Сначала выполни:\nsudo pacman -S --needed base-devel cmake git curl ffmpeg yt-dlp unzip\n' "$tool" >&2
-    exit 1
-  fi
-done
-mkdir -p "$root/models" "$bin_dir"
-# Ограничиваем параллельную сборку, чтобы не перегрузить слабый ноутбук.
-jobs="${VKLECTURE_BUILD_JOBS:-2}"
-[[ "$jobs" =~ ^[1-9][0-9]*$ ]] || { printf 'VKLECTURE_BUILD_JOBS должен быть положительным целым\n' >&2; exit 2; }
+# shellcheck source=scripts/models.sh
+source "$project_dir/scripts/models.sh"
+root="${TRANSCRIBE_HOME:-${HOME:?Не задан HOME}/.local/share/transcribe}"
+bin_dir="${HOME:?Не задан HOME}/.local/bin"
+require_tools g++ cmake git curl ffmpeg yt-dlp sha256sum flock mktemp install mkdir mv rm
+model_info "$selection"
+model_info vad
 revision=927cfce34f31707e17f2bff35c349632fb9e2c3a
 source_dir="$root/whisper.cpp"
-if [[ ! -d "$source_dir" ]]; then
-  git clone --depth 1 --branch v1.9.4 https://github.com/ggml-org/whisper.cpp.git "$source_dir"
+# Check existing sources before creating installation directories.
+if [[ -e "$source_dir" ]]; then
+  actual_revision="$(git -C "$source_dir" rev-parse HEAD)"
+  if [[ "$actual_revision" != "$revision" ]]; then
+    printf 'В %s находится другая версия whisper.cpp. Укажи отдельный TRANSCRIBE_HOME.\n' "$source_dir" >&2
+    exit 1
+  fi
+  if [[ -n "$(git -C "$source_dir" status --porcelain --untracked-files=no)" ]]; then
+    printf 'Исходники whisper.cpp изменены: %s. Укажи отдельный TRANSCRIBE_HOME.\n' "$source_dir" >&2
+    exit 1
+  fi
 fi
-actual_revision="$(git -C "$source_dir" rev-parse HEAD)"
-if [[ "$actual_revision" != "$revision" ]]; then
-  printf 'В %s находится другая версия whisper.cpp. Укажи отдельный VKLECTURE_HOME.\n' "$source_dir" >&2
-  exit 1
+lock_models "$root"
+staging="$(mktemp -d "$root/.install.XXXXXX")"
+binary_stage=''
+engine_stage=''
+cleanup() {
+  rm -rf -- "$staging"
+  if [[ -n "$binary_stage" ]]; then rm -f -- "$binary_stage"; fi
+  if [[ -n "$engine_stage" ]]; then rm -f -- "$engine_stage"; fi
+}
+trap cleanup EXIT
+if [[ ! -e "$source_dir" ]]; then
+  git clone --depth 1 --branch v1.9.4 https://github.com/ggml-org/whisper.cpp.git "$staging/source"
+  [[ "$(git -C "$staging/source" rev-parse HEAD)" == "$revision" ]] || {
+    printf 'Ревизия загруженного whisper.cpp не совпадает с закреплённой.\n' >&2
+    exit 1
+  }
+  mv -- "$staging/source" "$source_dir"
 fi
-cmake -S "$source_dir" -B "$source_dir/build" \
-  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+# Build in staging: a failed build cannot overwrite installed executables.
+cmake -S "$source_dir" -B "$staging/whisper-build" \
+  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_BACKEND_DL=OFF \
   -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_BLAS=OFF \
   -DWHISPER_BUILD_TESTS=OFF
-cmake --build "$source_dir/build" --config Release --target whisper-cli --parallel "$jobs"
-cmake -S "$project_dir" -B "$project_dir/build" -DCMAKE_BUILD_TYPE=Release
-cmake --build "$project_dir/build" --parallel "$jobs"
-install -m 755 "$project_dir/build/vklecture" "$bin_dir/vklecture"
-bash "$project_dir/scripts/download-model.sh" "$selection"
-vad="$root/models/ggml-silero-v6.2.0.bin"
-if [[ ! -s "$vad" ]]; then
-  curl --fail --location --retry 3 --continue-at - --output "$vad.part" \
-    'https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin'
-  [[ -s "$vad.part" ]]
-  mv -- "$vad.part" "$vad"
-fi
-printf '%s\n' "$selection" > "$root/default-model"
-printf '\nУстановлено: %s/vklecture\nМодель: %s\n' "$bin_dir" "$selection"
+cmake --build "$staging/whisper-build" --config Release --target whisper-cli --parallel "$jobs"
+cmake -S "$project_dir" -B "$staging/project-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+cmake --build "$staging/project-build" --parallel "$jobs"
+download_model "$root" "$selection"
+download_model "$root" vad
+"$staging/project-build/transcribe" --version
+"$staging/whisper-build/bin/whisper-cli" --help >/dev/null
+printf '%s\n' "$selection" > "$staging/default-model"
+mkdir -p -- "$bin_dir" "$source_dir/build/bin"
+binary_stage="$(mktemp "$bin_dir/.transcribe.XXXXXX")"
+engine_stage="$(mktemp "$source_dir/build/bin/.whisper-cli.XXXXXX")"
+install -m 755 "$staging/project-build/transcribe" "$binary_stage"
+install -m 755 "$staging/whisper-build/bin/whisper-cli" "$engine_stage"
+# Each rename is atomic. These three separate paths are not one transaction.
+mv -f -- "$engine_stage" "$source_dir/build/bin/whisper-cli"
+engine_stage=''
+mv -f -- "$binary_stage" "$bin_dir/transcribe"
+binary_stage=''
+mv -f -- "$staging/default-model" "$root/default-model"
+printf '\nУстановлено: %s/transcribe\nМодель: %s\n' "$bin_dir" "$selection"
+# Print a command to copy, preserving the user's future HOME and PATH.
+# shellcheck disable=SC2016
 printf 'Добавь ~/.local/bin в PATH, если каталог ещё не включён:\nexport PATH="$HOME/.local/bin:$PATH"\n'
-if [[ -n "${VKLECTURE_HOME:-}" ]]; then
-  printf 'Для запуска сохраняй VKLECTURE_HOME=%s в окружении.\n' "$root"
+if [[ -n "${TRANSCRIBE_HOME:-}" ]]; then
+  printf 'Для запуска сохраняй TRANSCRIBE_HOME=%s в окружении.\n' "$root"
 fi
-"$bin_dir/vklecture" --help
+"$bin_dir/transcribe" --help

@@ -57,11 +57,11 @@ void run(const std::vector<std::string>& args) {
 }
 
 fs::path app_home() {
-    if (const char* p = std::getenv("VKLECTURE_HOME"); p && *p)
+    if (const char* p = std::getenv("TRANSCRIBE_HOME"); p && *p)
         return fs::absolute(p);
     const char* p = std::getenv("HOME");
-    if (!p || !*p) throw std::runtime_error("Не задан HOME или VKLECTURE_HOME");
-    return fs::path(p) / ".local/share/vklecture";
+    if (!p || !*p) throw std::runtime_error("Не задан HOME или TRANSCRIBE_HOME");
+    return fs::path(p) / ".local/share/transcribe";
 }
 
 std::string preset(std::string_view name) {
@@ -89,10 +89,10 @@ int positive_integer(std::string_view text) {
 }
 
 void help() {
-    std::cout << R"(vklecture — расшифровка русской речи на CPU
+    std::cout << R"(Transcribe CLI — транскрипция русской речи на CPU
 
 Использование:
-  vklecture [параметры] "URL или путь к файлу"
+  transcribe [параметры] "URL или путь к файлу"
 
 Параметры:
   --model small|medium|turbo|ПУТЬ.bin  Модель (по умолчанию выбранная при установке)
@@ -105,6 +105,7 @@ void help() {
   --no-vad                           Отключить определение участков речи
   --keep-audio                       Оставить рабочие аудио/видеофайлы
   --help                             Эта справка
+  --version                          Версия программы
   --                                 Конец параметров
 
 Результаты: transcript.txt, transcript.srt, transcript.vtt, source.txt.
@@ -142,7 +143,7 @@ Options parse(int argc, char** argv) {
         else if (o.input.empty()) o.input = arg;
         else throw std::runtime_error("За один запуск можно передать один файл или URL");
     }
-    if (o.input.empty()) throw std::runtime_error("Укажи URL или путь к файлу; справка: vklecture --help");
+    if (o.input.empty()) throw std::runtime_error("Укажи URL или путь к файлу; справка: transcribe --help");
     if (o.input.starts_with('[') && o.input.find("](") != std::string::npos)
         throw std::runtime_error("Вставь обычный URL, без Markdown-разметки [ссылка](ссылка)");
     if (!o.browser.empty() && !o.cookies.empty())
@@ -176,6 +177,10 @@ int main(int argc, char** argv) {
         for (int i = 1; i < argc; ++i) {
             if (std::string_view(argv[i]) == "--") break;
             if (std::string_view(argv[i]) == "--help") { help(); return 0; }
+            if (std::string_view(argv[i]) == "--version") {
+                std::cout << "transcribe " << TRANSCRIBE_VERSION << '\n';
+                return 0;
+            }
             if (std::string_view(argv[i]) == "--model" || std::string_view(argv[i]) == "--threads" ||
                 std::string_view(argv[i]) == "--out" || std::string_view(argv[i]) == "--prompt" ||
                 std::string_view(argv[i]) == "--cookies" || std::string_view(argv[i]) == "--cookies-from-browser") ++i;
@@ -209,7 +214,7 @@ int main(int argc, char** argv) {
         fs::create_directory(work);
         std::cout << "Каталог результата: " << result.string() << '\n';
         if (url) {
-            std::cout << "[1/3] Скачивание из VK/другого сайта...\n";
+            std::cout << "[1/3] Скачивание медиа по URL...\n";
             const fs::path path_file = work / "download.path";
             std::vector<std::string> args = {
                 "yt-dlp", "--ignore-config", "--no-playlist", "--no-simulate",

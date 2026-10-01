@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux / ${{ matrix.compiler }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y cmake g++ clang python3 ffmpeg shellcheck
+      - name: Shell checks
+        run: |
+          bash -n install.sh scripts/download-model.sh scripts/models.sh
+          shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
+      - name: Build
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
+          cmake --build build --parallel 2
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure
+
+  arch:
+    name: Arch Linux
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 20
+    steps:
+      - name: Dependencies
+        run: pacman -Syu --noconfirm --needed cmake python ffmpeg git shellcheck
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Shell checks
+        run: |
+          bash -n install.sh scripts/download-model.sh scripts/models.sh
+          shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
+      - name: Build and test as a regular user
+        run: |
+          useradd --create-home tester
+          runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
+          runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
+          runuser -u tester -- ctest --test-dir /tmp/transcribe-build --output-on-failure

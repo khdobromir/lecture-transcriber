@@ -42,6 +42,8 @@ else:
         assert audio.getsampwidth() == 2
     prefix = get("--output-file")
     for extension in ("txt", "srt", "vtt"):
+        if os.environ.get("MISSING_EXPORT") == extension:
+            continue
         Path(prefix + "." + extension).write_text("Тестовая расшифровка.\n", encoding="utf-8")
 '''
 
@@ -49,20 +51,30 @@ else:
 class Pipeline(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        if not shutil.which("g++") or not shutil.which("ffmpeg"):
-            raise unittest.SkipTest("Нужны g++ и ffmpeg")
-        cls.shared = tempfile.TemporaryDirectory(prefix="vklecture-tests-")
-        cls.binary = Path(cls.shared.name) / "vklecture"
-        subprocess.run(["g++", "-std=c++23", "-O2", "-Wall", "-Wextra",
-                        "-Wpedantic", "-Werror", str(PROJECT / "src/main.cpp"),
-                        "-o", str(cls.binary)], check=True)
+        if not shutil.which("ffmpeg"):
+            raise RuntimeError("Нужен ffmpeg")
+        cls.shared = tempfile.TemporaryDirectory(prefix="transcribe-tests-")
+        cls.addClassCleanup(cls.shared.cleanup)
+        supplied = os.environ.get("TRANSCRIBE_TEST_BINARY")
+        if supplied:
+            cls.binary = Path(supplied).resolve()
+            cls.version = os.environ["TRANSCRIBE_TEST_VERSION"]
+        else:
+            build = Path(cls.shared.name) / "build"
+            subprocess.run(["cmake", "-S", str(PROJECT), "-B", str(build),
+                            "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_TESTING=OFF"], check=True)
+            subprocess.run(["cmake", "--build", str(build), "--parallel", "2"], check=True)
+            cls.binary = build / "transcribe"
+            import re
+            cls.version = re.search(r"project\(transcribe VERSION ([0-9.]+)",
+                                    (PROJECT / "CMakeLists.txt").read_text()).group(1)
 
     @classmethod
     def tearDownClass(cls):
         cls.shared.cleanup()
 
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="vklecture-case-")
+        self.temp = tempfile.TemporaryDirectory(prefix="transcribe-case-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.data = self.root / "app data"
@@ -87,7 +99,7 @@ class Pipeline(unittest.TestCase):
                                for n in [int(1000 * math.sin(i * 2 * math.pi * 440 / 44100))])
             stream.writeframes(samples)
         self.log = self.root / "calls.jsonl"
-        self.env = dict(os.environ, VKLECTURE_HOME=str(self.data),
+        self.env = dict(os.environ, TRANSCRIBE_HOME=str(self.data),
                         PATH=str(bin_dir) + os.pathsep + os.environ["PATH"],
                         MOCK_LOG=str(self.log), MOCK_INPUT=str(self.audio))
         self.out = self.root / "Результаты с пробелами"
@@ -173,6 +185,54 @@ class Pipeline(unittest.TestCase):
             completed = self.invoke(str(self.audio))
             self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(len(list(self.out.iterdir())), 2)
+
+    def test_help_and_version_without_installation(self):
+        env = dict(self.env, TRANSCRIBE_HOME=str(self.root / "not installed"))
+        for option in ("--help", "--version"):
+            completed = self.invoke(option, env=env)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            if option == "--version":
+                self.assertEqual(completed.stdout, f"transcribe {self.version}\n")
+        self.assertFalse(self.out.exists())
+
+    def test_version_after_option_terminator_is_input(self):
+        completed = self.invoke("--", "--version")
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertFalse(self.out.exists())
+
+    def test_default_data_directory_without_override(self):
+        home = self.root / "home"
+        default_data = home / ".local/share/transcribe"
+        default_data.parent.mkdir(parents=True)
+        self.data.rename(default_data)
+        env = dict(self.env, HOME=str(home))
+        env.pop("TRANSCRIBE_HOME", None)
+        completed = self.invoke(str(self.audio), env=env)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn(str(default_data), (self.result() / "source.txt").read_text())
+
+    def test_missing_downloader_preserves_work_directory(self):
+        (self.root / "bin/yt-dlp").unlink()
+        # Only FFmpeg is available; an installed system yt-dlp cannot leak in.
+        os.symlink(shutil.which("ffmpeg"), self.root / "bin/ffmpeg")
+        completed = self.invoke("https://vkvideo.ru/video-1_2",
+                                env=dict(self.env, PATH=str(self.root / "bin")))
+        self.assertEqual(completed.returncode, 127, completed.stderr)
+        self.assertTrue((self.result() / "audio").is_dir())
+        self.assertNotIn("Готово.", completed.stdout)
+
+    def test_missing_engine_stops_before_creating_results(self):
+        (self.data / "whisper.cpp/build/bin/whisper-cli").unlink()
+        completed = self.invoke(str(self.audio))
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertFalse(self.out.exists())
+
+    def test_missing_export_preserves_audio(self):
+        completed = self.invoke(str(self.audio), env=dict(self.env, MISSING_EXPORT="vtt"))
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertTrue((self.result() / "audio/lecture.wav").is_file())
+        self.assertFalse((self.result() / "source.txt").exists())
+        self.assertNotIn("Готово.", completed.stdout)
 
 
 if __name__ == "__main__":
