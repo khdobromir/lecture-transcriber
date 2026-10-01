@@ -7,10 +7,11 @@
 
 ## Локальные проверки
 
-В Arch/Omarchy дополнительно к зависимостям README нужны `python` и `shellcheck`:
+Разработка ведётся в `dev`. В Arch/Omarchy дополнительно к зависимостям README
+нужен `shellcheck`:
 
 ```bash
-sudo pacman -S --needed python shellcheck
+sudo pacman -S --needed shellcheck
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
 cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
@@ -20,6 +21,7 @@ shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
 
 Для Clang добавьте `-DCMAKE_CXX_COMPILER=clang++` и выберите отдельный каталог
 сборки. CTest использует собранный бинарник, а не компилирует его другим GCC.
+Все тесты и подмены внешних инструментов — C++23, Python для них не требуется.
 Тесты установщика запускайте без sudo: они используют отдельный временный HOME,
 настоящие хеши и файловые операции, подменяют сеть и сборочные инструменты.
 Модели и доступ к аккаунту VK для автоматических тестов не нужны.
@@ -27,24 +29,33 @@ shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
 После обычной установки можно отдельно проверить реальный движок:
 
 ```bash
-python3 tests/smoke_real.py --binary build/transcribe
+build/smoke_real --binary build/transcribe
 ```
 
 Для этой проверки нужны установленная модель medium и VAD, а также встроенный
 пример whisper.cpp `samples/jfk.wav`. Сборка только команды через CMake
-не устанавливает движок и модели. Скрипт ищет их в `TRANSCRIBE_HOME` либо
+не устанавливает движок и модели. Утилита ищет их в `TRANSCRIBE_HOME` либо
 `~/.local/share/transcribe`. Если они находятся в другом каталоге, укажите его:
 
 ```bash
-python3 tests/smoke_real.py --binary build/transcribe --app-home "$HOME/путь-к-установке"
+build/smoke_real --binary build/transcribe --app-home "$HOME/путь-к-установке"
 ```
 
-Этот каталог должен содержать `whisper.cpp` и `models`; скрипт не переносит
+Этот каталог должен содержать `whisper.cpp` и `models`; утилита не переносит
 и не скачивает файлы. Программа обрабатывает пятисекундный
 фрагмент во временном каталоге и проверяет экспорт. Это проверка процессов,
 а не качества распознавания; английский пример обрабатывается с языком `ru`.
 
+Сравнение скорости, памяти и границ дробления описано в README. Выполненные
+локальные проверки `dev` — в [отчёте](docs/dev-validation.md).
+Проверки подготовки v0.2.0 — в [отчёте выпуска](docs/release-validation-v0.2.0.md).
+
 ## Pull requests
+
+Для всех новых коммитов, включая коммиты слияния, используйте Conventional
+Commits: `<type>[optional scope][!]: <description>`. Например,
+`fix(process): stop whisper-cli on cancellation` или
+`chore(release): prepare v0.2.0`.
 
 Опишите проблему, конечное поведение и выполненные проверки. Для исправления
 ошибки добавьте воспроизводящий её тест. Сохраняйте совместимость параметров
@@ -53,3 +64,4 @@ CLI и форматов результатов либо явно докумен�
 
 Версия задаётся только в `project(... VERSION ...)` в CMake. Изменения версии,
 зависимостей и пользовательского поведения отражайте в changelog.
+Порядок подготовки и публикации — в [инструкции выпуска](docs/releasing.md).
