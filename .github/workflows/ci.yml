@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
   pull_request:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y cmake g++ clang python3 ffmpeg shellcheck
+          sudo apt-get install --no-install-recommends -y cmake g++ clang ffmpeg shellcheck
       - name: Shell checks
         run: |
           bash -n install.sh scripts/download-model.sh scripts/models.sh
@@ -49,7 +49,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Dependencies
-        run: pacman -Syu --noconfirm --needed cmake python ffmpeg git shellcheck
+        run: pacman -Syu --noconfirm --needed cmake ffmpeg git shellcheck
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false

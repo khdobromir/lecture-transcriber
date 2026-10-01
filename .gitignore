@@ -1,6 +1,7 @@
 /build*/
 /cmake-build-*/
 /transcripts/
+/benchmark-results/
 /models/
 /transcribe
 __pycache__/
