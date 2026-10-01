@@ -349,12 +349,22 @@ int main(int argc, char** argv) {
         const auto start = std::chrono::steady_clock::now();
         recognize(chunks, o, engine, model, vad_model, result);
         transcribe::merge_exports(chunks, result);
-        if (!o.keep) fs::remove_all(work);
         transcribe::check_cancelled();
-        metadata(result, details, "completed", 0);
         const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
         std::cout << "Готово. Распознавание заняло " << std::fixed << std::setprecision(1)
-                  << seconds / 60.0 << " мин.\n" << result.string() << '\n';
+                  << seconds / 60.0 << " мин.\n" << result.string() << '\n' << std::flush;
+        transcribe::check_cancelled();
+        if (!std::cout) throw std::runtime_error("Не удалось вывести итог обработки");
+        metadata(result, details, "completed", 0);
+        transcribe::commit_completion();
+        // Cleanup is irreversible. Once success is committed, it must not turn
+        // into an interrupted/failed run that falsely promises preserved audio.
+        try {
+            if (!o.keep) fs::remove_all(work);
+        } catch (const std::exception& error) {
+            std::cerr << "Предупреждение: Не удалось удалить рабочие файлы в " << work.string()
+                      << ": " << error.what() << '\n';
+        }
         return 0;
     } catch (const std::exception& error) {
         const auto* process = dynamic_cast<const ProcessError*>(&error);

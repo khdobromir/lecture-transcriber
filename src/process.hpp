@@ -19,6 +19,9 @@ using Output = std::function<void(std::string_view)>;
 void install_signal_handlers();
 int cancellation_signal();
 void check_cancelled();
+// After exports and success metadata are saved, signals cannot cancel cleanup.
+// A cancellation received before this transition still throws.
+void commit_completion();
 int physical_cpus();
 
 // Each child owns a process group, two drained pipes and a diagnostic log.

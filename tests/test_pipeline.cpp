@@ -1,6 +1,8 @@
 #include "support.hpp"
 #include "audio.hpp"
+#include <array>
 #include <sched.h>
+#include <sys/inotify.h>
 
 using namespace test;
 struct Fixture {
@@ -240,6 +242,54 @@ int main() {
         until([&] { return f.event_count("ready") == 1 && f.event_count("helper") == 1 && f.event_count("start") == 2; });
         close(output[0]); CHECK(child.wait().code == 128 + SIGPIPE); f.no_children();
         CHECK(contains(read(f.result() / "source.txt"), "Статус: interrupted"));
+    });
+    add("closed_terminal_output_pipe_after_last_progress_preserves_audio", [](Fixture& f) {
+        int output[2]; CHECK(pipe2(output, O_CLOEXEC | O_NONBLOCK) == 0);
+        Child child(f.command({f.audio.string()}), f.env, f.root, output[1]);
+        std::string progress;
+        until([&] {
+            std::array<char, 4096> bytes{};
+            const auto n = ::read(output[0], bytes.data(), bytes.size());
+            if (n > 0) progress.append(bytes.data(), static_cast<size_t>(n));
+            return contains(progress, "Распознавание: 100%");
+        });
+        close(output[0]);
+        CHECK(child.wait().code == 128 + SIGPIPE); f.no_children();
+        CHECK(contains(read(f.result() / "source.txt"), "Статус: interrupted"));
+        CHECK(fs::is_regular_file(f.result() / "audio/lecture.wav"));
+    });
+    for (int signal : {SIGINT, SIGTERM, SIGHUP}) {
+        add("signal_during_cleanup_keeps_completed_status_" + std::to_string(signal), [=](Fixture& f) {
+            auto env = f.env; env["SLOW_CLEANUP"] = "1"; env["ENGINE_DELAY_MS"] = "500";
+            Child child(f.command({f.audio.string()}), env, f.root);
+            until([&] { return fs::exists(f.out) && entries(f.out) == 1 && fs::exists(f.result() / "audio/parts/1"); });
+            const int notify = inotify_init1(IN_CLOEXEC | IN_NONBLOCK); CHECK(notify >= 0);
+            const int watch = inotify_add_watch(notify, (f.result() / "audio/parts/1").c_str(), IN_DELETE);
+            if (watch < 0) { close(notify); throw std::runtime_error("inotify_add_watch"); }
+            try {
+                until([&] {
+                    std::array<char, 4096> events{};
+                    return ::read(notify, events.data(), events.size()) > 0;
+                });
+                CHECK(kill(child.pid, signal) == 0);
+            } catch (...) { close(notify); throw; }
+            close(notify);
+            success(child.wait()); f.no_children();
+            CHECK(contains(read(f.result() / "source.txt"), "Статус: completed\nКод: 0"));
+            CHECK(!fs::exists(f.result() / "audio"));
+            for (const char* ext : {"txt", "srt", "vtt"}) CHECK(fs::is_regular_file(f.result() / (std::string("transcript.") + ext)));
+        });
+    }
+    add("cleanup_failure_warns_without_failing_completed_transcription", [](Fixture& f) {
+        const auto result = f.invoke({f.audio.string()}, {{"DENY_CLEANUP", "1"}});
+        const auto locked = f.result() / "audio/parts/1/locked";
+        // Restore write access before assertions, including when the old CLI fails.
+        fs::permissions(locked, fs::perms::owner_all);
+        success(result);
+        CHECK(contains(result.err, "Не удалось удалить рабочие файлы"));
+        CHECK(contains(read(f.result() / "source.txt"), "Статус: completed\nКод: 0"));
+        CHECK(fs::is_regular_file(locked / "keep"));
+        for (const char* ext : {"txt", "srt", "vtt"}) CHECK(fs::is_regular_file(f.result() / (std::string("transcript.") + ext)));
     });
     add("write_failure_stops_running_workers", [](Fixture& f) {
         wav(f.audio, 1, 16000, 1);

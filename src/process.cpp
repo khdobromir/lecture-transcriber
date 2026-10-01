@@ -18,7 +18,9 @@ namespace transcribe {
 namespace {
 volatile sig_atomic_t cancelled = 0;
 volatile sig_atomic_t repeated = 0;
+volatile sig_atomic_t completed = 0;
 void on_signal(int signal) {
+    if (completed) return;
     if (cancelled) repeated = 1;
     else cancelled = signal;
 }
@@ -41,6 +43,12 @@ void install_signal_handlers() {
 int cancellation_signal() { return cancelled; }
 void check_cancelled() {
     if (cancelled) throw ProcessError("Обработка прервана сигналом " + std::to_string(cancelled), 128 + cancelled);
+}
+void commit_completion() {
+    check_cancelled();
+    completed = 1;
+    // Catch a signal delivered between the check and the atomic transition.
+    if (cancelled) { completed = 0; check_cancelled(); }
 }
 int physical_cpus() {
     cpu_set_t mask;

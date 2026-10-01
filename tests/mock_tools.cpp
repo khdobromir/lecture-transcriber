@@ -94,6 +94,13 @@ int main(int argc, char** argv) {
             if (test::getenv("MISSING_EXPORT") != "srt") write(prefix.string() + ".srt", text.empty() ? "" : "1\n00:00:00,000 --> 00:00:00,100\n" + text + '\n');
             if (test::getenv("MISSING_EXPORT") != "vtt") write(prefix.string() + ".vtt", "WEBVTT\n\n" + (text.empty() ? std::string() : "00:00:00.000 --> 00:00:00.100\n" + text + '\n'));
             if (!test::getenv("MALFORMED_EXPORT").empty()) write(prefix.string() + ".srt", "1\ninvalid times\ntext\n");
+            if (!test::getenv("SLOW_CLEANUP").empty())
+                for (int i = 0; i < 4000; ++i) fs::create_directory(prefix.parent_path() / ("cleanup-" + std::to_string(i)));
+            if (!test::getenv("DENY_CLEANUP").empty()) {
+                const auto locked = prefix.parent_path() / "locked";
+                write(locked / "keep", "cleanup fixture");
+                fs::permissions(locked, fs::perms::owner_read | fs::perms::owner_exec);
+            }
             event(kind, "finish", part);
         } else if (kind == "git") {
             if (args.at(0) == "clone") {
