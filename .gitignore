@@ -24,3 +24,34 @@ cookies*.txt
 .agents/
 /VALIDATION.md
 /docs/RELEASING.md
+
+# Local caches, outputs and preserved cleanup material
+/.cache/
+/.local-archive/
+/out/
+/dist/
+/target/
+/tmp/
+/temp/
+/bin/
+/obj/
+/CMakeUserPresets.json
+
+# CMake files from accidental in-source configuration
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/CTestTestfile.cmake
+/DartConfiguration.tcl
+/compile_commands.json
+
+# Compiled C/C++ artifacts
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+*.exe
+a.out
