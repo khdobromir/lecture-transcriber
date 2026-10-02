@@ -319,7 +319,10 @@ Ctrl+C прекращает текущую обработку; уже созда
 `cmake --install build --prefix "$HOME/.local"` установит только CLI.
 Движок и модели устанавливает `install.sh`.
 
-CI проверяет Linux с GCC/Clang и отдельно Arch Linux.
+CI проверяет Ubuntu 24.04 с GCC/Clang 18, Debian 13 с GCC и Arch Linux,
+а также clang-tidy, cppcheck и ShellCheck. Реальный Whisper smoke запускается
+отдельно вручную и еженедельно. Suites и команды анализа описаны в
+[инструкции разработчика](CONTRIBUTING.md).
 Правила участия — [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Лицензия и зависимости

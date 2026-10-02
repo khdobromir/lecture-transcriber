@@ -1,0 +1,52 @@
+name: Real Whisper smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    container: ubuntu:24.04
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 30
+    steps:
+      - name: Dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ git curl ffmpeg util-linux shellcheck
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the project as a regular user
+        run: |
+          bash -n install.sh scripts/*.sh
+          shellcheck -x install.sh scripts/*.sh
+          useradd --create-home tester
+          runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
+          runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
+          install -d -o tester -g tester "$RUNNER_TEMP/real-smoke-run"
+      - name: Bootstrap pinned engine and models, then transcribe
+        run: |
+          set -euo pipefail
+          runuser -u tester -- bash scripts/ci-real-smoke.sh /tmp/transcribe-build "$RUNNER_TEMP/real-smoke-run/workspace" 2>&1 | tee "$RUNNER_TEMP/real-smoke-bootstrap.log"
+      - name: Preserve public fixture diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: real-smoke-diagnostics
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/real-smoke-bootstrap.log
+            ${{ runner.temp }}/real-smoke-run/workspace/results/results/**
