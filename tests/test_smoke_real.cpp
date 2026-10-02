@@ -11,7 +11,7 @@ struct Fixture {
         write(sample, "invalid audio fixture"); write(medium, "smoke model fixture\n"); write(vad, "smoke model fixture\n");
         manifest(fs::path(PROJECT_SOURCE) / "scripts/models.tsv", manifest_path, "smoke model fixture\n");
     }
-    Capture invoke(std::vector<std::string> args = {}, Env extra = {}) {
+    Capture invoke(std::vector<std::string> args = {}, const Env& extra = {}) {
         args.insert(args.begin(), {SMOKE_BINARY, "--binary", binary.string(), "--manifest", manifest_path.string()});
         auto variables = env; for (const auto& [key, value] : extra) variables[key] = value;
         return test::invoke(args, variables, root);
@@ -21,7 +21,7 @@ struct Fixture {
 };
 int main() {
     Suite suite;
-    const auto add = [&](std::string name, std::function<void(Fixture&)> run) { suite.add(std::move(name), [run] { Fixture f; run(f); }); };
+    const auto add = [&](std::string_view name, auto run) { suite.add(std::string(name), [run = std::move(run)] { Fixture f; run(f); }); };
     add("missing_default_installation_explains_app_home", [](Fixture& f) {
         const auto result = f.invoke(); f.error(result, "Каталог установки не найден");
         CHECK(contains(result.err, ".local/share/transcribe") && contains(result.err, "--app-home") && contains(result.err, "bash install.sh medium"));
@@ -38,5 +38,16 @@ int main() {
     });
     add("corrupt_model_is_preserved", [](Fixture& f) { write(f.medium, "corrupt model"); f.error(f.custom(), "SHA-256"); CHECK(read(f.medium) == "corrupt model"); });
     add("ffmpeg_failure_is_reported", [](Fixture& f) { f.error(f.custom(), "ffmpeg"); CHECK(read(f.sample) == "invalid audio fixture"); });
+    add("artifacts_directory_refuses_existing_path", [](Fixture& f) {
+        const auto artifacts = f.root / "diagnostics"; write(artifacts / "keep", "original");
+        f.error(f.invoke({"--app-home", f.home.string(), "--artifacts", artifacts.string()}), "уже существует");
+        CHECK(read(artifacts / "keep") == "original");
+    });
+    add("artifacts_directory_preserves_failed_run", [](Fixture& f) {
+        wav(f.sample); const auto artifacts = f.root / "diagnostics";
+        CHECK(f.invoke({"--app-home", f.home.string(), "--artifacts", artifacts.string()}).code == 1);
+        CHECK(fs::is_regular_file(artifacts / "technical sample.wav"));
+        CHECK(fs::is_directory(artifacts / "app data"));
+    });
     return suite.run();
 }

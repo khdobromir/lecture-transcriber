@@ -18,19 +18,19 @@ void Lines::feed(std::string_view bytes) {
     while (true) {
         const size_t end = buffer_.find('\n', start);
         if (end == std::string::npos) break;
-        std::string_view line(buffer_.data() + start, end - start);
+        std::string_view line = std::string_view(buffer_).substr(start, end - start);
         if (!line.empty() && line.back() == '\r') line.remove_suffix(1);
         try { line_(line); }
         catch (...) { buffer_.erase(0, end + 1); throw; }
         start = end + 1;
     }
     buffer_.erase(0, start);
-    if (buffer_.size() > 16 * 1024 * 1024) throw std::runtime_error("Слишком длинная строка вывода процесса");
+    if (buffer_.size() > size_t{16} * 1024 * 1024) throw std::runtime_error("Слишком длинная строка вывода процесса");
 }
 void Lines::finish() { if (!buffer_.empty()) { line_(buffer_); buffer_.clear(); } }
 namespace {
 uint32_t little(const unsigned char* p) {
-    return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24;
+    return uint32_t(p[0]) | uint32_t(p[1]) << 8U | uint32_t(p[2]) << 16U | uint32_t(p[3]) << 24U;
 }
 std::ofstream writer(const fs::path& file) {
     std::ofstream out(file, std::ios::binary);
@@ -115,7 +115,7 @@ int64_t wav_samples(const fs::path& wav) {
             if (!format || length % 2) throw std::runtime_error("WAV должен быть моно, 16 кГц, PCM 16 бит");
             return length / 2;
         }
-        in.seekg(static_cast<std::streamoff>(start + length + (length & 1)));
+        in.seekg(static_cast<std::streamoff>(start + length + (length & 1U)));
     }
     throw std::runtime_error("Нет аудиоданных в WAV");
 }
@@ -136,7 +136,7 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
                 if (end == text.c_str() || !std::isfinite(value) || value < 0) throw std::runtime_error("Некорректный вывод silencedetect");
                 return value;
             };
-            if (auto value = get("silence_start: ")) start = *value;
+            if (auto value = get("silence_start: ")) start = value;
             if (auto value = get("silence_end: "); value && start) { pauses.push_back((*start + *value) / 2); start.reset(); }
         });
         std::cout << "Поиск пауз для границ частей...\n" << std::flush;
@@ -165,7 +165,7 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
     for (int i = 0; i < count; ++i) {
         const auto dir = parts / std::to_string(i + 1);
         fs::create_directory(dir);
-        chunks.push_back({boundaries[static_cast<size_t>(i)], boundaries[static_cast<size_t>(i + 1)],
+        chunks.push_back({boundaries[static_cast<size_t>(i)], boundaries[static_cast<size_t>(i) + 1],
                           count == 1 ? wav : dir / "audio.wav", dir / "transcript"});
     }
     if (count > 1) {
@@ -194,7 +194,8 @@ std::string segment_text(std::string_view line) {
                 (void)timestamp(line.substr(1, arrow - 1));
                 (void)timestamp(line.substr(arrow + 5, end - arrow - 5));
                 line.remove_prefix(end + 3);
-            } catch (const std::runtime_error&) {}
+            } catch (const std::runtime_error&) { // NOLINT(bugprone-empty-catch): invalid timestamp brackets are literal transcript text.
+            }
         }
     }
     while (!line.empty() && (line.front() == ' ' || line.front() == '\t')) line.remove_prefix(1);

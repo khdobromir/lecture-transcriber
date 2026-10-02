@@ -1,20 +1,22 @@
 #include "support.hpp"
 #include "process.hpp"
+#include "exports.hpp"
 
 using namespace test;
 int main(int argc, char** argv) {
     try {
         transcribe::install_signal_handlers();
-        fs::path binary = TRANSCRIBE_BINARY, home, manifest_path = fs::path(PROJECT_SOURCE) / "scripts/models.tsv";
+        fs::path binary = TRANSCRIBE_BINARY, home, artifacts, manifest_path = fs::path(PROJECT_SOURCE) / "scripts/models.tsv";
         const auto app = test::getenv("TRANSCRIBE_HOME");
         home = app.empty() ? fs::path(test::getenv("HOME")) / ".local/share/transcribe" : fs::path(app);
         for (int i = 1; i < argc; ++i) {
             const std::string_view arg = argv[i];
-            if (arg == "--help") { std::cout << "smoke_real [--binary ПУТЬ] [--app-home КАТАЛОГ] [--manifest ФАЙЛ]\n"; return 0; }
+            if (arg == "--help") { std::cout << "smoke_real [--binary ПУТЬ] [--app-home КАТАЛОГ] [--manifest ФАЙЛ] [--artifacts НОВЫЙ-КАТАЛОГ]\n"; return 0; }
             if (i + 1 >= argc) throw std::runtime_error("Нужно значение параметра");
             if (arg == "--binary") binary = argv[++i];
             else if (arg == "--app-home") home = argv[++i];
             else if (arg == "--manifest") manifest_path = argv[++i];
+            else if (arg == "--artifacts") artifacts = argv[++i];
             else throw std::runtime_error("Неизвестный параметр smoke_real");
         }
         binary = fs::absolute(binary); home = fs::absolute(home);
@@ -37,7 +39,10 @@ int main(int argc, char** argv) {
             models[selection] = model;
         }
         if (models.size() != 2) throw std::runtime_error("В манифесте нужны medium и Silero VAD");
-        Temp temp; const auto data = temp.path / "app data", audio = temp.path / "technical sample.wav", output = temp.path / "results";
+        Temp temp;
+        const auto workspace = artifacts.empty() ? temp.path : fs::absolute(artifacts);
+        if (!artifacts.empty() && !fs::create_directory(workspace)) throw std::runtime_error("Каталог --artifacts уже существует");
+        const auto data = workspace / "app data", audio = workspace / "technical sample.wav", output = workspace / "results";
         test::link(engine, data / "whisper.cpp/build/bin/whisper-cli");
         for (const auto& [selection, model] : models) { (void)selection; test::link(model, data / "models" / model.filename()); }
         write(data / "default-model", "medium\n");
@@ -50,6 +55,7 @@ int main(int argc, char** argv) {
         const auto result = single(output);
         for (const char* file : {"transcript.txt", "transcript.srt", "transcript.vtt", "source.txt"}) CHECK(fs::is_regular_file(result / file));
         CHECK(!fs::exists(result / "audio")); CHECK(read(audio) == original); CHECK(contains(read(result / "source.txt"), "Статус: completed"));
+        check_exports(result, 5000);
         std::cout << "Real smoke passed: medium-q5_0, Silero VAD 6.2.0, ru, 5 s JFK; "
                   << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() << " s\n";
         return 0;

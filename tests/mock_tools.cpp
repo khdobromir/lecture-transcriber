@@ -54,8 +54,10 @@ int main(int argc, char** argv) {
             destination.replace(destination.find("%(ext)s"), 7, "wav");
             fs::copy_file(test::getenv("MOCK_INPUT"), destination);
             const auto it = std::find(args.begin(), args.end(), "--print-to-file");
-            CHECK(it != args.end() && *(it + 1) == "after_move:%(filepath)s");
-            write(*(it + 2), destination + '\n');
+            const auto index = static_cast<size_t>(it - args.begin());
+            CHECK(it != args.end());
+            CHECK(args.at(index + 1) == "after_move:%(filepath)s");
+            write(args.at(index + 2), destination + '\n');
         } else if (kind == "whisper-cli") {
             const fs::path prefix = value(args, "--output-file");
             const int part = std::stoi(prefix.parent_path().filename());
@@ -71,19 +73,32 @@ int main(int argc, char** argv) {
             CHECK(static_cast<unsigned char>(audio.at(fmt + 14)) == 16);
             const std::string text = test::getenv("EMPTY_SPEECH").empty() ? "Тестовая расшифровка " + std::to_string(part) + ".\n" : "";
             if (!text.empty()) {
-                const std::string line = "\n[00:00:00.000 --> 00:00:00.100]  " + text;
+                const std::string line = "\n[00:00:00.000 --> 00:00:00.100]  " +
+                    (test::getenv("INCOMPLETE_TAIL").empty() ? text : text.substr(0, text.size() - 1));
                 if (!test::getenv("SPLIT_UTF8").empty()) {
                     for (char ch : line) { std::cout.put(ch); std::cout.flush(); std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
                 } else std::cout << line << std::flush;
             }
             std::cerr << "whisper_print_progress_callback: progress =  50%\n" << std::flush;
+            if (test::getenv("CRASH_PART") == std::to_string(part)) {
+                event(kind, "crash_ready", part);
+                until([] { return fs::exists(test::getenv("CRASH_RELEASE")); });
+                if (test::getenv("CRASH_MODE") == "segv") {
+                    const rlimit limit{0, 0}; CHECK(setrlimit(RLIMIT_CORE, &limit) == 0);
+                    // Deliberate fixture signal; sanitizers must not turn it into exit 1.
+                    std::signal(SIGSEGV, SIG_DFL);
+                    CHECK(kill(getpid(), SIGSEGV) == 0);
+                    _exit(99);
+                }
+                return 17;
+            }
             if (!test::getenv("ORPHAN_HELPER").empty()) {
                 const auto helper = fork(); CHECK(helper >= 0);
                 if (helper == 0) { event(kind, "helper", part); for (;;) pause(); }
             }
             if (!test::getenv("FLOOD").empty() && (test::getenv("FLOOD_PART").empty() || test::getenv("FLOOD_PART") == std::to_string(part))) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                std::cerr << std::string(512 * 1024, 'x') << '\n' << std::flush;
+                std::cerr << std::string(size_t{512} * 1024, 'x') << '\n' << std::flush;
             }
             if (hanging(kind, part)) hang(kind, part);
             int delay = test::getenv("ENGINE_DELAY_MS").empty() ? 20 : std::stoi(test::getenv("ENGINE_DELAY_MS"));
@@ -131,6 +146,7 @@ int main(int argc, char** argv) {
         else if (kind == "ffmpeg" && !test::getenv("REAL_FFMPEG").empty()) {
             args.insert(args.begin(), test::getenv("REAL_FFMPEG"));
             std::vector<char*> command;
+            command.reserve(args.size() + 1);
             for (auto& arg : args) command.push_back(arg.data());
             command.push_back(nullptr); execv(command[0], command.data()); return 127;
         }

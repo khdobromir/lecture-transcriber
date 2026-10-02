@@ -100,6 +100,7 @@ Process::Process(const std::vector<std::string>& args, const std::filesystem::pa
         checked(posix_spawnattr_setpgroup(&attributes, 0));
         checked(posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF));
         std::vector<char*> argv;
+        argv.reserve(args.size() + 1);
         for (const auto& arg : args) argv.push_back(const_cast<char*>(arg.c_str()));
         argv.push_back(nullptr);
         const int error = posix_spawnp(&pid_, argv[0], &actions, &attributes, argv.data(), environ);
