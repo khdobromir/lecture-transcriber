@@ -93,14 +93,14 @@ SHA-256 во временный каталог runner и не запускает
 
 Сравнение скорости, памяти и границ дробления описано в README. Выполненные
 локальные проверки `dev` — в [отчёте](docs/dev-validation.md).
-Проверки подготовки v0.2.0 — в [отчёте выпуска](docs/release-validation-v0.2.0.md).
+Проверки подготовки v0.2.1 — в [отчёте выпуска](docs/release-validation-v0.2.1.md).
 
 ## Pull requests
 
 Для всех новых коммитов, включая коммиты слияния, используйте Conventional
 Commits: `<type>[optional scope][!]: <description>`. Например,
 `fix(process): stop whisper-cli on cancellation` или
-`chore(release): prepare v0.2.0`.
+`chore(release): prepare v0.2.1`.
 
 Опишите проблему, конечное поведение и выполненные проверки. Для исправления
 ошибки добавьте воспроизводящий её тест. Сохраняйте совместимость параметров
