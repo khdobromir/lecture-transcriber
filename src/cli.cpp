@@ -57,7 +57,7 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
     const auto absolute = [&](const fs::path& path) { return path.is_absolute() ? path : cwd / path; };
     Inputs files;
     files.engine = absolute(root) / "whisper.cpp/build/bin/whisper-cli";
-    if (access(files.engine.c_str(), X_OK) != 0)
+    if (!fs::is_regular_file(files.engine) || access(files.engine.c_str(), X_OK) != 0)
         throw std::runtime_error("Нет whisper-cli. Сначала выполни bash install.sh");
     const std::string selected = o.model.empty() ? read_line(absolute(root) / "default-model") : o.model;
     files.model = selected == "small" || selected == "medium" || selected == "turbo"

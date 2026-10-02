@@ -107,6 +107,13 @@ int main() {
             CHECK(!fs::exists(f.temp.path / "transcripts"));
         });
     }
+    suite.add("preflight_engine_directory_is_rejected", [] {
+        Files f;
+        const auto engine = f.root / "whisper.cpp/build/bin/whisper-cli";
+        fs::remove(engine); fs::create_directory(engine);
+        rejected([&] { (void)f.validate(); }, "Нет whisper-cli");
+        CHECK(!fs::exists(f.temp.path / "transcripts"));
+    });
     suite.add("missing_engine_and_default_selection", [] {
         Files f; fs::permissions(f.root / "whisper.cpp/build/bin/whisper-cli", fs::perms::owner_read);
         rejected([&] { (void)f.validate(); }, "Нет whisper-cli");

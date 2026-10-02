@@ -220,13 +220,20 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& result) {
             txt.write(bytes.data(), text.gcount());
         }
         if (text.bad()) throw std::runtime_error("Ошибка чтения TXT");
+        const int64_t duration_ms = (chunk.end - chunk.begin) * 1000 / 16000;
+        // whisper.cpp timestamps have a 10 ms resolution. Allow one tick of
+        // rounding, but keep the published interval within the actual chunk.
+        constexpr int64_t timestamp_resolution_ms = 10;
         for (bool web : {false, true}) {
             auto& output = web ? vtt : srt;
             for (const auto& cue : read_cues(chunk.prefix.string() + (web ? ".vtt" : ".srt"), web)) {
                 check_cancelled();
+                if (cue.end > duration_ms + timestamp_resolution_ms)
+                    throw std::runtime_error("Субтитр выходит за границы части: " + chunk.prefix.string());
                 const int64_t offset = chunk.begin * 1000 / 16000;
                 if (!web) output << ++index << '\n';
-                output << time_string(cue.begin + offset, web ? '.' : ',') << " --> " << time_string(cue.end + offset, web ? '.' : ',')
+                output << time_string(std::min(cue.begin, duration_ms) + offset, web ? '.' : ',') << " --> "
+                       << time_string(std::min(cue.end, duration_ms) + offset, web ? '.' : ',')
                        << '\n' << cue.text << '\n';
             }
         }

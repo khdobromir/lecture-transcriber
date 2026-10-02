@@ -138,6 +138,24 @@ int main() {
     add("missing_engine_stops_before_creating_results", [](Fixture& f) {
         fs::remove(f.engine); CHECK(f.invoke({f.audio.string()}).code != 0); CHECK(!fs::exists(f.out));
     });
+    add("preflight_engine_directory_stops_before_conversion", [](Fixture& f) {
+        fs::remove(f.engine); fs::create_directory(f.engine);
+        const auto result = f.invoke({f.audio.string()});
+        CHECK(result.code == 1 && contains(result.err, "Нет whisper-cli"));
+        CHECK(!fs::exists(f.out) && f.calls().empty());
+    });
+    for (const auto* ext : {"srt", "vtt"}) for (bool multiple : {false, true})
+        add(std::string("subtitle_bounds_") + ext + (multiple ? "_chunks" : "_single"), [=](Fixture& f) {
+            wav(f.audio, 1, 16000, 1); const auto original = read(f.audio);
+            const auto result = f.invoke({"--chunks", multiple ? "2" : "1", "--jobs", "1", f.audio.string()},
+                {{"OUT_OF_BOUNDS_EXPORT", ext}, {"OUT_OF_BOUNDS_PART", multiple ? "2" : "1"}});
+            CHECK(result.code == 1 && contains(result.err, "границы части"));
+            CHECK(contains(read(f.result() / "source.txt"), "Статус: failed\nКод: 1"));
+            CHECK(read(f.audio) == original && fs::is_regular_file(f.result() / "audio/lecture.wav"));
+            CHECK(!read(f.result() / "transcript.txt").empty());
+            CHECK(!fs::exists(f.result() / "transcript.srt") && !fs::exists(f.result() / "transcript.vtt"));
+            CHECK(!contains(result.out, "Готово.")); f.no_children();
+        });
     add("missing_export_preserves_audio", [](Fixture& f) {
         const auto result = f.invoke({f.audio.string()}, {{"MISSING_EXPORT", "vtt"}});
         CHECK(result.code != 0); CHECK(fs::exists(f.result() / "audio/lecture.wav"));
