@@ -4,6 +4,7 @@ on:
   push:
     branches: [master, dev]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,33 +15,86 @@ concurrency:
 
 jobs:
   linux:
-    name: Linux / ${{ matrix.compiler }}
+    name: Ubuntu 24.04 / ${{ matrix.compiler }}
     runs-on: ubuntu-24.04
+    container: ubuntu:24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        compiler: [g++, clang++]
+        compiler: [g++, clang++-18]
     steps:
+      - name: Dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ clang-18 ffmpeg git shellcheck util-linux
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y cmake g++ clang ffmpeg shellcheck
       - name: Shell checks
         run: |
-          bash -n install.sh scripts/download-model.sh scripts/models.sh
-          shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
-      - name: Build
+          bash -n install.sh scripts/*.sh
+          shellcheck -x install.sh scripts/*.sh
+      - name: Build as a regular user
         env:
           CXX: ${{ matrix.compiler }}
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
-          cmake --build build --parallel 2
+          useradd --create-home tester
+          runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_CXX_COMPILER="$CXX" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
+          runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
       - name: Tests
-        run: ctest --test-dir build --output-on-failure
+        run: runuser -u tester -- ctest --test-dir /tmp/transcribe-build --output-on-failure
+      - name: Repeat cancellation and partial-output crashes
+        if: matrix.compiler == 'g++'
+        env:
+          TEST_CASE_FILTER: reliability_
+        run: runuser -u tester -- ctest --test-dir /tmp/transcribe-build -R '^pipeline$' --repeat until-fail:20 --output-on-failure
+
+  debian:
+    name: Debian 13 / GCC
+    runs-on: ubuntu-24.04
+    container: debian:13-slim
+    timeout-minutes: 15
+    steps:
+      - name: Dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ ffmpeg git shellcheck util-linux
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Shell checks
+        run: |
+          bash -n install.sh scripts/*.sh
+          shellcheck -x install.sh scripts/*.sh
+      - name: Build and test as a regular user
+        run: |
+          useradd --create-home tester
+          runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
+          runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
+          runuser -u tester -- ctest --test-dir /tmp/transcribe-build --output-on-failure
+
+  static:
+    name: Static analysis
+    runs-on: ubuntu-24.04
+    container: ubuntu:24.04
+    timeout-minutes: 15
+    steps:
+      - name: Dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates git make cmake g++ clang-18 clang-tidy-18 cppcheck ffmpeg shellcheck util-linux
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: |
+          useradd --create-home tester
+          runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release
+      - name: Analyze
+        env:
+          CLANG_TIDY: clang-tidy-18
+        run: runuser -u tester -- bash scripts/check-static.sh /tmp/transcribe-build
 
   arch:
     name: Arch Linux
@@ -55,8 +109,8 @@ jobs:
           persist-credentials: false
       - name: Shell checks
         run: |
-          bash -n install.sh scripts/download-model.sh scripts/models.sh
-          shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
+          bash -n install.sh scripts/*.sh
+          shellcheck -x install.sh scripts/*.sh
       - name: Build and test as a regular user
         run: |
           useradd --create-home tester

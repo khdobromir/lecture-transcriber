@@ -65,7 +65,9 @@ int main(int argc, char** argv) {
         const auto probe = invoke({which("ffprobe").string(), "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=duration:format=duration", "-of", "default=noprint_wrappers=1:nokey=1", fs::absolute(input).string()}); success(probe);
         std::istringstream durations(probe.out); std::string line; double duration = 0;
         while (std::getline(durations, line)) {
-            try { const double value = std::stod(line); if (std::isfinite(value)) duration = std::max(duration, value); } catch (const std::exception&) {}
+            try { const double value = std::stod(line); if (std::isfinite(value)) duration = std::max(duration, value); }
+            catch (const std::exception&) { // NOLINT(bugprone-empty-catch): ffprobe may report N/A alongside a valid duration.
+            }
         }
         if (duration <= 0 || (!allow_short && duration < 600)) throw std::runtime_error("Для сравнения нужна запись не менее 10 минут; --allow-short разрешает только технический эксперимент");
         fs::create_directories(output);
@@ -111,7 +113,7 @@ int main(int argc, char** argv) {
             }
             std::sort(times.begin(), times.end());
             auto& best = variant.chunks == 1 ? best_single : best_split; best = std::min(best, times[1]);
-            report << '|' << variant.chunks << '|' << variant.jobs << '|' << variant.threads << '|' << times[1] << '|' << maximum.rss / 1024.0 << '|' << maximum.swap / 1024.0 << "|\n"; report.flush();
+            report << '|' << variant.chunks << '|' << variant.jobs << '|' << variant.threads << '|' << times[1] << '|' << static_cast<double>(maximum.rss) / 1024.0 << '|' << static_cast<double>(maximum.swap) / 1024.0 << "|\n"; report.flush();
         }
         const double gain = 100 * (1 - best_split / best_single);
         report << "\nИзменение времени лучшего дробления относительно лучшего цельного запуска: " << gain << "% (положительное — быстрее).\n\n"

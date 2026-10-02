@@ -20,7 +20,7 @@ struct Fixture {
         env = {{"HOME", home.string()}, {"TRANSCRIBE_HOME", root.string()}, {"PATH", bin.string()},
                {"MOCK_LOG", log.string()}, {"TRANSCRIBE_BUILD_JOBS", ""}};
     }
-    Capture invoke(std::string script = "install.sh", std::vector<std::string> args = {"small"}, Env extra = {}) {
+    Capture invoke(const std::string& script = "install.sh", std::vector<std::string> args = {"small"}, const Env& extra = {}) {
         auto variables = env; for (const auto& [key, value] : extra) variables[key] = value;
         args.insert(args.begin(), {"/bin/bash", (project / script).string()}); return test::invoke(args, variables, directory);
     }
@@ -39,7 +39,7 @@ struct Fixture {
 };
 int main() {
     Suite suite;
-    const auto add = [&](std::string name, std::function<void(Fixture&)> run) { suite.add(std::move(name), [run] { Fixture f; run(f); }); };
+    const auto add = [&](std::string_view name, auto run) { suite.add(std::string(name), [run = std::move(run)] { Fixture f; run(f); }); };
     add("success_and_repeat_skip_download_and_clone", [](Fixture& f) {
         success(f.invoke()); success(f.invoke());
         CHECK(read(f.default_model) == "small\n"); CHECK(access(f.command.c_str(), X_OK) == 0); CHECK(access(f.engine.c_str(), X_OK) == 0);

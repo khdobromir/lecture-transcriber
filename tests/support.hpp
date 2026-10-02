@@ -69,6 +69,7 @@ public:
         const int err = open((temp.path / "stderr").c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0600);
         if (out < 0 || err < 0) throw std::runtime_error("capture files");
         std::vector<char*> argv;
+        argv.reserve(args.size() + 1);
         for (const auto& arg : args) argv.push_back(const_cast<char*>(arg.c_str()));
         argv.push_back(nullptr);
         pid = fork();
@@ -153,7 +154,7 @@ inline void wav(const fs::path& file, double seconds = 0.5, int rate = 44100, in
                 const std::function<bool(double)>& silent = {}) {
     const auto samples = static_cast<uint32_t>(seconds * rate);
     std::ostringstream out(std::ios::binary);
-    const auto le = [&](uint32_t value, int bytes) { for (int i = 0; i < bytes; ++i) out.put(static_cast<char>((value >> (8 * i)) & 255)); };
+    const auto le = [&](uint32_t value, int bytes) { for (int i = 0; i < bytes; ++i) out.put(static_cast<char>((value >> (8U * static_cast<unsigned>(i))) & 255U)); };
     out << "RIFF"; le(36 + samples * static_cast<uint32_t>(channels) * 2, 4); out << "WAVEfmt "; le(16, 4);
     le(1, 2); le(static_cast<uint32_t>(channels), 2); le(static_cast<uint32_t>(rate), 4);
     le(static_cast<uint32_t>(rate * channels * 2), 4); le(static_cast<uint32_t>(channels * 2), 2); le(16, 2);
@@ -191,7 +192,8 @@ inline std::string value(const std::vector<std::string>& args, std::string_view 
     return *(it + 1);
 }
 inline bool has(const std::vector<std::string>& args, std::string_view flag) { return std::find(args.begin(), args.end(), flag) != args.end(); }
-inline void manifest(const fs::path& source, const fs::path& destination, std::string_view payload) {
+// Source/destination ordering matches filesystem copy operations.
+inline void manifest(const fs::path& source, const fs::path& destination, std::string_view payload) { // NOLINT(bugprone-easily-swappable-parameters)
     Temp temp;
     write(temp.path / "model", payload);
     const auto hash = invoke({which("sha256sum").string(), (temp.path / "model").string()}); success(hash);
@@ -210,13 +212,16 @@ struct Suite {
     std::vector<std::pair<std::string, std::function<void()>>> cases;
     void add(std::string name, std::function<void()> run) { cases.emplace_back(std::move(name), std::move(run)); }
     int run() {
-        size_t failed = 0;
+        size_t failed = 0, selected = 0;
+        const auto filter = test::getenv("TEST_CASE_FILTER");
         for (const auto& [name, run] : cases) {
+            if (!filter.empty() && !contains(name, filter)) continue;
+            ++selected;
             try { run(); std::cout << "PASS " << name << '\n'; }
             catch (const std::exception& error) { ++failed; std::cerr << "FAIL " << name << ": " << error.what() << '\n'; }
         }
-        std::cout << cases.size() - failed << '/' << cases.size() << " cases passed\n";
-        return failed ? 1 : 0;
+        std::cout << selected - failed << '/' << selected << " cases passed\n";
+        return failed || !selected ? 1 : 0;
     }
 };
 }

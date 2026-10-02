@@ -1,5 +1,6 @@
 // Linux, C++23. Запускает yt-dlp, FFmpeg и whisper-cli без оболочки.
 #include "audio.hpp"
+#include "cli.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <charconv>
@@ -24,6 +25,9 @@
 namespace fs = std::filesystem;
 
 using transcribe::ProcessError;
+using transcribe::Options;
+using transcribe::read_line;
+using transcribe::require_file;
 using transcribe::run;
 
 fs::path app_home() {
@@ -32,30 +36,6 @@ fs::path app_home() {
     const char* p = std::getenv("HOME");
     if (!p || !*p) throw std::runtime_error("Не задан HOME или TRANSCRIBE_HOME");
     return fs::path(p) / ".local/share/transcribe";
-}
-
-std::string preset(std::string_view name) {
-    if (name == "small") return "small-q5_1";
-    if (name == "medium") return "medium-q5_0";
-    if (name == "turbo") return "large-v3-turbo-q5_0";
-    return std::string(name);
-}
-
-std::string read_line(const fs::path& path) {
-    std::ifstream stream(path);
-    std::string line;
-    if (!std::getline(stream, line))
-        throw std::runtime_error("Не удалось прочитать " + path.string());
-    if (!line.empty() && line.back() == '\r') line.pop_back();
-    return line;
-}
-
-int positive_integer(std::string_view text) {
-    int value{};
-    const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
-    if (error != std::errc{} || end != text.data() + text.size() || value < 1 || value > 256)
-        throw std::runtime_error("Число должно быть целым от 1 до 256");
-    return value;
 }
 
 void help() {
@@ -89,55 +69,6 @@ Ctrl+C, SIGTERM и SIGHUP останавливают работников и с�
 )";
 }
 
-struct Options {
-    std::string input, model, browser, cookies, prompt;
-    fs::path output = "transcripts";
-    int threads = 0, chunks = 1, jobs = 0;
-    bool vad = true, keep = false;
-};
-
-Options parse(int argc, char** argv) {
-    Options o;
-    bool positional = false;
-    for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i];
-        const auto value = [&]() -> std::string {
-            if (++i >= argc || !*argv[i]) throw std::runtime_error("Нужно значение для " + arg);
-            return argv[i];
-        };
-        if (!positional && arg == "--") positional = true;
-        else if (!positional && arg == "--model") o.model = value();
-        else if (!positional && arg == "--threads") o.threads = positive_integer(value());
-        else if (!positional && arg == "--chunks") o.chunks = positive_integer(value());
-        else if (!positional && arg == "--jobs") o.jobs = positive_integer(value());
-        else if (!positional && arg == "--out") o.output = value();
-        else if (!positional && arg == "--cookies-from-browser") o.browser = value();
-        else if (!positional && arg == "--cookies") o.cookies = value();
-        else if (!positional && arg == "--prompt") o.prompt = value();
-        else if (!positional && arg == "--no-vad") o.vad = false;
-        else if (!positional && arg == "--keep-audio") o.keep = true;
-        else if (!positional && arg.starts_with('-'))
-            throw std::runtime_error("Неизвестный параметр: " + arg);
-        else if (o.input.empty()) o.input = arg;
-        else throw std::runtime_error("За один запуск можно передать один файл или URL");
-    }
-    if (o.input.empty()) throw std::runtime_error("Укажи URL или путь к файлу; справка: transcribe --help");
-    if (o.input.starts_with('[') && o.input.find("](") != std::string::npos)
-        throw std::runtime_error("Вставь обычный URL, без Markdown-разметки [ссылка](ссылка)");
-    if (!o.browser.empty() && !o.cookies.empty())
-        throw std::runtime_error("Выбери --cookies либо --cookies-from-browser");
-    if (o.jobs > o.chunks) throw std::runtime_error("--jobs не должен превышать --chunks");
-    const int cpus = transcribe::physical_cpus();
-    if (!o.jobs) o.jobs = std::min({2, o.chunks, cpus});
-    if (!o.threads) o.threads = std::max(1, cpus / o.jobs);
-    cpu_set_t mask;
-    CPU_ZERO(&mask);
-    const int logical = sched_getaffinity(0, sizeof(mask), &mask) == 0 ? CPU_COUNT(&mask) : static_cast<int>(std::thread::hardware_concurrency());
-    if (logical > 0 && o.jobs * o.threads > logical)
-        std::cerr << "Число работников × потоки превышает доступные CPU; скорость может снизиться.\n";
-    return o;
-}
-
 fs::path new_result_dir(const fs::path& parent) {
     fs::create_directories(parent);
     const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -151,11 +82,6 @@ fs::path new_result_dir(const fs::path& parent) {
     return fs::path(result);
 }
 
-void require_file(const fs::path& path, const std::string& hint) {
-    if (!fs::is_regular_file(path) || fs::file_size(path) == 0)
-        throw std::runtime_error("Нет файла: " + path.string() + "\n" + hint);
-}
-
 void metadata(const fs::path& result, const std::string& details, std::string_view status, int code) {
     std::ofstream out(result / ".source.tmp");
     out.exceptions(std::ios::badbit | std::ios::failbit);
@@ -165,7 +91,7 @@ void metadata(const fs::path& result, const std::string& details, std::string_vi
 }
 
 void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
-               const fs::path& engine, const fs::path& model, const fs::path& vad_model, const fs::path& result) {
+               const transcribe::Inputs& files, const fs::path& result) {
     struct Part {
         std::ofstream file;
         std::string pending;
@@ -192,6 +118,7 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
     std::ofstream live(result / "transcript.txt");
     live.exceptions(std::ios::badbit | std::ios::failbit);
     std::vector<std::unique_ptr<Part>> parts;
+    parts.reserve(chunks.size());
     std::vector<std::unique_ptr<transcribe::Process>> processes(chunks.size());
     for (const auto& chunk : chunks) parts.push_back(std::make_unique<Part>(chunk.prefix.parent_path() / "transcript.partial.txt"));
     size_t next = 0, current = 0, finished = 0, active = 0;
@@ -213,11 +140,11 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
                 const size_t index = next;
                 const auto& chunk = chunks[index];
                 std::vector<std::string> args{
-                    engine.string(), "--model", model.string(), "--file", chunk.wav.string(), "--language", "ru",
+                    files.engine.string(), "--model", files.model.string(), "--file", chunk.wav.string(), "--language", "ru",
                     "--threads", std::to_string(o.threads), "--no-gpu", "--output-txt", "--output-srt", "--output-vtt",
                     "--output-file", chunk.prefix.string(), "--print-progress"
                 };
-                if (o.vad) args.insert(args.end(), {"--vad", "--vad-model", vad_model.string()});
+                if (o.vad) args.insert(args.end(), {"--vad", "--vad-model", files.vad_model.string()});
                 if (!o.prompt.empty()) args.insert(args.end(), {"--prompt", o.prompt});
                 processes[index] = std::make_unique<transcribe::Process>(args, result / ("whisper-" + std::to_string(index + 1) + ".log"),
                     [&, index](std::string_view bytes) { parts[index]->text.feed(bytes); },
@@ -257,7 +184,8 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
         try {
             for (auto& part : parts) part->text.finish();
             publish();
-        } catch (...) {}
+        } catch (...) { // NOLINT(bugprone-empty-catch): best-effort flush must preserve the original exception.
+        }
         std::rethrow_exception(error);
     }
 }
@@ -267,45 +195,27 @@ int main(int argc, char** argv) {
     std::string details;
     try {
         transcribe::install_signal_handlers();
-        if (argc == 1) { help(); return 2; }
-        // --help действует и без установленного движка/модели.
-        for (int i = 1; i < argc; ++i) {
-            if (std::string_view(argv[i]) == "--") break;
-            if (std::string_view(argv[i]) == "--help") { help(); return 0; }
-            if (std::string_view(argv[i]) == "--version") {
-                std::cout << "transcribe " << TRANSCRIBE_VERSION << '\n';
-                return 0;
-            }
-            if (std::string_view(argv[i]) == "--model" || std::string_view(argv[i]) == "--threads" ||
-                std::string_view(argv[i]) == "--chunks" || std::string_view(argv[i]) == "--jobs" ||
-                std::string_view(argv[i]) == "--out" || std::string_view(argv[i]) == "--prompt" ||
-                std::string_view(argv[i]) == "--cookies" || std::string_view(argv[i]) == "--cookies-from-browser") ++i;
+        std::vector<std::string_view> args(argv + 1, argv + argc);
+        const auto action = transcribe::cli_action(args);
+        if (action == transcribe::CliAction::help || action == transcribe::CliAction::usage) {
+            help(); return action == transcribe::CliAction::usage ? 2 : 0;
         }
-        Options o = parse(argc, argv);
+        if (action == transcribe::CliAction::version) {
+            std::cout << "transcribe " << TRANSCRIBE_VERSION << '\n'; return 0;
+        }
+        Options o = transcribe::parse_arguments(args, transcribe::physical_cpus());
+        cpu_set_t mask;
+        CPU_ZERO(&mask);
+        const int logical = sched_getaffinity(0, sizeof(mask), &mask) == 0 ? CPU_COUNT(&mask)
+            : static_cast<int>(std::thread::hardware_concurrency());
+        if (transcribe::oversubscribed(o, logical))
+            std::cerr << "Число работников × потоки превышает доступные CPU; скорость может снизиться.\n";
         transcribe::check_cancelled();
-        const fs::path root = app_home();
-        const fs::path engine = root / "whisper.cpp/build/bin/whisper-cli";
-        if (access(engine.c_str(), X_OK) != 0)
-            throw std::runtime_error("Нет whisper-cli. Сначала выполни bash install.sh");
-        if (o.model.empty()) o.model = read_line(root / "default-model");
-        fs::path model;
-        if (o.model == "small" || o.model == "medium" || o.model == "turbo")
-            model = root / "models" / ("ggml-" + preset(o.model) + ".bin");
-        else model = fs::absolute(o.model);
-        require_file(model, "Скачай модель: bash scripts/download-model.sh small|medium|turbo");
-        const fs::path vad_model = root / "models/ggml-silero-v6.2.0.bin";
-        if (o.vad) require_file(vad_model, "Повтори установку или добавь --no-vad");
-
-        const bool url = o.input.starts_with("https://") || o.input.starts_with("http://");
-        fs::path input;
-        if (!url) {
-            input = fs::absolute(o.input);
-            require_file(input, "Проверь имя локального видео/аудиофайла");
-        }
-        if (!o.cookies.empty()) {
-            o.cookies = fs::absolute(o.cookies).string();
-            require_file(o.cookies, "Проверь путь к файлу cookies");
-        }
+        const auto files = transcribe::validate_inputs(o, {app_home(), fs::current_path()});
+        const auto& model = files.model;
+        auto input = files.input;
+        const bool url = files.url;
+        o.cookies = files.cookies;
         result = new_result_dir(fs::absolute(o.output));
         const fs::path work = result / "audio";
         fs::create_directory(work);
@@ -347,14 +257,24 @@ int main(int argc, char** argv) {
         metadata(result, details, "processing", 0);
         std::cout << "[3/3] Русская речь, CPU, " << o.jobs << " работников, по " << o.threads << " поток(а)...\n" << std::flush;
         const auto start = std::chrono::steady_clock::now();
-        recognize(chunks, o, engine, model, vad_model, result);
+        recognize(chunks, o, files, result);
         transcribe::merge_exports(chunks, result);
-        if (!o.keep) fs::remove_all(work);
         transcribe::check_cancelled();
-        metadata(result, details, "completed", 0);
         const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
         std::cout << "Готово. Распознавание заняло " << std::fixed << std::setprecision(1)
-                  << seconds / 60.0 << " мин.\n" << result.string() << '\n';
+                  << seconds / 60.0 << " мин.\n" << result.string() << '\n' << std::flush;
+        transcribe::check_cancelled();
+        if (!std::cout) throw std::runtime_error("Не удалось вывести итог обработки");
+        metadata(result, details, "completed", 0);
+        transcribe::commit_completion();
+        // Cleanup is irreversible. Once success is committed, it must not turn
+        // into an interrupted/failed run that falsely promises preserved audio.
+        try {
+            if (!o.keep) fs::remove_all(work);
+        } catch (const std::exception& error) {
+            std::cerr << "Предупреждение: Не удалось удалить рабочие файлы в " << work.string()
+                      << ": " << error.what() << '\n';
+        }
         return 0;
     } catch (const std::exception& error) {
         const auto* process = dynamic_cast<const ProcessError*>(&error);

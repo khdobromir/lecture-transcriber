@@ -1,6 +1,9 @@
 #include "support.hpp"
 #include "audio.hpp"
+#include "exports.hpp"
+#include <array>
 #include <sched.h>
+#include <sys/inotify.h>
 
 using namespace test;
 struct Fixture {
@@ -22,7 +25,7 @@ struct Fixture {
     std::vector<std::string> command(std::vector<std::string> args) const {
         args.insert(args.begin(), {TRANSCRIBE_BINARY, "--out", out.string()}); return args;
     }
-    Capture invoke(std::vector<std::string> args, Env extra = {}) {
+    Capture invoke(std::vector<std::string> args, const Env& extra = {}) {
         auto variables = env; for (auto& [key, value] : extra) variables[key] = value;
         return test::invoke(command(std::move(args)), variables, root);
     }
@@ -53,8 +56,8 @@ struct Fixture {
 
 int main() {
     Suite suite;
-    const auto add = [&](std::string name, std::function<void(Fixture&)> run) {
-        suite.add(std::move(name), [run] { Fixture fixture; run(fixture); });
+    const auto add = [&](std::string_view name, auto run) {
+        suite.add(std::string(name), [run = std::move(run)] { Fixture fixture; run(fixture); });
     };
     add("local_file_conversion_exports_cleanup", [](Fixture& f) {
         const auto original = read(f.audio);
@@ -64,6 +67,10 @@ int main() {
         CHECK(f.calls().size() == 1 && f.calls()[0].kind == "whisper-cli");
         CHECK(!contains(result.out + result.err, "Тестовая расшифровка"));
         CHECK(contains(read(f.result() / "source.txt"), "Статус: completed"));
+        check_exports(f.result(), 500);
+        CHECK(read(f.result() / "transcript.txt") == "Тестовая расшифровка 1.\n");
+        CHECK(read(f.result() / "transcript.srt") == "1\n00:00:00,000 --> 00:00:00,100\nТестовая расшифровка 1.\n\n");
+        CHECK(read(f.result() / "transcript.vtt") == "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\nТестовая расшифровка 1.\n\n");
     });
     add("url_arguments_cookies_prompt_and_keep_audio", [](Fixture& f) {
         const std::string url = "https://vkvideo.ru/video-1_2?x=$(touch PWNED)&y='lecture'";
@@ -111,6 +118,12 @@ int main() {
         CHECK(!fs::exists(f.out));
     });
     add("version_after_option_terminator_is_input", [](Fixture& f) { CHECK(f.invoke({"--", "--version"}).code != 0); CHECK(!fs::exists(f.out)); });
+    add("no_arguments_and_help_precedence", [](Fixture& f) {
+        CHECK(test::invoke({TRANSCRIBE_BINARY}, f.env, f.root).code == 2);
+        success(f.invoke({"--unknown", "--help"}, {{"TRANSCRIBE_HOME", (f.root / "absent").string()}}));
+        CHECK(f.invoke({"--prompt", "--help"}).code == 1);
+        CHECK(!fs::exists(f.out));
+    });
     add("default_data_directory_without_override", [](Fixture& f) {
         const auto home = f.root / "home", data = home / ".local/share/transcribe";
         fs::create_directories(data.parent_path()); fs::rename(f.data, data);
@@ -217,9 +230,51 @@ int main() {
         CHECK(result.code == 17); CHECK(f.event_count("start") == 2); f.no_children();
         CHECK(fs::exists(f.result() / "audio/parts/1/transcript.partial.txt"));
     });
+    for (bool multiple : {false, true}) for (bool tail : {false, true}) for (const auto* mode : {"exit", "segv"}) {
+        add(std::string("reliability_crash_") + mode + (multiple ? "_workers" : "_single") + (tail ? "_tail" : "_line"), [=](Fixture& f) {
+            wav(f.audio, 4, 16000, 1); const auto original = read(f.audio);
+            auto env = f.env;
+            env["CRASH_PART"] = multiple ? "2" : "1"; env["CRASH_MODE"] = mode;
+            env["CRASH_RELEASE"] = (f.root / "release crash").string();
+            if (tail) env["INCOMPLETE_TAIL"] = "1";
+            if (multiple) { env["HANG_TOOL"] = "whisper-cli"; env["HANG_PART"] = "1"; }
+            Child child(f.command({"--chunks", multiple ? "4" : "1", "--jobs", multiple ? "2" : "1", f.audio.string()}), env, f.root);
+            until([&] { return f.event_count("crash_ready") == 1 && (!multiple || f.event_count("helper") == 1); });
+            if (!tail) until([&] { return contains(read(f.result() / "audio/parts" / env["CRASH_PART"] / "transcript.partial.txt"), "расшифровка"); });
+            write(env["CRASH_RELEASE"], "release");
+            const auto result = child.wait(); CHECK(result.code == (mode == std::string_view("segv") ? 139 : 17)); f.no_children();
+            const auto metadata = read(f.result() / "source.txt");
+            CHECK(contains(metadata, "Статус: failed\nКод: " + std::to_string(result.code)));
+            CHECK(read(f.audio) == original && fs::is_regular_file(f.result() / "audio/lecture.wav"));
+            CHECK(read(f.result() / "transcript.txt") == "Тестовая расшифровка 1.\n");
+            CHECK(read(f.result() / "audio/parts" / env["CRASH_PART"] / "transcript.partial.txt") ==
+                  "Тестовая расшифровка " + env["CRASH_PART"] + ".\n");
+            CHECK(contains(read(f.result() / ("whisper-" + env["CRASH_PART"] + ".log")), "progress ="));
+            CHECK(f.event_count("start") == (multiple ? 2 : 1));
+            CHECK(!fs::exists(f.result() / "transcript.srt") && !fs::exists(f.result() / "transcript.vtt"));
+            CHECK(!contains(result.out, "Готово."));
+        });
+    }
+    for (bool repeat : {false, true}) add(repeat ? "reliability_sigint_repeated" : "reliability_sigint_workers", [=](Fixture& f) {
+        wav(f.audio, 4, 16000, 1); const auto original = read(f.audio);
+        auto env = f.env; env["HANG_TOOL"] = "whisper-cli"; env["IGNORE_STOP"] = "1";
+        Child child(f.command({"--chunks", "4", "--jobs", "2", f.audio.string()}), env, f.root);
+        until([&] { return f.event_count("ready") == 2 && f.event_count("helper") == 2; });
+        Fixture other; auto other_env = other.env; other_env["HANG_TOOL"] = "whisper-cli";
+        Child independent(other.command({other.audio.string()}), other_env, other.root);
+        until([&] { return other.event_count("ready") == 1 && other.event_count("helper") == 1; });
+        CHECK(kill(child.pid, SIGINT) == 0);
+        const auto result = child.wait(std::chrono::seconds(10), [&] { if (repeat) CHECK(kill(child.pid, SIGINT) == 0); });
+        CHECK(result.code == 130); f.no_children(); CHECK(independent.running());
+        CHECK(contains(read(f.result() / "source.txt"), "Статус: interrupted\nКод: 130"));
+        CHECK(read(f.result() / "transcript.txt") == "Тестовая расшифровка 1.\n");
+        CHECK(read(f.audio) == original && fs::is_regular_file(f.result() / "audio/lecture.wav"));
+        CHECK(f.event_count("start") == 2);
+        CHECK(kill(independent.pid, SIGINT) == 0); CHECK(independent.wait().code == 130); other.no_children();
+    });
     add("large_diagnostic_pipe_does_not_deadlock", [](Fixture& f) {
         success(f.invoke({"--chunks", "4", "--jobs", "2", f.audio.string()}, {{"FLOOD", "1"}}));
-        CHECK(fs::file_size(f.result() / "whisper-1.log") > 512 * 1024);
+        CHECK(fs::file_size(f.result() / "whisper-1.log") > uintmax_t{512} * 1024);
     });
     add("exited_tool_remaining_helper_reaped_and_descriptors_closed", [](Fixture& f) {
         success(f.invoke({f.audio.string()}, {{"ORPHAN_HELPER", "1"}, {"CHECK_CLOSED_FDS", "1"}}));
@@ -240,6 +295,54 @@ int main() {
         until([&] { return f.event_count("ready") == 1 && f.event_count("helper") == 1 && f.event_count("start") == 2; });
         close(output[0]); CHECK(child.wait().code == 128 + SIGPIPE); f.no_children();
         CHECK(contains(read(f.result() / "source.txt"), "Статус: interrupted"));
+    });
+    add("closed_terminal_output_pipe_after_last_progress_preserves_audio", [](Fixture& f) {
+        int output[2]; CHECK(pipe2(output, O_CLOEXEC | O_NONBLOCK) == 0);
+        Child child(f.command({f.audio.string()}), f.env, f.root, output[1]);
+        std::string progress;
+        until([&] {
+            std::array<char, 4096> bytes{};
+            const auto n = ::read(output[0], bytes.data(), bytes.size());
+            if (n > 0) progress.append(bytes.data(), static_cast<size_t>(n));
+            return contains(progress, "Распознавание: 100%");
+        });
+        close(output[0]);
+        CHECK(child.wait().code == 128 + SIGPIPE); f.no_children();
+        CHECK(contains(read(f.result() / "source.txt"), "Статус: interrupted"));
+        CHECK(fs::is_regular_file(f.result() / "audio/lecture.wav"));
+    });
+    for (int signal : {SIGINT, SIGTERM, SIGHUP}) {
+        add("signal_during_cleanup_keeps_completed_status_" + std::to_string(signal), [=](Fixture& f) {
+            auto env = f.env; env["SLOW_CLEANUP"] = "1"; env["ENGINE_DELAY_MS"] = "500";
+            Child child(f.command({f.audio.string()}), env, f.root);
+            until([&] { return fs::exists(f.out) && entries(f.out) == 1 && fs::exists(f.result() / "audio/parts/1"); });
+            const int notify = inotify_init1(IN_CLOEXEC | IN_NONBLOCK); CHECK(notify >= 0);
+            const int watch = inotify_add_watch(notify, (f.result() / "audio/parts/1").c_str(), IN_DELETE);
+            if (watch < 0) { close(notify); throw std::runtime_error("inotify_add_watch"); }
+            try {
+                until([&] {
+                    std::array<char, 4096> events{};
+                    return ::read(notify, events.data(), events.size()) > 0;
+                });
+                CHECK(kill(child.pid, signal) == 0);
+            } catch (...) { close(notify); throw; }
+            close(notify);
+            success(child.wait()); f.no_children();
+            CHECK(contains(read(f.result() / "source.txt"), "Статус: completed\nКод: 0"));
+            CHECK(!fs::exists(f.result() / "audio"));
+            for (const char* ext : {"txt", "srt", "vtt"}) CHECK(fs::is_regular_file(f.result() / (std::string("transcript.") + ext)));
+        });
+    }
+    add("cleanup_failure_warns_without_failing_completed_transcription", [](Fixture& f) {
+        const auto result = f.invoke({f.audio.string()}, {{"DENY_CLEANUP", "1"}});
+        const auto locked = f.result() / "audio/parts/1/locked";
+        // Restore write access before assertions, including when the old CLI fails.
+        fs::permissions(locked, fs::perms::owner_all);
+        success(result);
+        CHECK(contains(result.err, "Не удалось удалить рабочие файлы"));
+        CHECK(contains(read(f.result() / "source.txt"), "Статус: completed\nКод: 0"));
+        CHECK(fs::is_regular_file(locked / "keep"));
+        for (const char* ext : {"txt", "srt", "vtt"}) CHECK(fs::is_regular_file(f.result() / (std::string("transcript.") + ext)));
     });
     add("write_failure_stops_running_workers", [](Fixture& f) {
         wav(f.audio, 1, 16000, 1);
