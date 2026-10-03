@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(transcribe VERSION 0.2.1 DESCRIPTION "Транскрипция русской речи на CPU" LANGUAGES CXX)
+project(transcribe VERSION 0.3.0 DESCRIPTION "Транскрипция русской речи на CPU" LANGUAGES CXX)
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message(FATAL_ERROR "Эта версия предназначена для Linux (Omarchy/Arch)")
 endif()
