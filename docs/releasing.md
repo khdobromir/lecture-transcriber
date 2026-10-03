@@ -14,7 +14,7 @@
    CLI во временный prefix.
 4. Запишите результаты и границы проверки в `docs/release-validation-vX.Y.Z.md`.
 5. Создайте коммит Conventional Commits, например
-   `chore(release): prepare v0.2.1`, отправьте `dev` и создайте PR в `master`.
+   `chore(release): prepare v0.3.0`, отправьте `dev` и создайте PR в `master`.
 6. Дождитесь успешного CI для актуального коммита и PR: Ubuntu GCC, Ubuntu Clang,
    Debian GCC, Arch Linux и статический анализ (clang-tidy, cppcheck, ShellCheck).
    Заметки GitHub Release можно заранее сохранить как черновик.
@@ -23,12 +23,12 @@
 изменились код, зависимости или конфликтное слияние, повторите относящиеся
 к изменениям проверки.
 
-## Слияние и публикация v0.2.1
+## Слияние и публикация v0.3.0
 
 После слияния PR дождитесь успешного CI на итоговом коммите `master`.
 Не удаляйте `dev`: дальнейшая разработка продолжается в этой ветке.
 Для коммита слияния используйте Conventional Commits, например
-`chore(release): merge v0.2.1 into master`.
+`chore(release): merge v0.3.0 into master`.
 Синхронизируйте локальную `master` и убедитесь, что она совпадает с `origin/master`:
 
 ```bash
@@ -38,30 +38,30 @@ git status --short
 git rev-parse HEAD origin/master
 ```
 
-Проверьте, что в этом коммите версия CMake равна `0.2.1`, и что тег `v0.2.1`
+Проверьте, что в этом коммите версия CMake равна `0.3.0`, и что тег `v0.3.0`
 ещё не существует локально и на GitHub. Создайте аннотированный тег именно на
 проверенном коммите:
 
 ```bash
-git tag -a v0.2.1 -m "Transcribe CLI v0.2.1"
-git push origin v0.2.1
+git tag -a v0.3.0 -m "Transcribe CLI v0.3.0"
+git push origin v0.3.0
 ```
 
 Если черновик GitHub Release уже подготовлен, опубликуйте его после отправки
-тега, сохранив заметки из `docs/release-notes-v0.2.1.md`:
+тега, сохранив заметки из `docs/release-notes-v0.3.0.md`:
 
 ```bash
-gh release edit v0.2.1 --draft=false --latest \
-  --title "Transcribe CLI v0.2.1" \
-  --notes-file docs/release-notes-v0.2.1.md
+gh release edit v0.3.0 --draft=false --latest \
+  --title "Transcribe CLI v0.3.0" \
+  --notes-file docs/release-notes-v0.3.0.md
 ```
 
 Если черновика нет, создайте выпуск по существующему тегу:
 
 ```bash
-gh release create v0.2.1 --verify-tag --latest \
-  --title "Transcribe CLI v0.2.1" \
-  --notes-file docs/release-notes-v0.2.1.md
+gh release create v0.3.0 --verify-tag --latest \
+  --title "Transcribe CLI v0.3.0" \
+  --notes-file docs/release-notes-v0.3.0.md
 ```
 
 Проверьте страницу выпуска, скачивание исходников и соответствие тега

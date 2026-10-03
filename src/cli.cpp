@@ -44,7 +44,8 @@ CliAction cli_action(std::span<const std::string_view> args) {
         if (arg == "--help") return CliAction::help;
         if (arg == "--version") return CliAction::version;
         if (arg == "--model" || arg == "--threads" || arg == "--chunks" || arg == "--jobs" ||
-            arg == "--out" || arg == "--prompt" || arg == "--cookies" || arg == "--cookies-from-browser") ++i;
+            arg == "--out" || arg == "--cache-dir" || arg == "--cache-limit-gib" ||
+            arg == "--prompt" || arg == "--cookies" || arg == "--cookies-from-browser") ++i;
     }
     return CliAction::run;
 }
@@ -57,7 +58,7 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
     const auto absolute = [&](const fs::path& path) { return path.is_absolute() ? path : cwd / path; };
     Inputs files;
     files.engine = absolute(root) / "whisper.cpp/build/bin/whisper-cli";
-    if (access(files.engine.c_str(), X_OK) != 0)
+    if (!fs::is_regular_file(files.engine) || access(files.engine.c_str(), X_OK) != 0)
         throw std::runtime_error("Нет whisper-cli. Сначала выполни bash install.sh");
     const std::string selected = o.model.empty() ? read_line(absolute(root) / "default-model") : o.model;
     files.model = selected == "small" || selected == "medium" || selected == "turbo"
@@ -92,11 +93,23 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
         else if (!positional && arg == "--chunks") o.chunks = positive_integer(value());
         else if (!positional && arg == "--jobs") o.jobs = positive_integer(value());
         else if (!positional && arg == "--out") o.output = value();
+        else if (!positional && arg == "--cache-dir") o.cache_dir = value();
+        else if (!positional && arg == "--cache-limit-gib") {
+            const auto text = value();
+            uint64_t gib{};
+            const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), gib);
+            if (error != std::errc{} || end != text.data() + text.size() || gib == 0 || gib > UINT64_MAX / (uint64_t{1024} * 1024 * 1024))
+                throw std::runtime_error("--cache-limit-gib: нужно положительное целое число ГиБ без переполнения");
+            o.cache_limit = gib * 1024 * 1024 * 1024;
+        }
         else if (!positional && arg == "--cookies-from-browser") o.browser = value();
         else if (!positional && arg == "--cookies") o.cookies = value();
         else if (!positional && arg == "--prompt") o.prompt = value();
         else if (!positional && arg == "--no-vad") o.vad = false;
         else if (!positional && arg == "--keep-audio") o.keep = true;
+        else if (!positional && arg == "--no-progress") o.progress = false;
+        else if (!positional && arg == "--no-cache") o.cache = false;
+        else if (!positional && arg == "--refresh-cache") o.refresh_cache = true;
         else if (!positional && arg.starts_with('-'))
             throw std::runtime_error("Неизвестный параметр: " + arg);
         else if (o.input.empty()) o.input = arg;
@@ -107,6 +120,7 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
         throw std::runtime_error("Вставь обычный URL, без Markdown-разметки [ссылка](ссылка)");
     if (!o.browser.empty() && !o.cookies.empty())
         throw std::runtime_error("Выбери --cookies либо --cookies-from-browser");
+    if (!o.cache && o.refresh_cache) throw std::runtime_error("--no-cache и --refresh-cache несовместимы");
     if (o.jobs > o.chunks) throw std::runtime_error("--jobs не должен превышать --chunks");
     const int cpus = std::clamp(physical_cpus, 1, 256);
     if (!o.jobs) o.jobs = std::min({2, o.chunks, cpus});

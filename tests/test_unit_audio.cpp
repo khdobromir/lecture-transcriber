@@ -19,7 +19,7 @@ struct Exports {
         chunks.push_back({begin, begin + 16000, {}, prefix});
         write(prefix.string() + ".txt", text); write(prefix.string() + ".srt", srt); write(prefix.string() + ".vtt", vtt);
     }
-    void merge() { transcribe::merge_exports(chunks, result); }
+    void merge() { transcribe::merge_exports(chunks, result, result / "audio/final"); }
 };
 }
 int main() {
@@ -35,7 +35,7 @@ int main() {
         Temp temp; const auto path = temp.path / "audio.wav";
         wav(path, 0.5, 16000, 1); CHECK(transcribe::wav_samples(path) == 8000);
         wav(path, 0, 16000, 1); CHECK(transcribe::wav_samples(path) == 0);
-        rejected([&] { (void)transcribe::split_audio(path, temp.path, 1); });
+        rejected([&] { (void)transcribe::split_audio(path, temp.path, 1, temp.path); });
     });
     suite.add("wav_rejects_corruption_and_noncanonical_format", [] {
         Temp temp; const auto path = temp.path / "audio.wav";
@@ -90,6 +90,36 @@ int main() {
             CHECK(read(f.result / "transcript.txt") == "partial\n");
             CHECK(!fs::exists(f.result / "transcript.srt") && !fs::exists(f.result / "transcript.vtt"));
         });
+    for (bool web : {false, true}) for (const auto* interval : {
+            "00:00:00.000 --> 00:00:01.011", "00:00:01.011 --> 00:00:01.011",
+            "00:00:00.000 --> 00:00:20.000"})
+        suite.add(std::string("subtitle_bounds_rejects_") + (web ? "vtt_" : "srt_") + interval, [=] {
+            Exports f; f.add(32000, "text\n", "1\n00:00:00,000 --> 00:00:00,100\ntext\n\n",
+                "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\ntext\n\n");
+            std::string times = interval;
+            if (!web) std::replace(times.begin(), times.end(), '.', ',');
+            write(f.chunks[0].prefix.string() + (web ? ".vtt" : ".srt"),
+                std::string(web ? "WEBVTT\n\n" : "1\n") + times + "\ntext\n\n");
+            write(f.result / "transcript.txt", "partial\n"); rejected([&] { f.merge(); });
+            CHECK(read(f.result / "transcript.txt") == "partial\n");
+            CHECK(!fs::exists(f.result / "transcript.srt") && !fs::exists(f.result / "transcript.vtt"));
+        });
+    for (int64_t samples : {int64_t{16000}, int64_t{16008}})
+        suite.add("subtitle_bounds_rounding_" + std::to_string(samples), [=] {
+            Exports f; f.add(20008, "text\n", "1\n00:00:00,000 --> 00:00:01,010\ntext\n\n2\n00:00:01,010 --> 00:00:01,010\ntail\n\n",
+                "WEBVTT\n\n00:00:00.000 --> 00:00:01.010\ntext\n\n00:00:01.010 --> 00:00:01.010\ntail\n\n");
+            f.chunks[0].end = f.chunks[0].begin + samples;
+            f.merge(); check_exports(f.result, 2250);
+            CHECK(contains(read(f.result / "transcript.srt"), "00:00:02,250 --> 00:00:02,250"));
+            CHECK(contains(read(f.result / "transcript.vtt"), "00:00:02.250 --> 00:00:02.250"));
+            CHECK(!contains(read(f.result / "transcript.srt"), "02,260"));
+        });
+    suite.add("subtitle_bounds_exact_duration_is_valid", [] {
+        Exports f; f.add(0, "text\n", "1\n00:00:00,000 --> 00:00:01,000\ntext\n\n",
+            "WEBVTT\n\n00:00:00.000 --> 00:00:01.000\ntext\n\n");
+        f.merge(); check_exports(f.result, 1000);
+        CHECK(contains(read(f.result / "transcript.srt"), "00:00:01,000"));
+    });
     suite.add("independent_oracle_rejects_invalid_exports", [] {
         Exports f; f.add(0, "text", "1\n00:00:00,000 --> 00:00:00,100\ntext\n\n", "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\ntext\n\n");
         f.merge(); check_exports(f.result, 1000);

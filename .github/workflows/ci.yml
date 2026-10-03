@@ -49,6 +49,11 @@ jobs:
         env:
           TEST_CASE_FILTER: reliability_
         run: runuser -u tester -- ctest --test-dir /tmp/transcribe-build -R '^pipeline$' --repeat until-fail:20 --output-on-failure
+      - name: Repeat cache reuse and concurrent downloads
+        if: matrix.compiler == 'g++'
+        env:
+          TEST_CASE_FILTER: cache_
+        run: runuser -u tester -- ctest --test-dir /tmp/transcribe-build -R '^pipeline$' --repeat until-fail:20 --output-on-failure
 
   debian:
     name: Debian 13 / GCC

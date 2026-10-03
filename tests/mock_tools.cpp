@@ -50,14 +50,32 @@ int main(int argc, char** argv) {
             CHECK(has(args, "--no-playlist") && has(args, "--ignore-config"));
             CHECK(args.size() >= 2 && args[args.size() - 2] == "--" && args.back().starts_with("https://"));
             CHECK(value(args, "-f") == "bestaudio/best");
+            CHECK(has(args, "--no-cache-dir"));
+            if (has(args, "--simulate")) {
+                const std::map<std::string, std::string> fields{
+                    {"%(title)s", test::getenv("MOCK_TITLE").empty() ? "Тестовое видео" : test::getenv("MOCK_TITLE")},
+                    {"%(extractor_key)s", "Mock"}, {"%(id)s", test::getenv("MOCK_ID").empty() ? "1" : test::getenv("MOCK_ID")},
+                    {"%(is_live)s", test::getenv("MOCK_LIVE").empty() ? "False" : "True"}};
+                for (size_t i = 0; i + 2 < args.size(); ++i) if (args[i] == "--print-to-file") {
+                    auto file = args[i + 2];
+                    for (size_t pos = 0; (pos = file.find("%%", pos)) != std::string::npos; ++pos) file.erase(pos, 1);
+                    write(file, fields.at(args[i + 1]) + '\n');
+                }
+                return 0;
+            }
+            if (!test::getenv("HANG_DOWNLOAD").empty()) hang(kind, 0);
+            if (!test::getenv("FAIL_DOWNLOAD_ONLY").empty()) return 23;
             auto destination = value(args, "-o");
             destination.replace(destination.find("%(ext)s"), 7, "wav");
+            for (size_t pos = 0; (pos = destination.find("%%", pos)) != std::string::npos; ++pos) destination.erase(pos, 1);
             fs::copy_file(test::getenv("MOCK_INPUT"), destination);
             const auto it = std::find(args.begin(), args.end(), "--print-to-file");
             const auto index = static_cast<size_t>(it - args.begin());
             CHECK(it != args.end());
             CHECK(args.at(index + 1) == "after_move:%(filepath)s");
-            write(args.at(index + 2), destination + '\n');
+            auto file = args.at(index + 2);
+            for (size_t pos = 0; (pos = file.find("%%", pos)) != std::string::npos; ++pos) file.erase(pos, 1);
+            write(file, destination + '\n');
         } else if (kind == "whisper-cli") {
             const fs::path prefix = value(args, "--output-file");
             const int part = std::stoi(prefix.parent_path().filename());
@@ -109,6 +127,11 @@ int main(int argc, char** argv) {
             if (test::getenv("MISSING_EXPORT") != "srt") write(prefix.string() + ".srt", text.empty() ? "" : "1\n00:00:00,000 --> 00:00:00,100\n" + text + '\n');
             if (test::getenv("MISSING_EXPORT") != "vtt") write(prefix.string() + ".vtt", "WEBVTT\n\n" + (text.empty() ? std::string() : "00:00:00.000 --> 00:00:00.100\n" + text + '\n'));
             if (!test::getenv("MALFORMED_EXPORT").empty()) write(prefix.string() + ".srt", "1\ninvalid times\ntext\n");
+            if (test::getenv("OUT_OF_BOUNDS_PART") == std::to_string(part)) {
+                const auto ext = test::getenv("OUT_OF_BOUNDS_EXPORT");
+                if (ext == "srt") write(prefix.string() + ".srt", "1\n00:00:00,000 --> 00:00:20,000\n" + text + '\n');
+                if (ext == "vtt") write(prefix.string() + ".vtt", "WEBVTT\n\n00:00:00.000 --> 00:00:20.000\n" + text + '\n');
+            }
             if (!test::getenv("SLOW_CLEANUP").empty())
                 for (int i = 0; i < 4000; ++i) fs::create_directory(prefix.parent_path() / ("cleanup-" + std::to_string(i)));
             if (!test::getenv("DENY_CLEANUP").empty()) {
