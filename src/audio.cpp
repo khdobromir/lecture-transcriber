@@ -119,7 +119,7 @@ int64_t wav_samples(const fs::path& wav) {
     }
     throw std::runtime_error("Нет аудиоданных в WAV");
 }
-std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int count) {
+std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int count, const fs::path& logs) { // NOLINT(bugprone-easily-swappable-parameters): source WAV and destination work directory ordering.
     const int64_t samples = wav_samples(wav);
     if (samples < count) throw std::runtime_error("Запись слишком короткая для выбранного числа частей");
     std::vector<int64_t> boundaries{0};
@@ -141,7 +141,7 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
         });
         std::cout << "Поиск пауз для границ частей...\n" << std::flush;
         run({"ffmpeg", "-nostdin", "-hide_banner", "-i", wav.string(), "-af", "silencedetect=noise=-35dB:d=0.5", "-f", "null", "-"},
-            work.parent_path() / "silence.log", {}, [&](std::string_view bytes) { silence.feed(bytes); });
+            logs / "silence.log", {}, [&](std::string_view bytes) { silence.feed(bytes); });
         silence.finish();
         int fallback = 0;
         const double window = std::min(10.0, static_cast<double>(samples) / 16000 / count / 4);
@@ -178,7 +178,7 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
         }
         std::vector<std::string> args{"ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", wav.string(), "-filter_complex", graph};
         for (int i = 0; i < count; ++i) args.insert(args.end(), {"-map", "[o" + std::to_string(i) + "]", "-c:a", "pcm_s16le", chunks[static_cast<size_t>(i)].wav.string()});
-        run(args, work.parent_path() / "split.log");
+        run(args, logs / "split.log");
         for (const auto& chunk : chunks) if (wav_samples(chunk.wav) != chunk.end - chunk.begin)
             throw std::runtime_error("Нарезка изменила число семплов аудио");
     }
@@ -201,10 +201,9 @@ std::string segment_text(std::string_view line) {
     while (!line.empty() && (line.front() == ' ' || line.front() == '\t')) line.remove_prefix(1);
     return std::string(line);
 }
-void merge_exports(const std::vector<Chunk>& chunks, const fs::path& result) {
+void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts, const fs::path& staging) {
     for (const auto& chunk : chunks) for (const char* ext : {".txt", ".srt", ".vtt"})
         if (!fs::is_regular_file(chunk.prefix.string() + ext)) throw std::runtime_error("whisper-cli не создал ожидаемый файл " + std::string(ext));
-    const auto staging = result / "audio/final";
     fs::create_directory(staging);
     auto txt = writer(staging / "transcript.txt");
     auto srt = writer(staging / "transcript.srt");
@@ -240,6 +239,6 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& result) {
     }
     txt.close(); srt.close(); vtt.close();
     check_cancelled();
-    for (const char* ext : {"txt", "srt", "vtt"}) fs::rename(staging / (std::string("transcript.") + ext), result / (std::string("transcript.") + ext));
+    for (const char* ext : {"txt", "srt", "vtt"}) fs::rename(staging / (std::string("transcript.") + ext), transcripts / (std::string("transcript.") + ext));
 }
 }

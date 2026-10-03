@@ -8,9 +8,10 @@
 namespace transcribe {
 struct Options {
     std::string input, model, browser, cookies, prompt;
-    std::filesystem::path output = "transcripts";
+    std::filesystem::path output, cache_dir;
+    uint64_t cache_limit = uint64_t{10} * 1024 * 1024 * 1024;
     int threads = 0, chunks = 1, jobs = 0;
-    bool vad = true, keep = false;
+    bool vad = true, keep = false, progress = true, cache = true, refresh_cache = false;
 };
 enum class CliAction : std::uint8_t { run, help, version, usage };
 // args excludes argv[0]. This scan preserves help/version precedence and skips values.

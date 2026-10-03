@@ -53,9 +53,9 @@ int main(int argc, char** argv) {
         Child child({binary.string(), "--out", output.string(), audio.string()}, {{"TRANSCRIBE_HOME", data.string()}});
         const auto completed = child.wait(std::chrono::seconds(300), [] { transcribe::check_cancelled(); }); success(completed);
         const auto result = single(output);
-        for (const char* file : {"transcript.txt", "transcript.srt", "transcript.vtt", "source.txt"}) CHECK(fs::is_regular_file(result / file));
+        for (const char* file : {"transcripts/transcript.txt", "transcripts/transcript.srt", "transcripts/transcript.vtt", "source.txt"}) CHECK(fs::is_regular_file(result / file));
         CHECK(!fs::exists(result / "audio")); CHECK(read(audio) == original); CHECK(contains(read(result / "source.txt"), "Статус: completed"));
-        check_exports(result, 5000);
+        check_exports(result / "transcripts", 5000);
         std::cout << "Real smoke passed: medium-q5_0, Silero VAD 6.2.0, ru, 5 s JFK; "
                   << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() << " s\n";
         return 0;

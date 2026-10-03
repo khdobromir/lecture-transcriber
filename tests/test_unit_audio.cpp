@@ -19,7 +19,7 @@ struct Exports {
         chunks.push_back({begin, begin + 16000, {}, prefix});
         write(prefix.string() + ".txt", text); write(prefix.string() + ".srt", srt); write(prefix.string() + ".vtt", vtt);
     }
-    void merge() { transcribe::merge_exports(chunks, result); }
+    void merge() { transcribe::merge_exports(chunks, result, result / "audio/final"); }
 };
 }
 int main() {
@@ -35,7 +35,7 @@ int main() {
         Temp temp; const auto path = temp.path / "audio.wav";
         wav(path, 0.5, 16000, 1); CHECK(transcribe::wav_samples(path) == 8000);
         wav(path, 0, 16000, 1); CHECK(transcribe::wav_samples(path) == 0);
-        rejected([&] { (void)transcribe::split_audio(path, temp.path, 1); });
+        rejected([&] { (void)transcribe::split_audio(path, temp.path, 1, temp.path); });
     });
     suite.add("wav_rejects_corruption_and_noncanonical_format", [] {
         Temp temp; const auto path = temp.path / "audio.wav";

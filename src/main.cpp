@@ -1,6 +1,9 @@
 // Linux, C++23. Запускает yt-dlp, FFmpeg и whisper-cli без оболочки.
 #include "audio.hpp"
 #include "cli.hpp"
+#include "media.hpp"
+#include "progress.hpp"
+#include "result.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <charconv>
@@ -52,7 +55,12 @@ void help() {
   --jobs N                           Одновременные части (не больше --chunks)
                                      По умолчанию до двух при дроблении
   --out КАТАЛОГ                      Родительский каталог результатов
-                                     (по умолчанию ./transcripts)
+                                     (по умолчанию $HOME/Transcriptions)
+  --cache-dir КАТАЛОГ                Кэш скачанного аудио
+  --cache-limit-gib N                 Лимит кэша в ГиБ (по умолчанию 10)
+  --no-cache                         Не читать и не сохранять кэш
+  --refresh-cache                    Скачать заново и обновить кэш
+  --no-progress                      Не выводить промежуточный прогресс
   --cookies-from-browser СПЕЦ         Например firefox или chromium:ПРОФИЛЬ
   --cookies ФАЙЛ                     Файл cookies в формате Netscape
   --prompt ТЕКСТ                     Краткий список терминов лекции
@@ -62,24 +70,11 @@ void help() {
   --version                          Версия программы
   --                                 Конец параметров
 
-Результаты: transcript.txt, transcript.srt, transcript.vtt, source.txt.
+Результаты: transcripts/transcript.txt, .srt, .vtt; logs/*.log; source.txt.
 Каждый запуск создаёт отдельный каталог; исходный локальный файл не удаляется.
 TXT дополняется во время распознавания в порядке записи; субтитры — после успеха.
 Ctrl+C, SIGTERM и SIGHUP останавливают работников и сохраняют частичный текст.
 )";
-}
-
-fs::path new_result_dir(const fs::path& parent) {
-    fs::create_directories(parent);
-    const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::tm local{};
-    localtime_r(&now, &local);
-    std::ostringstream name;
-    name << "lecture-" << std::put_time(&local, "%Y%m%d-%H%M%S") << "-XXXXXX";
-    std::string pattern = (parent / name.str()).string();
-    char* result = mkdtemp(pattern.data());
-    if (!result) throw std::runtime_error("Не удалось создать каталог: " + std::string(std::strerror(errno)));
-    return fs::path(result);
 }
 
 void metadata(const fs::path& result, const std::string& details, std::string_view status, int code) {
@@ -91,7 +86,7 @@ void metadata(const fs::path& result, const std::string& details, std::string_vi
 }
 
 void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
-               const transcribe::Inputs& files, const fs::path& result) {
+               const transcribe::Inputs& files, const transcribe::ResultPaths& paths) {
     struct Part {
         std::ofstream file;
         std::string pending;
@@ -115,14 +110,14 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
                     progress = std::max(progress, number);
             }) { file.exceptions(std::ios::badbit | std::ios::failbit); }
     };
-    std::ofstream live(result / "transcript.txt");
+    std::ofstream live(paths.transcripts() / "transcript.txt");
     live.exceptions(std::ios::badbit | std::ios::failbit);
     std::vector<std::unique_ptr<Part>> parts;
     parts.reserve(chunks.size());
     std::vector<std::unique_ptr<transcribe::Process>> processes(chunks.size());
     for (const auto& chunk : chunks) parts.push_back(std::make_unique<Part>(chunk.prefix.parent_path() / "transcript.partial.txt"));
     size_t next = 0, current = 0, finished = 0, active = 0;
-    int last_progress = -1;
+    transcribe::Progress progress(o.progress);
     const auto publish = [&] {
         while (current < parts.size()) {
             auto& part = *parts[current];
@@ -146,7 +141,7 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
                 };
                 if (o.vad) args.insert(args.end(), {"--vad", "--vad-model", files.vad_model.string()});
                 if (!o.prompt.empty()) args.insert(args.end(), {"--prompt", o.prompt});
-                processes[index] = std::make_unique<transcribe::Process>(args, result / ("whisper-" + std::to_string(index + 1) + ".log"),
+                processes[index] = std::make_unique<transcribe::Process>(args, paths.logs() / ("whisper-" + std::to_string(index + 1) + ".log"),
                     [&, index](std::string_view bytes) { parts[index]->text.feed(bytes); },
                     [&, index](std::string_view bytes) { parts[index]->errors.feed(bytes); });
                 ++next; ++active;
@@ -166,13 +161,10 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
                 }
             }
             publish();
-            int64_t weighted = 0;
-            for (size_t i = 0; i < chunks.size(); ++i) weighted += (chunks[i].end - chunks[i].begin) * parts[i]->progress;
-            const int progress = static_cast<int>(weighted / chunks.back().end);
-            if (progress > last_progress) {
-                std::cout << "Распознавание: " << progress << "%; завершено частей " << finished << '/' << chunks.size() << '\n' << std::flush;
-                last_progress = progress;
-            }
+            std::vector<transcribe::PartProgress> states;
+            states.reserve(chunks.size());
+            for (size_t i = 0; i < chunks.size(); ++i) states.push_back({chunks[i].end - chunks[i].begin, parts[i]->progress});
+            progress.update(transcribe::weighted_progress(states), finished, chunks.size());
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         transcribe::check_cancelled();
@@ -191,7 +183,7 @@ void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,
 }
 
 int main(int argc, char** argv) {
-    fs::path result;
+    transcribe::ResultPaths paths;
     std::string details;
     try {
         transcribe::install_signal_handlers();
@@ -216,56 +208,87 @@ int main(int argc, char** argv) {
         auto input = files.input;
         const bool url = files.url;
         o.cookies = files.cookies;
-        result = new_result_dir(fs::absolute(o.output));
-        const fs::path work = result / "audio";
-        fs::create_directory(work);
+        const auto parent = o.output.empty() ? transcribe::default_output() : fs::absolute(o.output);
+        paths = transcribe::ResultPaths::create(parent, url ? "video" : input.stem().string());
         details = "Источник: " + o.input + "\nМодель: " + model.string() + "\nЯзык: ru\nПотоки: " + std::to_string(o.threads) +
             "\nЧасти: " + std::to_string(o.chunks) + "\nРаботники: " + std::to_string(o.jobs) + "\nVAD: " + (o.vad ? "on\n" : "off\n");
-        metadata(result, details, "processing", 0);
-        std::cout << "Каталог результата: " << result.string() << '\n' << std::flush;
+        metadata(paths.root, details, "processing", 0);
+        std::unique_ptr<transcribe::MediaCache> cache;
+        std::optional<transcribe::MediaCache::Entry> cached;
+        transcribe::SourceInfo source;
+        std::string context;
+        const auto cache_warning = [](const std::exception& error) {
+            transcribe::check_cancelled();
+            std::cerr << "Предупреждение: кэш недоступен: " << error.what() << '\n';
+        };
         if (url) {
-            std::cout << "[1/3] Скачивание медиа по URL...\n";
-            const fs::path path_file = work / "download.path";
-            std::vector<std::string> args = {
-                "yt-dlp", "--ignore-config", "--no-playlist", "--no-simulate",
-                "-f", "bestaudio/best", "--restrict-filenames", "-o",
-                (work / "source.%(ext)s").string(), "--print-to-file",
-                "after_move:%(filepath)s", path_file.string()
-            };
-            if (!o.browser.empty()) {
-                args.insert(args.end(), {"--cookies-from-browser", o.browser});
+            std::cout << "Временный каталог результата: " << paths.root.string() << '\n' << std::flush;
+            if (o.cache) try {
+                context = transcribe::authentication_context(o);
+                cache = std::make_unique<transcribe::MediaCache>(o.cache_dir.empty() ? transcribe::default_cache() : o.cache_dir, o.cache_limit);
+                if (!o.refresh_cache) cached = cache->lookup_url(o.input, context);
+            } catch (const std::exception& error) { cache_warning(error); cache.reset(); }
+            if (cached) source = cached->source;
+            else {
+                std::cout << "[1/3] Получение названия и идентификатора видео...\n" << std::flush;
+                source = transcribe::probe_source(o, paths);
+                if (cache && !o.refresh_cache) try { cached = cache->lookup_source(source, context); }
+                catch (const std::exception& error) { cache_warning(error); cache.reset(); }
             }
-            if (!o.cookies.empty()) args.insert(args.end(), {"--cookies", o.cookies});
-            args.insert(args.end(), {"--", o.input});
-            std::cout.flush();
-            run(args, result / "download.log");
-            input = read_line(path_file);
-            require_file(input, "yt-dlp не сохранил аудио/видео");
-        } else std::cout << "[1/3] Используется локальный файл\n";
+            paths.name(source.title);
+            details += "Название: " + transcribe::safe_title(source.title) + '\n';
+            metadata(paths.root, details, "processing", 0);
+            std::cout << "Каталог результата: " << paths.root.string() << '\n' << std::flush;
+            if (cached && cache) try {
+                input = paths.work() / "source.cached";
+                cache->copy(*cached, input, o.input);
+                std::cout << "[1/3] Используется скачанное аудио из кэша\n" << std::flush;
+            } catch (const std::exception& error) { cache_warning(error); cached.reset(); cache.reset(); }
+            if (!cached) {
+                std::cout << "[1/3] Скачивание медиа по URL...\n" << std::flush;
+                input = transcribe::download_source(o, paths);
+            }
+        } else std::cout << "Каталог результата: " << paths.root.string() << "\n[1/3] Используется локальный файл\n" << std::flush;
 
+        const auto work = paths.work();
         const fs::path wav = work / "lecture.wav";
         std::cout << "[2/3] WAV: моно, 16 кГц, PCM 16 бит...\n";
         std::cout.flush();
-        run({"ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
+        try {
+            run({"ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
              "-i", input.string(), "-map", "0:a:0", "-vn", "-ar", "16000",
-             "-ac", "1", "-c:a", "pcm_s16le", wav.string()}, result / "ffmpeg.log");
-        require_file(wav, "Проверь, есть ли в видео аудиодорожка");
+             "-ac", "1", "-c:a", "pcm_s16le", wav.string()}, paths.logs() / "ffmpeg.log");
+            require_file(wav, "Проверь, есть ли в видео аудиодорожка");
+            (void)transcribe::wav_samples(wav);
+        } catch (...) {
+            // Cancellation or a broken output pipe does not prove cache corruption.
+            const auto failure = std::current_exception();
+            if (cache && cached && !transcribe::cancellation_signal()) try { cache->invalidate(*cached); }
+            catch (const std::exception& error) { std::cerr << "Предупреждение: " << error.what() << '\n'; }
+            std::rethrow_exception(failure);
+        }
+        if (cache && !cached) try {
+            if (!cache->publish(source, context, o.input, input))
+                std::cerr << "Предупреждение: аудио не сохранено в кэше (размер превышает лимит или live-поток).\n";
+        } catch (const std::exception& error) { cache_warning(error); }
+        cache.reset(); // Recognition does not hold the shared download/cache lock.
 
-        const auto chunks = transcribe::split_audio(wav, work, o.chunks);
+        const auto chunks = transcribe::split_audio(wav, work, o.chunks, paths.logs());
         for (size_t i = 0; i < chunks.size(); ++i)
             details += "Часть " + std::to_string(i + 1) + " (семплы): " + std::to_string(chunks[i].begin) + "–" + std::to_string(chunks[i].end) + '\n';
-        metadata(result, details, "processing", 0);
+        metadata(paths.root, details, "processing", 0);
         std::cout << "[3/3] Русская речь, CPU, " << o.jobs << " работников, по " << o.threads << " поток(а)...\n" << std::flush;
         const auto start = std::chrono::steady_clock::now();
-        recognize(chunks, o, files, result);
-        transcribe::merge_exports(chunks, result);
+        recognize(chunks, o, files, paths);
+        std::cout << "Объединение и проверка расшифровок...\n" << std::flush;
+        transcribe::merge_exports(chunks, paths.transcripts(), paths.staging());
         transcribe::check_cancelled();
         const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
         std::cout << "Готово. Распознавание заняло " << std::fixed << std::setprecision(1)
-                  << seconds / 60.0 << " мин.\n" << result.string() << '\n' << std::flush;
+                  << seconds / 60.0 << " мин.\n" << paths.root.string() << '\n' << std::flush;
         transcribe::check_cancelled();
         if (!std::cout) throw std::runtime_error("Не удалось вывести итог обработки");
-        metadata(result, details, "completed", 0);
+        metadata(paths.root, details, "completed", 0);
         transcribe::commit_completion();
         // Cleanup is irreversible. Once success is committed, it must not turn
         // into an interrupted/failed run that falsely promises preserved audio.
@@ -279,12 +302,12 @@ int main(int argc, char** argv) {
     } catch (const std::exception& error) {
         const auto* process = dynamic_cast<const ProcessError*>(&error);
         const int code = transcribe::cancellation_signal() ? 128 + transcribe::cancellation_signal() : (process ? process->code : 1);
-        if (!result.empty()) {
-            try { metadata(result, details, transcribe::cancellation_signal() ? "interrupted" : "failed", code); }
+        if (!paths.root.empty()) {
+            try { metadata(paths.root, details, transcribe::cancellation_signal() ? "interrupted" : "failed", code); }
             catch (const std::exception& failure) { std::cerr << "Не удалось сохранить статус: " << failure.what() << '\n'; }
         }
         std::cerr << "Ошибка: " << error.what() << '\n';
-        if (!result.empty()) std::cerr << "Промежуточные файлы оставлены в " << result.string() << '\n';
+        if (!paths.root.empty()) std::cerr << "Промежуточные файлы оставлены в " << paths.root.string() << '\n';
         return code;
     }
 }

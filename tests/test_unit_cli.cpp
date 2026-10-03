@@ -30,6 +30,14 @@ struct Files {
 }
 int main() {
     Suite suite;
+    suite.add("cache_flags_limits_and_conflicts", [] {
+        const auto o = parse({"--cache-dir", "my cache", "--cache-limit-gib", "20", "--no-progress", "--refresh-cache", "audio.wav"});
+        CHECK(o.cache_dir == "my cache" && o.cache_limit == uint64_t{20} * 1024 * 1024 * 1024 && !o.progress && o.refresh_cache);
+        CHECK(!parse({"--no-cache", "audio.wav"}).cache);
+        for (auto number : {"0", "-1", "1.5", "1x", "18446744073709551615"})
+            rejected([&] { (void)parse({"--cache-limit-gib", number, "audio.wav"}); }, "--cache-limit-gib");
+        rejected([] { (void)parse({"--refresh-cache", "--no-cache", "audio.wav"}); }, "несовместимы");
+    });
     suite.add("numeric_boundaries_and_all_numeric_options", [] {
         for (auto flag : {"--threads", "--chunks", "--jobs"}) for (auto number : {"1", "256"}) {
             const std::array<std::string_view, 5> args{"--chunks", "256", flag, number, "audio.wav"};
@@ -41,7 +49,7 @@ int main() {
                 rejected([&] { (void)parse({flag, number, "audio.wav"}); }, "Число должно");
     });
     suite.add("missing_and_empty_values", [] {
-        for (auto flag : {"--model", "--threads", "--chunks", "--jobs", "--out", "--prompt", "--cookies", "--cookies-from-browser"}) {
+        for (auto flag : {"--model", "--threads", "--chunks", "--jobs", "--out", "--cache-dir", "--cache-limit-gib", "--prompt", "--cookies", "--cookies-from-browser"}) {
             rejected([&] { (void)parse({"audio.wav", flag}); }, "Нужно значение");
             rejected([&] { (void)parse({flag, "", "audio.wav"}); }, "Нужно значение");
         }
@@ -66,7 +74,7 @@ int main() {
         CHECK(action({"--version", "--help"}) == CliAction::version);
         CHECK(action({"--help", "--version"}) == CliAction::help);
         CHECK(action({"--", "--help"}) == CliAction::run);
-        for (auto flag : {"--model", "--threads", "--chunks", "--jobs", "--out", "--prompt", "--cookies", "--cookies-from-browser"})
+        for (auto flag : {"--model", "--threads", "--chunks", "--jobs", "--out", "--cache-dir", "--cache-limit-gib", "--prompt", "--cookies", "--cookies-from-browser"})
             CHECK(action({flag, "--help", "audio.wav"}) == CliAction::run);
     });
     suite.add("deterministic_cpu_budget_and_explicit_override", [] {
