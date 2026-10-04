@@ -47,6 +47,10 @@ $Tools = Join-Path $Bin 'tools'
 $Licenses = Join-Path $Bundle 'licenses'
 New-Item -ItemType Directory -Force -Path $Tools, $Licenses | Out-Null
 Invoke-Checked git @('init', $Whisper)
+# The source SHA-256 pins are Git blob bytes (LF), independent of the host's
+# global Git settings. Configure this checkout before materializing the pin.
+Invoke-Checked git @('-C', $Whisper, 'config', 'core.autocrlf', 'false')
+Invoke-Checked git @('-C', $Whisper, 'config', 'core.eol', 'lf')
 Invoke-Checked git @('-C', $Whisper, 'remote', 'add', 'origin', $Lock.whisper.repository)
 Invoke-Checked git @('-C', $Whisper, 'fetch', '--depth', '1', 'origin', $Lock.whisper.revision)
 Invoke-Checked git @('-C', $Whisper, 'checkout', '--detach', $Lock.whisper.revision)
