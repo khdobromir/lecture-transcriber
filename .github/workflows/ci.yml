@@ -122,3 +122,72 @@ jobs:
           runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
           runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
           runuser -u tester -- ctest --test-dir /tmp/transcribe-build --output-on-failure
+
+  gui-linux:
+    name: Linux / Qt 6.8.3 / GUI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ ffmpeg libegl1 libgl1 libopengl0 libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
+          python -m pip install aqtinstall==3.3.0
+          python -m aqt install-qt linux desktop 6.8.3 linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
+      - name: Configure and build
+        run: |
+          cmake -S . -B "$RUNNER_TEMP/transcribe-gui-build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror -DTRANSCRIBE_BUILD_GUI=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/Qt/6.8.3/gcc_64"
+          cmake --build "$RUNNER_TEMP/transcribe-gui-build" --parallel 4
+      - name: Test controllers, downloads, QML and CLI
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QPA_PLATFORMTHEME: generic
+          QT_QUICK_BACKEND: software
+        run: ctest --test-dir "$RUNNER_TEMP/transcribe-gui-build" --output-on-failure
+      - name: QML lint
+        run: cmake --build "$RUNNER_TEMP/transcribe-gui-build" --target all_qmllint
+
+  windows:
+    name: Windows x64 / MSVC / CLI
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure and build
+        shell: pwsh
+        run: |
+          cmake -S . -B "$env:RUNNER_TEMP/transcribe-build" -A x64 -DCMAKE_CXX_FLAGS=/WX
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --build "$env:RUNNER_TEMP/transcribe-build" --config Release --parallel 4
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Native process, Unicode, cache and machine protocol tests
+        run: ctest --test-dir "$env:RUNNER_TEMP/transcribe-build" -C Release --output-on-failure
+
+  windows-package:
+    name: Windows x64 / Qt GUI and ZIP smoke
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Qt SDK
+        run: |
+          python -m pip install aqtinstall==3.3.0
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build, test, deploy and smoke package
+        run: ./scripts/package-windows.ps1 -QtRoot "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64" -WorkDirectory "$env:RUNNER_TEMP/transcribe-package" -Destination "$env:RUNNER_TEMP/transcribe-artifacts"
+      - name: Retain tested ZIP and checksums
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Transcribe-windows-x64
+          path: ${{ runner.temp }}/transcribe-artifacts/*
+          if-no-files-found: error
+          retention-days: 14
