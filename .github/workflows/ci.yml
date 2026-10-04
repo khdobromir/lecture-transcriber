@@ -134,12 +134,12 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ ffmpeg libegl1 libgl1 libopengl0 libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
+          sudo apt-get install -y cmake g++ ffmpeg libgl-dev libglx-dev libopengl-dev libegl-dev libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
           python -m pip install aqtinstall==3.3.0
           python -m aqt install-qt linux desktop 6.8.3 linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
       - name: Configure and build
         run: |
-          cmake -S . -B "$RUNNER_TEMP/transcribe-gui-build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror -DTRANSCRIBE_BUILD_GUI=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/Qt/6.8.3/gcc_64"
+          cmake -S . -B "$RUNNER_TEMP/transcribe-gui-build" -DCMAKE_BUILD_TYPE=Release -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON -DTRANSCRIBE_BUILD_GUI=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/Qt/6.8.3/gcc_64"
           cmake --build "$RUNNER_TEMP/transcribe-gui-build" --parallel 4
       - name: Test controllers, downloads, QML and CLI
         env:
@@ -161,7 +161,7 @@ jobs:
       - name: Configure and build
         shell: pwsh
         run: |
-          cmake -S . -B "$env:RUNNER_TEMP/transcribe-build" -A x64 -DCMAKE_CXX_FLAGS=/WX
+          cmake -S . -B "$env:RUNNER_TEMP/transcribe-build" -A x64 -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cmake --build "$env:RUNNER_TEMP/transcribe-build" --config Release --parallel 4
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

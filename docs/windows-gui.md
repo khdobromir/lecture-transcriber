@@ -10,6 +10,8 @@ GUI на Qt Quick 6.8+ запускает отдельный CLI-процесс.
 Для CLI нужны CMake 3.20+, компилятор C++23, FFmpeg и установленный whisper.cpp.
 Для GUI дополнительно нужны CMake 3.24+ и Qt 6.8+ с Quick, QuickControls2, Network,
 Concurrent и Test. Существующий `install.sh` устанавливает Linux CLI как прежде.
+Для официального Linux Qt SDK нужны также OpenGL development headers/libraries
+(Ubuntu: `libgl-dev libglx-dev libopengl-dev libegl-dev`).
 GUI собирается явно:
 
 ```sh
@@ -19,6 +21,10 @@ ctest --test-dir build-gui --output-on-failure
 cmake --build build-gui --target all_qmllint
 ./build-gui/transcribe-gui
 ```
+
+Строгие предупреждения включаются через `-DTRANSCRIBE_WARNINGS_AS_ERRORS=ON`.
+Эта опция сохраняет стандартные флаги компилятора, включая обработку C++
+исключений MSVC.
 
 В дереве сборки GUI и CLI находятся рядом в `build-gui`. Для установки
 используйте временный или пользовательский prefix:

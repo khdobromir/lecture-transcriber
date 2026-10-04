@@ -50,8 +50,8 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
         const std::string text = "Текст 😀 " + part + ".\n";
         std::cout << "\n[00:00:00.000 --> 00:00:00.100]  " << text << std::flush;
         std::cerr << "whisper_print_progress_callback: progress = 50%\n" << std::flush;
-        const char* delay = std::getenv("TRANSCRIBE_MOCK_DELAY");
-        if (delay) std::this_thread::sleep_for(std::chrono::milliseconds(std::stoi(delay)));
+        const auto delay = environment_utf8("TRANSCRIBE_MOCK_DELAY");
+        if (!delay.empty()) std::this_thread::sleep_for(std::chrono::milliseconds(std::stoi(delay)));
         put(utf8_path(prefix + ".txt"), text);
         put(utf8_path(prefix + ".srt"), "1\n00:00:00,000 --> 00:00:00,100\n" + text + '\n');
         put(utf8_path(prefix + ".vtt"), "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\n" + text + '\n');
@@ -63,15 +63,15 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
                 put(utf8_path(path), args[i + 1] == "%(title)s" ? "Лекция 😀\n" : args[i + 1] == "%(is_live)s" ? "False\n" : "Mock\n");
             }
         } else {
-            const auto input = std::getenv("TRANSCRIBE_MOCK_AUDIO");
-            if (!input) throw std::runtime_error("mock audio is missing");
+            const auto input = environment_utf8("TRANSCRIBE_MOCK_AUDIO");
+            if (input.empty()) throw std::runtime_error("mock audio is missing");
             auto path = value("-o");
             const auto extension = path.find("%(ext)s");
             if (extension != path.npos) path.replace(extension, 7, "wav");
             for (size_t at = 0; (at = path.find("%%", at)) != std::string::npos; ++at) path.erase(at, 1);
             fs::copy_file(utf8_path(input), utf8_path(path), fs::copy_options::overwrite_existing);
             const auto report = std::find(args.begin(), args.end(), "--print-to-file");
-            if (report == args.end() || report + 2 == args.end()) throw std::runtime_error("missing download report");
+            if (std::distance(report, args.end()) < 3) throw std::runtime_error("missing download report");
             put(utf8_path(*(report + 2)), path + '\n');
         }
     } else throw std::runtime_error("unknown mock tool");

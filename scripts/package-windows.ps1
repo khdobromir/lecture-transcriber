@@ -37,7 +37,7 @@ function Get-Verified($Dependency) {
     return $Target
 }
 Invoke-Checked cmake @('-S', $Project, '-B', $Build, '-G', 'Visual Studio 17 2022', '-A', 'x64',
-    "-DCMAKE_PREFIX_PATH=$QtRoot", '-DTRANSCRIBE_BUILD_GUI=ON', '-DBUILD_TESTING=ON', '-DCMAKE_CXX_FLAGS=/WX')
+    "-DCMAKE_PREFIX_PATH=$QtRoot", '-DTRANSCRIBE_BUILD_GUI=ON', '-DBUILD_TESTING=ON', '-DTRANSCRIBE_WARNINGS_AS_ERRORS=ON')
 Invoke-Checked cmake @('--build', $Build, '--config', 'Release', '--parallel', '4')
 if (-not $SkipTests) { Invoke-Checked ctest @('--test-dir', $Build, '-C', 'Release', '--output-on-failure') }
 Invoke-Checked cmake @('--install', $Build, '--config', 'Release', '--prefix', $Bundle)
@@ -54,7 +54,7 @@ Invoke-Checked python @("$Project\scripts\patch-whisper-windows.py", $Whisper)
 Invoke-Checked cmake @('-S', $Whisper, '-B', $WhisperBuild, '-G', 'Visual Studio 17 2022', '-A', 'x64',
     '-DWHISPER_BUILD_TESTS=OFF', '-DWHISPER_BUILD_EXAMPLES=ON', '-DWHISPER_SDL2=OFF',
     '-DGGML_NATIVE=OFF', '-DGGML_BACKEND_DL=ON', '-DGGML_CPU_ALL_VARIANTS=ON', '-DBUILD_SHARED_LIBS=ON',
-    '-DGGML_OPENMP=OFF', '-DGGML_CUDA=OFF', '-DGGML_VULKAN=OFF', '-DGGML_OPENCL=OFF', '-DCMAKE_CXX_FLAGS=/utf-8')
+    '-DGGML_OPENMP=OFF', '-DGGML_CUDA=OFF', '-DGGML_VULKAN=OFF', '-DGGML_OPENCL=OFF')
 Invoke-Checked cmake @('--build', $WhisperBuild, '--config', 'Release', '--parallel', '4')
 Copy-Item "$WhisperBuild\bin\Release\whisper-cli.exe" $Tools
 Get-ChildItem "$WhisperBuild\bin\Release" -Filter '*.dll' | Copy-Item -Destination $Tools

@@ -8,6 +8,7 @@
 namespace transcribe {
 std::filesystem::path utf8_path(std::string_view value);
 std::string path_utf8(const std::filesystem::path& value);
+std::string environment_utf8(std::string_view name);
 std::filesystem::path user_home();
 std::filesystem::path app_home();
 std::filesystem::path executable_directory();

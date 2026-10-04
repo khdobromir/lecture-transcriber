@@ -77,6 +77,16 @@ class MachineTests(unittest.TestCase):
         self.assertEqual(len(roots), 1)
         return roots[0]
 
+    def test_mock_download_rejects_truncated_report_arguments(self):
+        suffix = ".exe" if os.name == "nt" else ""
+        tool = self.root / "tools" / ("yt-dlp" + suffix)
+        for report in (["--print-to-file"], ["--print-to-file", "format"]):
+            with self.subTest(report=report):
+                child = subprocess.run([str(tool), "-o", str(self.root / "mock.wav"), *report],
+                                       env=self.env, capture_output=True, timeout=5)
+                self.assertEqual(child.returncode, 1)
+                self.assertIn("missing download report", child.stderr.decode("utf-8"))
+
     def test_success_unicode_and_multiple_parts(self):
         child = self.launch(["--chunks", "2", "--jobs", "2"])
         events = self.collect(child)

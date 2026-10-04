@@ -14,6 +14,10 @@
 
 namespace fs = std::filesystem;
 namespace transcribe {
+std::string environment_utf8(std::string_view name) {
+    const char* value = std::getenv(std::string(name).c_str());
+    return value ? value : "";
+}
 fs::path user_home() {
     const char* value = std::getenv("HOME");
     if (!value || !*value) throw std::runtime_error("Не задан HOME; укажи каталог явно");

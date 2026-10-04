@@ -38,8 +38,7 @@ std::string eta_text(std::optional<double> seconds) {
     return out.str();
 }
 Progress::Progress(bool enabled) : enabled_(enabled), terminal_(terminal_output()) {
-    const char* term = std::getenv("TERM");
-    if (term && std::string_view(term) == "dumb") terminal_ = false;
+    if (environment_utf8("TERM") == "dumb") terminal_ = false;
 }
 Progress::~Progress() { finish(); }
 void Progress::finish() {

@@ -5,6 +5,7 @@
 #include "result.hpp"
 #include "windows.hpp"
 #include <chrono>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -53,6 +54,15 @@ int execute(const std::vector<std::string>& args) {
 #endif
     Temp temp;
     install_signal_handlers();
+    const std::string environmentValue = "Лекция 😀 & spaces";
+#ifdef _WIN32
+    require(SetEnvironmentVariableW(L"TRANSCRIBE_PORTABLE_ENV", wide_utf8(environmentValue).c_str()) != 0);
+#else
+    require(setenv("TRANSCRIBE_PORTABLE_ENV", environmentValue.c_str(), 1) == 0);
+#endif
+    require(environment_utf8("TRANSCRIBE_PORTABLE_ENV") == environmentValue);
+    require(environment_utf8("TRANSCRIBE_PORTABLE_MISSING_ENV").empty());
+    std::cout << "PASS Unicode environment transport\n";
     const auto binary = path_utf8(executable_directory() / "test_portable"
 #ifdef _WIN32
         ".exe"

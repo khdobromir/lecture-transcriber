@@ -74,6 +74,9 @@ fs::path windows_environment_path(const wchar_t* name) {
     if (!written || written >= count) windows_error("GetEnvironmentVariable");
     value.resize(written); return fs::path(value);
 }
+std::string environment_utf8(std::string_view name) {
+    return narrow_utf8(windows_environment_path(wide_utf8(name).c_str()).native());
+}
 fs::path user_home() {
     auto home = windows_environment_path(L"USERPROFILE");
     if (home.empty()) throw std::runtime_error("Не задан USERPROFILE");
