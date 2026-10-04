@@ -56,6 +56,7 @@ Invoke-Checked git @('-C', $Whisper, 'fetch', '--depth', '1', 'origin', $Lock.wh
 Invoke-Checked git @('-C', $Whisper, 'checkout', '--detach', $Lock.whisper.revision)
 Invoke-Checked python @("$Project\scripts\patch-whisper-windows.py", $Whisper)
 Invoke-Checked cmake @('-S', $Whisper, '-B', $WhisperBuild, '-G', 'Visual Studio 17 2022', '-A', 'x64',
+    '-DCMAKE_CXX_STANDARD=17', '-DCMAKE_CXX_STANDARD_REQUIRED=ON',
     '-DWHISPER_BUILD_TESTS=OFF', '-DWHISPER_BUILD_EXAMPLES=ON', '-DWHISPER_SDL2=OFF',
     '-DGGML_NATIVE=OFF', '-DGGML_BACKEND_DL=ON', '-DGGML_CPU_ALL_VARIANTS=ON', '-DBUILD_SHARED_LIBS=ON',
     '-DGGML_OPENMP=OFF', '-DGGML_CUDA=OFF', '-DGGML_VULKAN=OFF', '-DGGML_OPENCL=OFF')
