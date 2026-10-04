@@ -1,4 +1,5 @@
 #include "audio.hpp"
+#include "platform.hpp"
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -63,7 +64,7 @@ std::string time_string(int64_t ms, char separator) {
 struct Cue { int64_t begin, end; std::string text; };
 std::vector<Cue> read_cues(const fs::path& file, bool vtt) {
     std::ifstream in(file);
-    if (!in) throw std::runtime_error("Не удалось прочитать " + file.string());
+    if (!in) throw std::runtime_error("Не удалось прочитать " + path_utf8(file));
     std::vector<Cue> cues;
     std::string line;
     if (vtt && (!std::getline(in, line) || !line.starts_with("WEBVTT")))
@@ -97,7 +98,7 @@ int64_t wav_samples(const fs::path& wav) {
     if (!in.read(reinterpret_cast<char*>(header.data()), header.size()) ||
         std::string_view(reinterpret_cast<char*>(header.data()), 4) != "RIFF" ||
         std::string_view(reinterpret_cast<char*>(header.data() + 8), 4) != "WAVE")
-        throw std::runtime_error("Ожидался PCM WAV (RIFF): " + wav.string());
+        throw std::runtime_error("Ожидался PCM WAV (RIFF): " + path_utf8(wav));
     bool format = false;
     const auto size = fs::file_size(wav);
     while (in.read(reinterpret_cast<char*>(header.data()), 8)) {
@@ -119,7 +120,7 @@ int64_t wav_samples(const fs::path& wav) {
     }
     throw std::runtime_error("Нет аудиоданных в WAV");
 }
-std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int count, const fs::path& logs) { // NOLINT(bugprone-easily-swappable-parameters): source WAV and destination work directory ordering.
+std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int count, const fs::path& logs, const std::function<void(std::string_view, bool)>& notice) { // NOLINT(bugprone-easily-swappable-parameters): source WAV and destination work directory ordering.
     const int64_t samples = wav_samples(wav);
     if (samples < count) throw std::runtime_error("Запись слишком короткая для выбранного числа частей");
     std::vector<int64_t> boundaries{0};
@@ -139,8 +140,8 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
             if (auto value = get("silence_start: ")) start = value;
             if (auto value = get("silence_end: "); value && start) { pauses.push_back((*start + *value) / 2); start.reset(); }
         });
-        std::cout << "Поиск пауз для границ частей...\n" << std::flush;
-        run({"ffmpeg", "-nostdin", "-hide_banner", "-i", wav.string(), "-af", "silencedetect=noise=-35dB:d=0.5", "-f", "null", "-"},
+        if (notice) notice("Поиск пауз для границ частей...", false);
+        run({tool_path("ffmpeg"), "-nostdin", "-hide_banner", "-i", path_utf8(wav), "-af", "silencedetect=noise=-35dB:d=0.5", "-f", "null", "-"},
             logs / "silence.log", {}, [&](std::string_view bytes) { silence.feed(bytes); });
         silence.finish();
         int fallback = 0;
@@ -156,7 +157,7 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
             if (cut <= boundaries.back() || cut >= samples) throw std::runtime_error("Некорректная граница части");
             boundaries.push_back(cut);
         }
-        if (fallback) std::cerr << "Для " << fallback << " границ паузы не найдены; качество возле срезов может снизиться.\n";
+        if (fallback && notice) notice("Для " + std::to_string(fallback) + " границ паузы не найдены; качество возле срезов может снизиться.", true);
     }
     boundaries.push_back(samples);
     std::vector<Chunk> chunks;
@@ -176,8 +177,8 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
             graph += ";[a" + std::to_string(i) + "]atrim=start_sample=" + std::to_string(chunk.begin) +
                 ":end_sample=" + std::to_string(chunk.end) + ",asetpts=PTS-STARTPTS[o" + std::to_string(i) + "]";
         }
-        std::vector<std::string> args{"ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", wav.string(), "-filter_complex", graph};
-        for (int i = 0; i < count; ++i) args.insert(args.end(), {"-map", "[o" + std::to_string(i) + "]", "-c:a", "pcm_s16le", chunks[static_cast<size_t>(i)].wav.string()});
+        std::vector<std::string> args{tool_path("ffmpeg"), "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", path_utf8(wav), "-filter_complex", graph};
+        for (int i = 0; i < count; ++i) args.insert(args.end(), {"-map", "[o" + std::to_string(i) + "]", "-c:a", "pcm_s16le", path_utf8(chunks[static_cast<size_t>(i)].wav)});
         run(args, logs / "split.log");
         for (const auto& chunk : chunks) if (wav_samples(chunk.wav) != chunk.end - chunk.begin)
             throw std::runtime_error("Нарезка изменила число семплов аудио");
@@ -203,7 +204,7 @@ std::string segment_text(std::string_view line) {
 }
 void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts, const fs::path& staging) {
     for (const auto& chunk : chunks) for (const char* ext : {".txt", ".srt", ".vtt"})
-        if (!fs::is_regular_file(chunk.prefix.string() + ext)) throw std::runtime_error("whisper-cli не создал ожидаемый файл " + std::string(ext));
+        if (!fs::is_regular_file(utf8_path(path_utf8(chunk.prefix) + ext))) throw std::runtime_error("whisper-cli не создал ожидаемый файл " + std::string(ext));
     fs::create_directory(staging);
     auto txt = writer(staging / "transcript.txt");
     auto srt = writer(staging / "transcript.srt");
@@ -211,7 +212,7 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts
     vtt << "WEBVTT\n\n";
     size_t index = 0;
     for (const auto& chunk : chunks) {
-        std::ifstream text(chunk.prefix.string() + ".txt", std::ios::binary);
+        std::ifstream text(utf8_path(path_utf8(chunk.prefix) + ".txt"), std::ios::binary);
         if (!text) throw std::runtime_error("Ошибка чтения TXT");
         std::array<char, 8192> bytes{};
         while (text.read(bytes.data(), bytes.size()) || text.gcount()) {
@@ -225,10 +226,10 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts
         constexpr int64_t timestamp_resolution_ms = 10;
         for (bool web : {false, true}) {
             auto& output = web ? vtt : srt;
-            for (const auto& cue : read_cues(chunk.prefix.string() + (web ? ".vtt" : ".srt"), web)) {
+            for (const auto& cue : read_cues(utf8_path(path_utf8(chunk.prefix) + (web ? ".vtt" : ".srt")), web)) {
                 check_cancelled();
                 if (cue.end > duration_ms + timestamp_resolution_ms)
-                    throw std::runtime_error("Субтитр выходит за границы части: " + chunk.prefix.string());
+                    throw std::runtime_error("Субтитр выходит за границы части: " + path_utf8(chunk.prefix));
                 const int64_t offset = chunk.begin * 1000 / 16000;
                 if (!web) output << ++index << '\n';
                 output << time_string(std::min(cue.begin, duration_ms) + offset, web ? '.' : ',') << " --> "
@@ -239,6 +240,6 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts
     }
     txt.close(); srt.close(); vtt.close();
     check_cancelled();
-    for (const char* ext : {"txt", "srt", "vtt"}) fs::rename(staging / (std::string("transcript.") + ext), transcripts / (std::string("transcript.") + ext));
+    for (const char* ext : {"txt", "srt", "vtt"}) replace_file(staging / (std::string("transcript.") + ext), transcripts / (std::string("transcript.") + ext));
 }
 }

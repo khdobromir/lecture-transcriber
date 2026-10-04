@@ -17,7 +17,7 @@ private:
 struct Chunk { int64_t begin, end; std::filesystem::path wav, prefix; };
 int64_t wav_samples(const std::filesystem::path& wav);
 std::vector<Chunk> split_audio(const std::filesystem::path& wav, const std::filesystem::path& work, int count,
-                               const std::filesystem::path& logs);
+                               const std::filesystem::path& logs, const std::function<void(std::string_view, bool)>& notice = {});
 std::string segment_text(std::string_view line);
 void merge_exports(const std::vector<Chunk>& chunks, const std::filesystem::path& transcripts,
                    const std::filesystem::path& staging);

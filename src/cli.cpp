@@ -3,7 +3,7 @@
 #include <charconv>
 #include <fstream>
 #include <stdexcept>
-#include <unistd.h>
+#include "platform.hpp"
 
 namespace fs = std::filesystem;
 namespace transcribe {
@@ -18,7 +18,7 @@ std::string read_line(const fs::path& path) {
     std::ifstream stream(path);
     std::string line;
     if (!std::getline(stream, line))
-        throw std::runtime_error("Не удалось прочитать " + path.string());
+        throw std::runtime_error("Не удалось прочитать " + path_utf8(path));
     if (!line.empty() && line.back() == '\r') line.pop_back();
     return line;
 }
@@ -33,9 +33,24 @@ int positive_integer(std::string_view text) {
 
 void require_file(const fs::path& path, const std::string& hint) {
     if (!fs::is_regular_file(path) || fs::file_size(path) == 0)
-        throw std::runtime_error("Нет файла: " + path.string() + "\n" + hint);
+        throw std::runtime_error("Нет файла: " + path_utf8(path) + "\n" + hint);
 }
 
+namespace {
+bool consumes_value(std::string_view arg) {
+    return arg == "--model" || arg == "--threads" || arg == "--chunks" || arg == "--jobs" ||
+            arg == "--out" || arg == "--cache-dir" || arg == "--cache-limit-gib" ||
+            arg == "--prompt" || arg == "--cookies" || arg == "--cookies-from-browser";
+}
+}
+bool machine_requested(std::span<const std::string_view> args) {
+    for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i] == "--") break;
+        if (args[i] == "--machine") return true;
+        if (consumes_value(args[i])) ++i;
+    }
+    return false;
+}
 CliAction cli_action(std::span<const std::string_view> args) {
     if (args.empty()) return CliAction::usage;
     for (size_t i = 0; i < args.size(); ++i) {
@@ -43,9 +58,7 @@ CliAction cli_action(std::span<const std::string_view> args) {
         if (arg == "--") break;
         if (arg == "--help") return CliAction::help;
         if (arg == "--version") return CliAction::version;
-        if (arg == "--model" || arg == "--threads" || arg == "--chunks" || arg == "--jobs" ||
-            arg == "--out" || arg == "--cache-dir" || arg == "--cache-limit-gib" ||
-            arg == "--prompt" || arg == "--cookies" || arg == "--cookies-from-browser") ++i;
+        if (consumes_value(arg)) ++i;
     }
     return CliAction::run;
 }
@@ -58,22 +71,35 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
     const auto absolute = [&](const fs::path& path) { return path.is_absolute() ? path : cwd / path; };
     Inputs files;
     files.engine = absolute(root) / "whisper.cpp/build/bin/whisper-cli";
-    if (!fs::is_regular_file(files.engine) || access(files.engine.c_str(), X_OK) != 0)
+#ifdef _WIN32
+    files.engine += ".exe";
+    if (!executable_file(files.engine)) files.engine = executable_directory() / "tools/whisper-cli.exe";
+#endif
+    if (!executable_file(files.engine))
+#ifdef _WIN32
+        throw std::runtime_error("Нет tools/whisper-cli.exe. Распакуйте весь Windows ZIP заново");
+#else
         throw std::runtime_error("Нет whisper-cli. Сначала выполни bash install.sh");
+#endif
     const std::string selected = o.model.empty() ? read_line(absolute(root) / "default-model") : o.model;
+    files.model_selection = selected;
     files.model = selected == "small" || selected == "medium" || selected == "turbo"
-        ? absolute(root) / "models" / ("ggml-" + preset(selected) + ".bin") : absolute(selected);
+        ? absolute(root) / "models" / ("ggml-" + preset(selected) + ".bin") : absolute(utf8_path(selected));
+    #ifdef _WIN32
+    require_file(files.model, "Скачайте или импортируйте модель на вкладке «Модели» в GUI");
+#else
     require_file(files.model, "Скачай модель: bash scripts/download-model.sh small|medium|turbo");
+#endif
     files.vad_model = absolute(root) / "models/ggml-silero-v6.2.0.bin";
     if (o.vad) require_file(files.vad_model, "Повтори установку или добавь --no-vad");
     files.url = o.input.starts_with("https://") || o.input.starts_with("http://");
     if (!files.url) {
-        files.input = absolute(o.input);
+        files.input = absolute(utf8_path(o.input));
         require_file(files.input, "Проверь имя локального видео/аудиофайла");
     }
     if (!o.cookies.empty()) {
-        files.cookies = absolute(o.cookies).string();
-        require_file(files.cookies, "Проверь путь к файлу cookies");
+        files.cookies = path_utf8(absolute(utf8_path(o.cookies)));
+        require_file(utf8_path(files.cookies), "Проверь путь к файлу cookies");
     }
     return files;
 }
@@ -92,8 +118,8 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
         else if (!positional && arg == "--threads") o.threads = positive_integer(value());
         else if (!positional && arg == "--chunks") o.chunks = positive_integer(value());
         else if (!positional && arg == "--jobs") o.jobs = positive_integer(value());
-        else if (!positional && arg == "--out") o.output = value();
-        else if (!positional && arg == "--cache-dir") o.cache_dir = value();
+        else if (!positional && arg == "--out") o.output = utf8_path(value());
+        else if (!positional && arg == "--cache-dir") o.cache_dir = utf8_path(value());
         else if (!positional && arg == "--cache-limit-gib") {
             const auto text = value();
             uint64_t gib{};
@@ -107,6 +133,7 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
         else if (!positional && arg == "--prompt") o.prompt = value();
         else if (!positional && arg == "--no-vad") o.vad = false;
         else if (!positional && arg == "--keep-audio") o.keep = true;
+        else if (!positional && arg == "--machine") o.machine = true;
         else if (!positional && arg == "--no-progress") o.progress = false;
         else if (!positional && arg == "--no-cache") o.cache = false;
         else if (!positional && arg == "--refresh-cache") o.refresh_cache = true;

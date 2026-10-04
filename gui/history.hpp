@@ -1,0 +1,23 @@
+#pragma once
+#include <cstdint>
+#include <QAbstractListModel>
+#include <QVector>
+#include <QtQml/qqmlregistration.h>
+
+struct HistoryRow { QString title, status, model, directory, date; bool available = true; };
+class HistoryModel : public QAbstractListModel {
+    Q_OBJECT
+    QML_ANONYMOUS
+public:
+    enum Role : std::uint16_t { Title = Qt::UserRole + 1, Status, Model, Directory, Date, Available };
+    explicit HistoryModel(QObject* parent = nullptr) : QAbstractListModel(parent) {}
+    int rowCount(const QModelIndex& parent = {}) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
+    void replace(QVector<HistoryRow> rows);
+    QString statusFor(const QString& directory) const;
+    static QVector<HistoryRow> scan(const QStringList& roots, const QStringList& known);
+private:
+    QVector<HistoryRow> rows_;
+};
+QString historyStatus(const QString& status);

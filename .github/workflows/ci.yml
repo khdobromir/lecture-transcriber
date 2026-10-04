@@ -27,7 +27,7 @@ jobs:
       - name: Dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ clang-18 ffmpeg git shellcheck util-linux
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ clang-18 ffmpeg git shellcheck util-linux python3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -64,7 +64,7 @@ jobs:
       - name: Dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ ffmpeg git shellcheck util-linux
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates make cmake g++ ffmpeg git shellcheck util-linux python3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -88,7 +88,7 @@ jobs:
       - name: Dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates git make cmake g++ clang-18 clang-tidy-18 cppcheck ffmpeg shellcheck util-linux
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates git make cmake g++ clang-18 clang-tidy-18 cppcheck ffmpeg shellcheck util-linux python3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -108,7 +108,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Dependencies
-        run: pacman -Syu --noconfirm --needed cmake ffmpeg git shellcheck
+        run: pacman -Syu --noconfirm --needed cmake ffmpeg git shellcheck python
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

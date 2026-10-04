@@ -6,8 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <string_view>
-#include <sys/ioctl.h>
-#include <unistd.h>
+#include "platform.hpp"
 
 namespace transcribe {
 double weighted_progress(const std::vector<PartProgress>& parts) {
@@ -38,7 +37,7 @@ std::string eta_text(std::optional<double> seconds) {
     out << std::setfill('0') << std::setw(2) << value / 60 % 60 << ':' << std::setw(2) << value % 60;
     return out.str();
 }
-Progress::Progress(bool enabled) : enabled_(enabled), terminal_(isatty(STDOUT_FILENO) != 0) {
+Progress::Progress(bool enabled) : enabled_(enabled), terminal_(terminal_output()) {
     const char* term = std::getenv("TERM");
     if (term && std::string_view(term) == "dumb") terminal_ = false;
 }
@@ -55,8 +54,7 @@ void Progress::update(double fraction, size_t finished, size_t total) { // NOLIN
     last_ = now; last_percent_ = percent; last_finished_ = finished;
     const auto remaining = eta_.update(fraction, now);
     if (terminal_) {
-        winsize size{};
-        const int columns = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) == 0 && size.ws_col ? size.ws_col : 80;
+        const int columns = terminal_columns();
         const auto status = std::to_string(percent) + "% | " + std::to_string(finished) + '/' + std::to_string(total) + " | " + eta_text(remaining);
         std::cout << "\r\033[K";
         if (columns >= 65) {

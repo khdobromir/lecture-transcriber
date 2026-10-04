@@ -1,4 +1,5 @@
 #include "process.hpp"
+#include "cancellation.hpp"
 #include <algorithm>
 #include <array>
 #include <cerrno>
@@ -16,13 +17,8 @@
 extern char** environ;
 namespace transcribe {
 namespace {
-volatile sig_atomic_t cancelled = 0;
-volatile sig_atomic_t repeated = 0;
-volatile sig_atomic_t completed = 0;
 void on_signal(int signal) {
-    if (completed) return;
-    if (cancelled) repeated = 1;
-    else cancelled = signal;
+    cancellation_token().request(signal);
 }
 void close_fd(int& fd) { if (fd >= 0) { close(fd); fd = -1; } }
 void system_error(const char* name, int error) {
@@ -30,6 +26,7 @@ void system_error(const char* name, int error) {
 }
 }
 void install_signal_handlers() {
+    cancellation_token().reset();
     struct sigaction action{};
     action.sa_handler = on_signal;
     sigemptyset(&action.sa_mask);
@@ -39,16 +36,6 @@ void install_signal_handlers() {
     }
     // Reap grandchildren when a tool exits before its helpers.
     if (prctl(PR_SET_CHILD_SUBREAPER, 1) != 0) system_error("prctl", errno);
-}
-int cancellation_signal() { return cancelled; }
-void check_cancelled() {
-    if (cancelled) throw ProcessError("Обработка прервана сигналом " + std::to_string(cancelled), 128 + cancelled);
-}
-void commit_completion() {
-    check_cancelled();
-    completed = 1;
-    // Catch a signal delivered between the check and the atomic transition.
-    if (cancelled) { completed = 0; check_cancelled(); }
 }
 int physical_cpus() {
     cpu_set_t mask;
@@ -134,7 +121,7 @@ void Process::request_stop(int signal) {
         deadline_ = std::chrono::steady_clock::now() + std::chrono::seconds(2);
         if (group_alive()) kill(-pid_, signal);
     }
-    if (repeated || signal == SIGKILL) { kill(-pid_, SIGKILL); killed_ = true; }
+    if (cancellation_token().repeated() || signal == SIGKILL) { kill(-pid_, SIGKILL); killed_ = true; }
 }
 void Process::drain(int& fd, const Output& callback, bool callbacks) {
     std::array<char, 8192> bytes{};
@@ -164,7 +151,7 @@ void Process::tick(bool callbacks) {
         while (waitpid(-pid_, nullptr, WNOHANG) > 0) {}
         if (group_alive() && !stopping_) request_stop(SIGTERM);
     }
-    if (stopping_ && !killed_ && (repeated || std::chrono::steady_clock::now() >= deadline_)) {
+    if (stopping_ && !killed_ && (cancellation_token().repeated() || std::chrono::steady_clock::now() >= deadline_)) {
         kill(-pid_, SIGKILL); killed_ = true;
     }
     if (reaped_ && out_ < 0 && err_ < 0 && !group_alive()) released_ = true;

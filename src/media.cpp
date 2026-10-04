@@ -1,24 +1,21 @@
 #include "media.hpp"
 #include "process.hpp"
+#include "platform.hpp"
 #include <algorithm>
 #include <array>
 #include <cerrno>
 #include <cstdlib>
-#include <fcntl.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <sys/file.h>
-#include <sys/stat.h>
 #include <thread>
-#include <unistd.h>
 
 namespace fs = std::filesystem;
 namespace transcribe {
 namespace {
-bool regular(const fs::path& file) { return fs::is_regular_file(fs::symlink_status(file)); }
+bool regular(const fs::path& file) { return !indirect_path(file) && fs::is_regular_file(fs::symlink_status(file)); }
 void copy_media(const fs::path& source, const fs::path& destination) {
     if (!regular(source) || fs::exists(fs::symlink_status(destination))) throw std::runtime_error("Некорректный путь копии аудио");
     std::ifstream in(source, std::ios::binary);
@@ -35,7 +32,7 @@ void copy_media(const fs::path& source, const fs::path& destination) {
     check_cancelled();
 }
 std::string field(const fs::path& file) {
-    if (!regular(file) || fs::file_size(file) > 16384) throw std::runtime_error("Некорректные метаданные yt-dlp: " + file.string());
+    if (!regular(file) || fs::file_size(file) > 16384) throw std::runtime_error("Некорректные метаданные yt-dlp: " + path_utf8(file));
     std::ifstream stream(file, std::ios::binary);
     std::string text{std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
     if (stream.bad()) throw std::runtime_error("Не удалось прочитать метаданные yt-dlp");
@@ -46,24 +43,22 @@ std::string field(const fs::path& file) {
 // yt-dlp interprets output *paths* as templates as well. Escape literal percent signs.
 std::string template_path(const fs::path& path) {
     std::string escaped;
-    for (char ch : path.string()) { escaped += ch; if (ch == '%') escaped += '%'; }
+    for (char ch : path_utf8(path)) { escaped += ch; if (ch == '%') escaped += '%'; }
     return escaped;
 }
 std::vector<std::string> downloader(const Options& o) {
-    std::vector<std::string> args{"yt-dlp", "--ignore-config", "--no-cache-dir", "--no-playlist", "-f", "bestaudio/best"};
+    std::vector<std::string> args{tool_path("yt-dlp"), "--ignore-config", "--no-cache-dir", "--no-playlist", "-f", "bestaudio/best"};
     if (!o.browser.empty()) args.insert(args.end(), {"--cookies-from-browser", o.browser});
     if (!o.cookies.empty()) args.insert(args.end(), {"--cookies", o.cookies});
     return args;
 }
 void private_directory(const fs::path& path) {
     fs::create_directories(path.parent_path());
-    if (mkdir(path.c_str(), 0700) != 0 && errno != EEXIST) throw std::runtime_error("Не удалось создать кэш: " + path.string());
-    struct stat info{};
-    if (lstat(path.c_str(), &info) || !S_ISDIR(info.st_mode) || info.st_uid != geteuid() || (info.st_mode & 0077U))
-        throw std::runtime_error("Каталог кэша должен принадлежать пользователю, иметь права 0700 и не быть symlink: " + path.string());
+    (void)create_private_directory(path);
+    require_private_directory(path);
 }
 bool managed_directory(const fs::path& directory) {
-    if (!fs::is_directory(fs::symlink_status(directory))) return false;
+    if (indirect_path(directory) || !fs::is_directory(fs::symlink_status(directory))) return false;
     for (const auto& file : fs::directory_iterator(directory)) {
         const auto name = file.path().filename();
         if ((name != "media" && name != "meta" && name != ".meta.tmp") || !regular(file.path())) return false;
@@ -72,17 +67,26 @@ bool managed_directory(const fs::path& directory) {
 }
 }
 fs::path default_cache() {
+#ifdef _WIN32
+    return app_home() / "cache/media";
+#else
     if (const char* value = std::getenv("XDG_CACHE_HOME"); value && *value && fs::path(value).is_absolute())
         return fs::path(value) / "transcribe/media";
     const char* home = std::getenv("HOME");
     if (!home || !*home) throw std::runtime_error("Не задан HOME; укажи --cache-dir или --no-cache");
     return fs::absolute(fs::path(home) / ".cache/transcribe/media");
+#endif
 }
 std::string authentication_context(const Options& o) {
     if (!o.cookies.empty()) {
         // Cookie contents are never copied to the cache. Changing the cookie file partitions hits.
-        return "cookies:" + o.cookies + ':' + std::to_string(fs::file_size(o.cookies)) + ':' +
-            std::to_string(fs::last_write_time(o.cookies).time_since_epoch().count());
+        const auto stamp = fs::last_write_time(utf8_path(o.cookies)).time_since_epoch();
+        // libc++ may use a 128-bit filesystem clock. Split the timestamp without
+        // narrowing the full duration or losing subsecond cache partitioning.
+        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(stamp);
+        const auto remainder = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp - seconds);
+        return "cookies:" + o.cookies + ':' + std::to_string(fs::file_size(utf8_path(o.cookies))) + ':' +
+            std::to_string(seconds.count()) + ':' + std::to_string(remainder.count());
     }
     return o.browser.empty() ? "anonymous" : "browser:" + o.browser;
 }
@@ -102,38 +106,27 @@ fs::path download_source(const Options& o, const ResultPaths& paths) {
         template_path(paths.work() / "source.") + "%(ext)s", "--print-to-file",
         "after_move:%(filepath)s", template_path(paths.work() / "download.path"), "--", o.input});
     run(args, paths.logs() / "download.log");
-    const fs::path file = field(paths.work() / "download.path");
+    const fs::path file = utf8_path(field(paths.work() / "download.path"));
     if (!regular(file) || fs::file_size(file) == 0 || fs::canonical(file).parent_path() != fs::canonical(paths.work()))
         throw std::runtime_error("yt-dlp не сохранил медиа внутри рабочего каталога");
     return file;
 }
-MediaCache::Lock::~Lock() { if (fd >= 0) close(fd); }
 MediaCache::MediaCache(const fs::path& root, uint64_t capacity) : root_(fs::absolute(root).lexically_normal()), capacity_(capacity) {
     // Refuse indirect paths before creating anything under a user-selected cache root.
     fs::path prefix;
     for (const auto& component : root_) {
         prefix /= component;
-        if (fs::is_symlink(fs::symlink_status(prefix))) throw std::runtime_error("Symlink в пути кэша: " + prefix.string());
+        if (indirect_path(prefix)) throw std::runtime_error("Symlink в пути кэша: " + path_utf8(prefix));
     }
     private_directory(root_);
-    lock_.fd = open((root_ / "lock").c_str(), O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK, 0600);
-    if (lock_.fd < 0) throw std::runtime_error("Не удалось открыть блокировку кэша");
-    struct stat info{};
-    if (fstat(lock_.fd, &info) || !S_ISREG(info.st_mode) || info.st_uid != geteuid() || info.st_nlink != 1)
-        throw std::runtime_error("Некорректный файл блокировки кэша");
-    while (flock(lock_.fd, LOCK_EX | LOCK_NB)) {
-        if (errno != EWOULDBLOCK && errno != EINTR) throw std::runtime_error("Не удалось заблокировать кэш");
-        check_cancelled();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-    check_cancelled();
+    lock_ = std::make_unique<FileLock>(root_ / "lock");
     private_directory(root_ / "entries");
     prune({});
 }
 std::vector<MediaCache::Entry> MediaCache::entries() const {
     std::vector<Entry> result;
     for (const auto& directory : fs::directory_iterator(root_ / "entries")) {
-        if (!directory.path().filename().string().starts_with("entry-") || !managed_directory(directory.path())) continue;
+        if (!path_utf8(directory.path().filename()).starts_with("entry-") || !managed_directory(directory.path())) continue;
         check_cancelled();
         Entry entry;
         entry.directory = directory.path();
@@ -166,14 +159,12 @@ void MediaCache::write_entry(const Entry& entry) const {
     for (const auto& url : entry.urls) text << std::quoted(url) << '\n';
     if (text.str().size() > 65536) throw std::runtime_error("Слишком большие метаданные кэша");
     const auto temp = entry.directory / ".meta.tmp";
-    const int fd = open(temp.c_str(), O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC | O_NOFOLLOW, 0600);
-    if (fd < 0) throw std::runtime_error("Не удалось записать метаданные кэша");
-    close(fd);
+    create_private_file(temp);
     try {
         std::ofstream out(temp, std::ios::binary);
         out.exceptions(std::ios::badbit | std::ios::failbit);
         out << text.str(); out.close();
-        fs::rename(temp, entry.directory / "meta");
+        replace_file(temp, entry.directory / "meta");
     } catch (...) { std::error_code error; fs::remove(temp, error); throw; }
 }
 void MediaCache::copy(Entry& entry, const fs::path& destination, const std::string& url) {
@@ -187,7 +178,7 @@ void MediaCache::copy(Entry& entry, const fs::path& destination, const std::stri
     check_cancelled();
 }
 void MediaCache::invalidate(const Entry& entry) const {
-    if (entry.directory.parent_path() != root_ / "entries" || !entry.directory.filename().string().starts_with("entry-") || !managed_directory(entry.directory))
+    if (entry.directory.parent_path() != root_ / "entries" || !path_utf8(entry.directory.filename()).starts_with("entry-") || !managed_directory(entry.directory))
         throw std::runtime_error("Некорректный путь записи кэша");
     fs::remove_all(entry.directory);
 }
@@ -195,7 +186,7 @@ void MediaCache::prune(const fs::path& keep) const {
     std::vector<Entry> records;
     // Count incomplete/corrupt managed entries too: they must not bypass the capacity.
     for (const auto& directory : fs::directory_iterator(root_ / "entries")) {
-        const auto name = directory.path().filename().string();
+        const auto name = path_utf8(directory.path().filename());
         if (!managed_directory(directory.path())) continue;
         if (name.starts_with(".pending-")) { fs::remove_all(directory.path()); continue; }
         if (name.starts_with("entry-") && regular(directory.path() / "media")) {
@@ -225,9 +216,7 @@ bool MediaCache::publish(const SourceInfo& source, const std::string& context, c
         if (previous) invalidate(*previous);
         return false;
     }
-    std::string pattern = (root_ / "entries/.pending-XXXXXX").string();
-    if (!mkdtemp(pattern.data())) throw std::runtime_error("Не удалось создать временную запись кэша");
-    const fs::path pending = pattern;
+    const fs::path pending = temporary_directory(root_ / "entries", ".pending-");
     Entry entry{pending, source, context, previous ? previous->urls : std::vector<std::string>{}, bytes};
     if (std::ranges::find(entry.urls, url) == entry.urls.end()) {
         if (entry.urls.size() == 64) entry.urls.erase(entry.urls.begin());
@@ -238,7 +227,7 @@ bool MediaCache::publish(const SourceInfo& source, const std::string& context, c
         copy_media(media, pending / "media");
         write_entry(entry);
         check_cancelled();
-        const auto destination = pending.parent_path() / ("entry-" + pending.filename().string().substr(9));
+        const auto destination = pending.parent_path() / ("entry-" + path_utf8(pending.filename()).substr(9));
         fs::rename(pending, destination);
         entry.directory = destination;
     } catch (...) { std::error_code error; fs::remove_all(pending, error); throw; }

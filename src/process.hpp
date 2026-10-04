@@ -8,7 +8,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <sys/types.h>
 
 namespace transcribe {
 struct ProcessError : std::runtime_error {
@@ -39,12 +38,17 @@ public:
     int exit_code() const;
     void require_success() const;
 private:
+#ifdef _WIN32
+    struct Native;
+    std::unique_ptr<Native> native_;
+#else
     void drain(int& fd, const Output& callback, bool callbacks);
     bool group_alive() const;
-    pid_t pid_ = -1;
+    int pid_ = -1;
     int out_ = -1, err_ = -1, status_ = 0;
     bool reaped_ = false, stopping_ = false, killed_ = false, released_ = false;
     std::chrono::steady_clock::time_point deadline_{};
+#endif
     std::string name_;
     std::filesystem::path log_path_;
     std::ofstream log_;
