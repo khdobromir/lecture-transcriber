@@ -87,7 +87,7 @@ struct ModelServer {
                     }
                     if (ignoreRange) offset = 0;
                     const auto body = (corrupt ? QByteArray(payload.size(), 'x') : payload).mid(offset);
-                    QByteArray headers = offset ? "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes " + QByteArray::number(offset) + '-' + QByteArray::number(payload.size() - 1) + '/' + QByteArray::number(payload.size()) + "\r\n" : "HTTP/1.1 200 OK\r\n";
+                    QByteArray headers = offset ? "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes " + QByteArray::number(offset) + '-' + QByteArray::number(payload.size() - 1) + '/' + QByteArray::number(payload.size()) + "\r\n" : QByteArray("HTTP/1.1 200 OK\r\n");
                     headers += "Content-Length: " + QByteArray::number(body.size()) + "\r\nConnection: close\r\n\r\n";
                     socket->write(headers + (stall ? body.left(100) : body)); socket->flush();
                     if (!stall) socket->disconnectFromHost();
