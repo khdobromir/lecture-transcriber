@@ -77,6 +77,20 @@ class MachineTests(unittest.TestCase):
         self.assertEqual(len(roots), 1)
         return roots[0]
 
+    def wait_for_partial(self, child):
+        events = []
+        for line in iter(child.stdout.readline, b""):
+            event = json.loads(line)
+            events.append(event)
+            if event["type"] != "progress":
+                continue
+            # The initial progress event can precede worker startup on Windows.
+            # Cancellation preservation must be tested after text is published.
+            partial = Path(event["result"]) / "transcripts/transcript.txt"
+            if partial.exists() and "Текст 😀" in partial.read_text(encoding="utf-8"):
+                return events
+        self.fail("Backend exited before publishing partial text")
+
     def test_mock_download_rejects_truncated_report_arguments(self):
         suffix = ".exe" if os.name == "nt" else ""
         tool = self.root / "tools" / ("yt-dlp" + suffix)
@@ -109,12 +123,9 @@ class MachineTests(unittest.TestCase):
                 if self.output.exists():
                     shutil.rmtree(self.output)
                 self.env["TRANSCRIBE_MOCK_DELAY"] = "30000"
+                self.env["TRANSCRIBE_MOCK_START_DELAY"] = "250"
                 child = self.launch()
-                prefix = []
-                for line in iter(child.stdout.readline, b""):
-                    prefix.append(json.loads(line))
-                    if prefix[-1]["type"] == "progress":
-                        break
+                prefix = self.wait_for_partial(child)
                 if command is None:
                     child.stdin.close()
                 else:
@@ -136,10 +147,9 @@ class MachineTests(unittest.TestCase):
 
     def test_lost_output_pipe_preserves_partial_result(self):
         self.env["TRANSCRIBE_MOCK_DELAY"] = "30000"
+        self.env["TRANSCRIBE_MOCK_START_DELAY"] = "250"
         child = self.launch()
-        for line in iter(child.stdout.readline, b""):
-            if json.loads(line)["type"] == "progress":
-                break
+        self.wait_for_partial(child)
         child.stdout.close()
         child.wait(timeout=12)
         self.assertEqual(child.returncode, 141)

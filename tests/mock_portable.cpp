@@ -45,6 +45,8 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
             }
         } else fs::copy_file(utf8_path(value("-i")), utf8_path(args.back()), fs::copy_options::overwrite_existing);
     } else if (kind == "whisper-cli") {
+        const auto startDelay = environment_utf8("TRANSCRIBE_MOCK_START_DELAY");
+        if (!startDelay.empty()) std::this_thread::sleep_for(std::chrono::milliseconds(std::stoi(startDelay)));
         const auto prefix = value("--output-file");
         const auto part = path_utf8(utf8_path(prefix).parent_path().filename());
         const std::string text = "Текст 😀 " + part + ".\n";
