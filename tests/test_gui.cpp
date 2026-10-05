@@ -341,6 +341,17 @@ private slots:
         Backend backend({"missing", fixture.ini, fixture.root}, readers); backend.viewResult("A");
         QTRY_VERIFY(!backend.previewError().isEmpty()); QTRY_VERIFY(!backend.historyError().isEmpty()); QVERIFY(backend.error().isEmpty());
     }
+    void historyDeduplicatesNativeAndLexicalPaths() {
+        QTemporaryDir temp; const auto directory = temp.path() + "/result";
+        put(directory + "/source.txt", "Статус: completed\nМодель: medium\n");
+        const auto native = QDir::toNativeSeparators(directory);
+        const auto rows = HistoryModel::scan({temp.path()}, {native, directory + "/."}, {{native, 1234}});
+        QCOMPARE(rows.size(), 1); QCOMPARE(rows.first().directory, directory); QCOMPARE(rows.first().created, 1234);
+        const auto missing = temp.path() + "/missing", nativeMissing = QDir::toNativeSeparators(missing);
+        const auto absent = HistoryModel::scan({}, {nativeMissing, missing + "/."}, {{nativeMissing, 4321}});
+        QCOMPARE(absent.size(), 1); QCOMPARE(absent.first().directory, missing); QCOMPARE(absent.first().created, 4321);
+        HistoryModel model; model.replace(rows); QCOMPARE(model.statusFor(native), QString("completed"));
+    }
     void historyLegacyAndMissing() {
         QTemporaryDir temp; put(temp.path() + "/old/source.txt", "Статус: completed\nМодель: medium\n");
         const auto rows = HistoryModel::scan({temp.path()}, {temp.path() + "/missing"});

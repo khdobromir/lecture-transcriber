@@ -260,7 +260,7 @@ void Backend::readEvents() {
 void Backend::acceptEvent(const transcribe::ProtocolMessage& message) {
     if (message.hello) { hello_ = true; return; }
     const auto& event = message.event;
-    const auto directory = pathText(event.result);
+    const auto directory = historyPath(pathText(event.result));
     if (!directory.isEmpty() && result_ != directory) {
         result_ = directory; if (followingTask_) selectResult(directory, "processing");
     }
@@ -342,7 +342,10 @@ void Backend::selectResult(const QString& directory, const QString& status) { //
     selected_ = directory; selectedStatus_ = status; transcript_.clear(); previewError_.clear();
     emit transcriptChanged(); emit changed(); readPreview();
 }
-void Backend::viewResult(const QString& directory) { followingTask_ = directory == result_; selectResult(directory, history_.statusFor(directory)); }
+void Backend::viewResult(const QString& directory) {
+    const auto normalized = historyPath(directory);
+    followingTask_ = normalized == result_; selectResult(normalized, history_.statusFor(normalized));
+}
 void Backend::viewCurrentResult() { if (!result_.isEmpty()) { followingTask_ = true; selectResult(result_, busy() ? "processing" : history_.statusFor(result_)); } }
 void Backend::retry() { if (canRetry()) { const auto input = lastInput_; const auto values = lastValues_; start(input, values); } }
 void Backend::openResult(const QString& extension) { previewError_ = openResultFile(selected_, extension); emit changed(); }

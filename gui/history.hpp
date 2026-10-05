@@ -25,4 +25,5 @@ public:
 private:
     QVector<HistoryRow> rows_;
 };
+QString historyPath(const QString& directory);
 QString historyStatus(const QString& status);
