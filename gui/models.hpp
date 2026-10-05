@@ -34,9 +34,11 @@ private:
     QString root_, selection_, status_;
     QVector<Record> records_, queue_;
     qsizetype index_ = 0;
-    bool busy_ = false, responseChecked_ = false;
+    bool busy_ = false, responseChecked_ = false, restarted_ = false;
     double progress_ = -1;
     qint64 offset_ = 0;
+    qint64 expectedTotal_ = -1;
+    QString responseError_;
     QNetworkAccessManager network_;
     QPointer<QNetworkReply> reply_;
     QFile part_;

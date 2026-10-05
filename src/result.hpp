@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -11,6 +12,7 @@ std::string safe_title(std::string_view title);
 struct ResultPaths {
     std::filesystem::path root;
     std::string date;
+    std::int64_t created = 0;
     std::filesystem::path logs() const { return root / "logs"; }
     std::filesystem::path transcripts() const { return root / "transcripts"; }
     std::filesystem::path work() const { return root / "audio"; }

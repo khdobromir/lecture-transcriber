@@ -50,6 +50,7 @@ Backend::Backend(Paths paths, QObject* parent)
     roots_ = settings_.value("roots").toStringList();
     if (!roots_.contains(output_)) roots_.append(output_);
     known_ = settings_.value("history/directories").toStringList();
+    knownTimes_ = settings_.value("history/timestamps").toMap();
     previewTimer_.setInterval(500);
     cancelTimer_.setSingleShot(true); cancelTimer_.setInterval(5000);
     connect(&cancelTimer_, &QTimer::timeout, this, [this] {
@@ -80,9 +81,11 @@ Backend::Backend(Paths paths, QObject* parent)
     });
     connect(&historyWatcher_, &QFutureWatcherBase::finished, this, [this] {
         const auto rows = historyWatcher_.result();
-        for (const auto& row : rows) if (!known_.contains(row.directory)) known_.append(row.directory);
+        if (historyDirty_) { historyDirty_ = false; refreshHistory(); return; }
+        known_.clear(); knownTimes_.clear();
+        for (const auto& row : rows) { known_.append(row.directory); knownTimes_.insert(row.directory, row.created); }
+        settings_.setValue("history/timestamps", knownTimes_);
         settings_.setValue("history/directories", known_); history_.replace(rows);
-        if (historyDirty_) { historyDirty_ = false; refreshHistory(); }
     });
     connect(&models_, &ModelManager::changed, this, &Backend::changed);
     connect(&models_, &ModelManager::failed, this, [this](const QString& message) { error_ = message; emit changed(); });
@@ -216,7 +219,11 @@ void Backend::exited(int code, QProcess::ExitStatus exitStatus) {
     if (error_.isEmpty()) error_ = tr("Backend завершился без подтверждённого результата. Проверьте журналы.");
     settled();
 }
-void Backend::settled() { busy_ = false; previewTimer_.stop(); cancelTimer_.stop(); refreshHistory(); emit changed(); }
+void Backend::settled() {
+    busy_ = false; previewTimer_.stop(); cancelTimer_.stop();
+    if (!result_.isEmpty() && !known_.contains(result_)) known_.prepend(result_);
+    refreshHistory(); emit changed();
+}
 void Backend::readPreview() {
     if (result_.isEmpty()) return;
     if (previewWatcher_.isRunning()) { previewDirty_ = true; return; }
@@ -234,8 +241,8 @@ void Backend::readPreview() {
 }
 void Backend::refreshHistory() {
     if (historyWatcher_.isRunning()) { historyDirty_ = true; return; }
-    const auto roots = roots_, known = known_;
-    historyWatcher_.setFuture(QtConcurrent::run([roots, known] { return HistoryModel::scan(roots, known); }));
+    const auto roots = roots_, known = known_; const auto timestamps = knownTimes_;
+    historyWatcher_.setFuture(QtConcurrent::run([roots, known, timestamps] { return HistoryModel::scan(roots, known, timestamps); }));
 }
 void Backend::viewResult(const QString& directory) { if (busy_) return; result_ = directory; status_ = history_.statusFor(directory); stage_.clear(); eta_.clear(); error_.clear(); progress_ = -1; transcript_.clear(); emit changed(); emit transcriptChanged(); readPreview(); }
 void Backend::openResult(const QString& extension) {

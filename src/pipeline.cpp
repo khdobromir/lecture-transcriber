@@ -29,7 +29,8 @@
 namespace fs = std::filesystem;
 namespace transcribe {
 namespace {
-void metadata(const fs::path& result, const std::string& details, const Options& options, std::string_view status, int code) {
+void metadata(const ResultPaths& paths, const std::string& details, const Options& options, std::string_view status, int code) {
+    const auto& result = paths.root;
     // Failure metadata must remain publishable after cancellation has been accepted.
     const std::function<void()> checkpoint = status == "failed" || status == "interrupted" ?
         std::function<void()>{[] {}} : std::function<void()>{check_cancelled};
@@ -40,7 +41,7 @@ void metadata(const fs::path& result, const std::string& details, const Options&
     replace_file(result / ".source.tmp", result / "source.txt", checkpoint);
     nlohmann::json manifest{{"version", 1}, {"status", status}, {"code", code}, {"source", options.input},
         {"model", options.model}, {"language", "ru"}, {"threads", options.threads}, {"chunks", options.chunks},
-        {"jobs", options.jobs}, {"vad", options.vad}, {"title", path_utf8(result.filename())},
+        {"jobs", options.jobs}, {"vad", options.vad}, {"title", path_utf8(result.filename())}, {"created_unix_ms", paths.created},
         {"transcripts", {{"txt", "transcripts/transcript.txt"}, {"srt", "transcripts/transcript.srt"}, {"vtt", "transcripts/transcript.vtt"}}}};
     std::ofstream json(result / ".result.tmp", std::ios::binary);
     json.exceptions(std::ios::badbit | std::ios::failbit);
@@ -168,7 +169,7 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
         paths = transcribe::ResultPaths::create(parent, url ? "video" : path_utf8(input.stem()));
         details = "Источник: " + o.input + "\nМодель: " + path_utf8(model) + "\nЯзык: ru\nПотоки: " + std::to_string(o.threads) +
             "\nЧасти: " + std::to_string(o.chunks) + "\nРаботники: " + std::to_string(o.jobs) + "\nVAD: " + (o.vad ? "on\n" : "off\n");
-        metadata(paths.root, details, o, "processing", 0);
+        metadata(paths, details, o, "processing", 0);
         std::unique_ptr<transcribe::MediaCache> cache;
         std::optional<transcribe::MediaCache::Entry> cached;
         transcribe::SourceInfo source;
@@ -193,7 +194,7 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
             }
             paths.name(source.title);
             details += "Название: " + transcribe::safe_title(source.title) + '\n';
-            metadata(paths.root, details, o, "processing", 0);
+            metadata(paths, details, o, "processing", 0);
             sink_(Event{.type = EventType::result, .result = paths.root});
             if (cached && cache) try {
                 input = paths.work() / "source.cached";
@@ -237,7 +238,7 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
         });
         for (size_t i = 0; i < chunks.size(); ++i)
             details += "Часть " + std::to_string(i + 1) + " (семплы): " + std::to_string(chunks[i].begin) + "–" + std::to_string(chunks[i].end) + '\n';
-        metadata(paths.root, details, o, "processing", 0);
+        metadata(paths, details, o, "processing", 0);
         sink_(Event{.type = EventType::stage, .stage = "recognize", .message = std::to_string(o.jobs) + " работников, по " + std::to_string(o.threads) + " поток(а)", .result = paths.root});
         const auto start = std::chrono::steady_clock::now();
         recognize(chunks, o, files, paths, sink_);
@@ -247,7 +248,7 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
         const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
         sink_(Event{.type = EventType::finalizing, .message = std::to_string(seconds / 60.0), .result = paths.root});
         transcribe::check_cancelled();
-        metadata(paths.root, details, o, "completed", 0);
+        metadata(paths, details, o, "completed", 0);
         transcribe::commit_completion();
         // Cleanup is irreversible. Once success is committed, it must not turn
         // into an interrupted/failed run that falsely promises preserved audio.
@@ -265,7 +266,7 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
         const auto* process = dynamic_cast<const ProcessError*>(&error);
         const int code = transcribe::cancellation_signal() ? 128 + transcribe::cancellation_signal() : (process ? process->code : 1);
         if (!paths.root.empty()) {
-            try { metadata(paths.root, details, o, transcribe::cancellation_signal() ? "interrupted" : "failed", code); }
+            try { metadata(paths, details, o, transcribe::cancellation_signal() ? "interrupted" : "failed", code); }
             catch (const std::exception&) { // NOLINT(bugprone-empty-catch): retain the original failure.
                 /* Preserve the original failure if metadata cannot be saved. */ }
         }
