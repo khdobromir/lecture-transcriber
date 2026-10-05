@@ -281,7 +281,7 @@ private slots:
         Backend backend({"missing", fixture.ini, fixture.root}, readers);
         backend.viewResult("A"); QTRY_VERIFY(ready->load());
         backend.viewResult("B"); backend.viewResult("A"); release->release();
-        QTRY_COMPARE(backend.transcript(), QString("fresh A")); QCOMPARE(backend.resultDirectory(), QString("A"));
+        QTRY_COMPARE(backend.transcript(), QString("fresh A")); QCOMPARE(backend.resultDirectory(), QDir("A").absolutePath());
     }
     void cancellationAfterCommitKeepsCompletedDuringVerification() {
         qputenv("TRANSCRIBE_TEST_MODE", "normal"); Fixture fixture;
@@ -351,6 +351,17 @@ private slots:
         const auto absent = HistoryModel::scan({}, {nativeMissing, missing + "/."}, {{nativeMissing, 4321}});
         QCOMPARE(absent.size(), 1); QCOMPARE(absent.first().directory, missing); QCOMPARE(absent.first().created, 4321);
         HistoryModel model; model.replace(rows); QCOMPARE(model.statusFor(native), QString("completed"));
+    }
+    void historyDeduplicatesRelativeRootsAndKnownPaths() {
+        QTemporaryDir temp(QDir::currentPath() + "/relative-history-XXXXXX"); QVERIFY(temp.isValid());
+        const auto directory = temp.path() + "/result", relativeRoot = QDir::current().relativeFilePath(temp.path());
+        const auto relative = relativeRoot + "/result", missing = temp.path() + "/missing";
+        put(directory + "/source.txt", "Статус: completed\nМодель: small\n");
+        const auto rows = HistoryModel::scan({relativeRoot, temp.path()}, {relative, directory}, {{relative, 1234}});
+        QCOMPARE(rows.size(), 1); QCOMPARE(rows.first().directory, directory); QCOMPARE(rows.first().created, 1234);
+        const auto absent = HistoryModel::scan({}, {relativeRoot + "/missing", missing}, {{relativeRoot + "/missing", 4321}});
+        QCOMPARE(absent.size(), 1); QCOMPARE(absent.first().directory, missing); QCOMPARE(absent.first().created, 4321);
+        HistoryModel model; model.replace(rows); QCOMPARE(model.statusFor(relative), QString("completed"));
     }
     void historyLegacyAndMissing() {
         QTemporaryDir temp; put(temp.path() + "/old/source.txt", "Статус: completed\nМодель: medium\n");

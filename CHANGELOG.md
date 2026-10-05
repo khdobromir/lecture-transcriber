@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- История объединяет относительные, абсолютные и native Windows пути одного
+  результата; legacy timestamps и недоступные известные записи сохраняются.
 - Итоговый Windows ZIP проверяется после упаковки: все file hashes, CRT,
   manifests, Unicode unpack и запуск с минимальным PATH; evidence сохраняется отдельно.
 - Linux install prefix проходит startup smoke; candidate workflow_dispatch
