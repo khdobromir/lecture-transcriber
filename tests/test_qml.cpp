@@ -28,6 +28,7 @@ private slots:
         auto* source = window->findChild<QQuickItem*>("sourceInput"); QVERIFY(source);
         source->forceActiveFocus(); QTRY_VERIFY(source->hasActiveFocus());
         QTest::keyClick(window, Qt::Key_Tab); QVERIFY(window->activeFocusItem() != source);
+        QTest::keyClick(window, Qt::Key_Backtab); QTRY_VERIFY(source->hasActiveFocus());
         backend.history()->replace({{"<b>Лекция 😀</b>", "interrupted", "medium", temp.path(), "2026-10-04", true}});
         auto* tabs = window->findChild<QQuickItem*>("navigationTabs"); QVERIFY(tabs);
         tabs->setProperty("currentIndex", 1); QTest::qWait(50);
@@ -39,6 +40,21 @@ private slots:
         const auto requested = qEnvironmentVariable("TRANSCRIBE_GUI_PREVIEW");
         if (!requested.isEmpty()) QVERIFY(screenshot.save(requested));
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+    }
+    void closingModelInstallationIsAsynchronous() {
+        QTemporaryDir temp; const auto root = temp.path() + "/data"; QDir().mkpath(root);
+        transcribe::FileLock lock(transcribe::utf8_path((root + "/.install.lock").toUtf8().toStdString()));
+        Backend backend({"missing", temp.path() + "/settings.ini", root,
+            {{"medium", "ggml-model.bin", "http://127.0.0.1:1/model", QByteArray(64, '0')}}});
+        QQmlApplicationEngine engine; engine.setInitialProperties({{"backend", QVariant::fromValue(&backend)}});
+        engine.load(QUrl::fromLocalFile(GUI_QML_SOURCE)); QVERIFY(!engine.rootObjects().isEmpty());
+        auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first()); QVERIFY(window);
+        backend.downloadModel("medium"); QVERIFY(backend.modelBusy()); window->close();
+        auto* confirmation = window->findChild<QObject*>("closeConfirmation"); QVERIFY(confirmation);
+        QTRY_VERIFY(confirmation->property("visible").toBool());
+        auto* cancel = window->findChild<QObject*>("cancelCloseButton"); QVERIFY(cancel); QVERIFY(QMetaObject::invokeMethod(cancel, "clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!backend.active(), 3000); QVERIFY(backend.error().isEmpty());
+        QVERIFY(backend.modelStatus().contains(QStringLiteral("отменена")));
     }
     void closingActiveTaskRequiresConfirmation() {
         QTemporaryDir temp;

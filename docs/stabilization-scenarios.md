@@ -84,3 +84,5 @@ legacy fallback — filesystem birthTime, затем lastModified. Недост�
 на обеих ОС. GUI ограничивает одну итерацию чтения, затем дочитывает очередь и
 stderr после exit. Linux tools принадлежат отдельному supervisor, который
 наблюдает lifetime pipe владельца и убирает группу даже после SIGKILL CLI.
+
+Состояния, владение workers и пользовательские действия: [gui-states.md](gui-states.md).

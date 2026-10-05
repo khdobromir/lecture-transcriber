@@ -35,16 +35,21 @@ QString HistoryModel::statusFor(const QString& directory) const {
     for (const auto& row : rows_) if (row.directory == directory) return row.status;
     return "unknown";
 }
-QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps) { // NOLINT(bugprone-easily-swappable-parameters): scan roots first, restore known result directories second.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): scan roots first, restore known result directories second.
+QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps,
+    const std::shared_ptr<std::atomic<bool>>& cancel) {
     QSet<QString> directories(known.begin(), known.end());
     for (const auto& root : roots) {
+        if (cancel && cancel->load()) return {};
         const auto children = QDir(root).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDir::Time);
         for (const auto& child : children) {
+            if (cancel && cancel->load()) return {};
             if (QFile::exists(child.filePath() + "/result.json") || QFile::exists(child.filePath() + "/source.txt")) directories.insert(child.filePath());
         }
     }
     QVector<HistoryRow> rows;
     for (const auto& directory : directories) {
+        if (cancel && cancel->load()) return {};
         const QFileInfo info(directory);
         HistoryRow row{info.fileName(), "unknown", {}, directory, info.lastModified().toString(Qt::ISODate), info.isDir() && !info.isSymLink()};
         const auto birth = info.birthTime();
