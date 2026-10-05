@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cstring>
 #include <thread>
 #include <vector>
 
@@ -130,9 +131,18 @@ void create_private_file(const fs::path& path) {
     if (!file) windows_error("Create private file");
 }
 void replace_file(const fs::path& source, const fs::path& destination, std::function<void()> cancellation) {
+    const auto target = fs::absolute(destination).native();
+    std::vector<unsigned char> storage(sizeof(FILE_RENAME_INFO) + target.size() * sizeof(wchar_t));
+    auto* rename = reinterpret_cast<FILE_RENAME_INFO*>(storage.data());
+    rename->Flags = FILE_RENAME_FLAG_REPLACE_IF_EXISTS | FILE_RENAME_FLAG_POSIX_SEMANTICS;
+    rename->FileNameLength = static_cast<DWORD>(target.size() * sizeof(wchar_t));
+    std::memcpy(rename->FileName, target.data(), rename->FileNameLength);
+    WinHandle file(CreateFileW(source.c_str(), DELETE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                               nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
+    if (!file) windows_error("Open file for publication");
     for (unsigned attempt = 0; ; ++attempt) {
         if (cancellation) cancellation(); else check_cancelled();
-        if (MoveFileExW(source.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) return;
+        if (SetFileInformationByHandle(file.get(), FileRenameInfoEx, rename, static_cast<DWORD>(storage.size()))) return;
         const auto error = GetLastError();
         if ((error != ERROR_SHARING_VIOLATION && error != ERROR_LOCK_VIOLATION) || attempt == 40)
             throw std::runtime_error("Не удалось сохранить файл " + path_utf8(destination) +

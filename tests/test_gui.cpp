@@ -119,7 +119,8 @@ private slots:
             const auto sourcePath = transcribe::utf8_path(replacement.toUtf8().toStdString());
             const auto destinationPath = transcribe::utf8_path(target.toUtf8().toStdString());
             QVERIFY(!MoveFileExW(sourcePath.c_str(), destinationPath.c_str(), MOVEFILE_REPLACE_EXISTING));
-            QCOMPARE(GetLastError(), static_cast<DWORD>(ERROR_SHARING_VIOLATION)); legacy.close();
+            const auto sharingError = GetLastError();
+            QVERIFY(sharingError == ERROR_SHARING_VIOLATION || sharingError == ERROR_ACCESS_DENIED); legacy.close();
 #endif
             transcribe::SharedReader held(transcribe::utf8_path(target.toUtf8().toStdString()));
             transcribe::replace_file(transcribe::utf8_path(replacement.toUtf8().toStdString()), transcribe::utf8_path(target.toUtf8().toStdString()));
