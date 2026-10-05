@@ -92,6 +92,42 @@ int execute(const std::vector<std::string>& args) {
     require(longRejected);
 #endif
     std::cout << "PASS Unicode paths, replacement, titles and collisions\n";
+    for (const auto* name : {"transcript.txt", "result.json"}) {
+        const auto target = temp.path / name;
+        put(target, "previous snapshot");
+        SharedReader reader(target);
+        put(temp.path / "replacement", "published snapshot");
+        replace_file(temp.path / "replacement", target);
+        require(reader.size() == 17 && reader.read(0, 1024) == "previous snapshot");
+        require(reader.read(9, 3) == "sna" && reader.read(100, 3).empty());
+        SharedReader published(target);
+        require(published.read(0, 1024) == "published snapshot");
+    }
+    std::cout << "PASS publication while own TXT/metadata readers remain open\n";
+#ifdef _WIN32
+    const auto blockedPath = temp.path / "blocked.txt";
+    put(blockedPath, "original"); put(temp.path / "replacement", "updated");
+    WinHandle blocker(CreateFileW(blockedPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                  nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    require(static_cast<bool>(blocker));
+    unsigned checkpoints = 0;
+    replace_file(temp.path / "replacement", blockedPath, [&] { if (++checkpoints == 2) blocker.reset(); });
+    require(checkpoints == 2);
+    blocker.reset(CreateFileW(blockedPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    put(temp.path / "replacement", "preserved");
+    const auto before = std::chrono::steady_clock::now();
+    bool locked = false;
+    try { replace_file(temp.path / "replacement", blockedPath); } catch (const std::runtime_error&) { locked = true; }
+    require(locked && fs::exists(temp.path / "replacement"));
+    require(std::chrono::steady_clock::now() - before < std::chrono::seconds(3));
+    checkpoints = 0; bool stopped = false;
+    try { replace_file(temp.path / "replacement", blockedPath, [&] { if (++checkpoints == 2) throw std::runtime_error("cancel"); }); }
+    catch (const std::runtime_error&) { stopped = true; }
+    require(stopped && checkpoints == 2 && fs::exists(temp.path / "replacement"));
+    blocker.reset();
+    std::cout << "PASS bounded replacement retry, synchronized release and cancellation\n";
+#endif
     {
         FileLock owner(temp.path / "lock");
         bool blocked = false, cancelled = false;

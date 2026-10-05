@@ -129,8 +129,43 @@ void create_private_file(const fs::path& path) {
     WinHandle file(CreateFileW(path.c_str(), GENERIC_WRITE, 0, &security.attributes, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr));
     if (!file) windows_error("Create private file");
 }
-void replace_file(const fs::path& source, const fs::path& destination) {
-    if (!MoveFileExW(source.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) windows_error("Replace file");
+void replace_file(const fs::path& source, const fs::path& destination, std::function<void()> cancellation) {
+    for (unsigned attempt = 0; ; ++attempt) {
+        if (cancellation) cancellation(); else check_cancelled();
+        if (MoveFileExW(source.c_str(), destination.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) return;
+        const auto error = GetLastError();
+        if ((error != ERROR_SHARING_VIOLATION && error != ERROR_LOCK_VIOLATION) || attempt == 40)
+            throw std::runtime_error("Не удалось сохранить файл " + path_utf8(destination) +
+                "; закройте программу, удерживающую файл, и повторите запуск. Windows error " + std::to_string(error));
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+}
+struct SharedReader::Native { WinHandle file; std::uint64_t bytes = 0; };
+SharedReader::SharedReader(const fs::path& path) : native_(std::make_unique<Native>()) {
+    native_->file.reset(CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                   nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
+    BY_HANDLE_FILE_INFORMATION info{};
+    if (!native_->file || !GetFileInformationByHandle(native_->file.get(), &info) ||
+        (info.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)))
+        throw std::runtime_error("Не удалось открыть файл для чтения: " + path_utf8(path));
+    native_->bytes = (static_cast<std::uint64_t>(info.nFileSizeHigh) << 32U) | info.nFileSizeLow;
+}
+SharedReader::~SharedReader() = default;
+std::uint64_t SharedReader::size() const { return native_->bytes; }
+std::string SharedReader::read(std::uint64_t offset, std::size_t limit) {
+    if (offset >= size()) return {};
+    LARGE_INTEGER position{}; position.QuadPart = static_cast<LONGLONG>(offset);
+    if (!SetFilePointerEx(native_->file.get(), position, nullptr, FILE_BEGIN)) windows_error("Seek reader");
+    std::string result(static_cast<std::size_t>(std::min<std::uint64_t>(size() - offset, limit)), '\0');
+    std::size_t done = 0;
+    while (done < result.size()) {
+        DWORD count = 0;
+        if (!ReadFile(native_->file.get(), result.data() + done,
+                      static_cast<DWORD>(std::min<std::size_t>(result.size() - done, 1048576)), &count, nullptr)) windows_error("Read file");
+        if (!count) break;
+        done += count;
+    }
+    result.resize(done); return result;
 }
 bool rename_directory(const fs::path& source, const fs::path& destination) {
     if (MoveFileExW(source.c_str(), destination.c_str(), MOVEFILE_WRITE_THROUGH)) return true;

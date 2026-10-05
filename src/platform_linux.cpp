@@ -51,7 +51,33 @@ void create_private_file(const fs::path& path) {
     if (fd < 0) throw std::runtime_error("Не удалось создать файл: " + path_utf8(path));
     close(fd);
 }
-void replace_file(const fs::path& source, const fs::path& destination) { fs::rename(source, destination); }
+void replace_file(const fs::path& source, const fs::path& destination, std::function<void()> cancellation) {
+    if (cancellation) cancellation();
+    fs::rename(source, destination);
+}
+struct SharedReader::Native { int fd = -1; std::uint64_t bytes = 0; ~Native() { if (fd >= 0) close(fd); } };
+SharedReader::SharedReader(const fs::path& path) : native_(std::make_unique<Native>()) {
+    native_->fd = open(path.c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
+    struct stat info{};
+    if (native_->fd < 0 || fstat(native_->fd, &info) || !S_ISREG(info.st_mode) || info.st_size < 0)
+        throw std::runtime_error("Не удалось открыть файл для чтения: " + path_utf8(path));
+    native_->bytes = static_cast<std::uint64_t>(info.st_size);
+}
+SharedReader::~SharedReader() = default;
+std::uint64_t SharedReader::size() const { return native_->bytes; }
+std::string SharedReader::read(std::uint64_t offset, std::size_t limit) {
+    if (offset >= size()) return {};
+    std::string result(static_cast<std::size_t>(std::min<std::uint64_t>(size() - offset, limit)), '\0');
+    std::size_t done = 0;
+    while (done < result.size()) {
+        const auto count = pread(native_->fd, result.data() + done, result.size() - done, static_cast<off_t>(offset + done));
+        if (count < 0 && errno == EINTR) continue;
+        if (count < 0) throw std::runtime_error("Ошибка чтения файла");
+        if (count == 0) break;
+        done += static_cast<std::size_t>(count);
+    }
+    result.resize(done); return result;
+}
 bool rename_directory(const fs::path& source, const fs::path& destination) {
     if (renameat2(AT_FDCWD, source.c_str(), AT_FDCWD, destination.c_str(), RENAME_NOREPLACE) == 0) return true;
     if (errno == EEXIST) return false;

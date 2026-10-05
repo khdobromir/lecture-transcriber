@@ -1,5 +1,7 @@
 #include "backend.hpp"
 #include "models.hpp"
+#include "files.hpp"
+#include "windows.hpp"
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QJsonDocument>
@@ -105,6 +107,27 @@ struct ModelServer {
 class GuiTests : public QObject {
     Q_OBJECT
 private slots:
+    void readersPermitPublication() {
+        QTemporaryDir temp;
+        for (const auto* name : {"transcript.txt", "result.json"}) {
+            const auto target = temp.path() + '/' + name;
+            const auto replacement = temp.path() + "/replacement";
+            put(target, "previous"); put(replacement, "published");
+#ifdef Q_OS_WIN
+            // Reproduce the exact previous GUI QFile sharing conflict first.
+            QFile legacy(target); QVERIFY(legacy.open(QIODevice::ReadOnly));
+            const auto sourcePath = transcribe::utf8_path(replacement.toUtf8().toStdString());
+            const auto destinationPath = transcribe::utf8_path(target.toUtf8().toStdString());
+            QVERIFY(!MoveFileExW(sourcePath.c_str(), destinationPath.c_str(), MOVEFILE_REPLACE_EXISTING));
+            QCOMPARE(GetLastError(), static_cast<DWORD>(ERROR_SHARING_VIOLATION)); legacy.close();
+#endif
+            transcribe::SharedReader held(transcribe::utf8_path(target.toUtf8().toStdString()));
+            transcribe::replace_file(transcribe::utf8_path(replacement.toUtf8().toStdString()), transcribe::utf8_path(target.toUtf8().toStdString()));
+            QCOMPARE(held.read(0, 100), std::string("previous"));
+            QCOMPARE(readSmallFile(target, 100).value(), QByteArray("published"));
+            QVERIFY(!readSmallFile(target, 2));
+        }
+    }
     void confirmedSuccessAndSplitUtf8_data() { QTest::addColumn<QString>("mode"); QTest::newRow("normal") << "normal"; QTest::newRow("split") << "split_utf8"; }
     void confirmedSuccessAndSplitUtf8() {
         QFETCH(QString, mode); qputenv("TRANSCRIBE_TEST_MODE", mode.toUtf8()); Fixture fixture;

@@ -1,4 +1,5 @@
 #include "history.hpp"
+#include "files.hpp"
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -48,17 +49,15 @@ QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringLi
         const QFileInfo info(directory);
         HistoryRow row{info.fileName(), "unknown", {}, directory, info.lastModified().toString(Qt::ISODate), info.isDir() && !info.isSymLink()};
         if (row.available) {
-            QFile file(directory + "/result.json");
-            if (file.size() <= 65536 && file.open(QIODevice::ReadOnly)) {
-                const auto doc = QJsonDocument::fromJson(file.readAll());
+            if (const auto bytes = readSmallFile(directory + "/result.json", 65536)) {
+                const auto doc = QJsonDocument::fromJson(*bytes);
                 const auto json = doc.object();
                 if (json.value("version").toInt() == 1) {
                     row.title = json.value("title").toString(row.title); row.status = json.value("status").toString(); row.model = json.value("model").toString();
                 }
             } else {
-                QFile legacy(directory + "/source.txt");
-                if (legacy.size() <= 65536 && legacy.open(QIODevice::ReadOnly)) {
-                    for (const auto& line : QString::fromUtf8(legacy.readAll()).split('\n')) {
+                if (const auto legacy = readSmallFile(directory + "/source.txt", 65536)) {
+                    for (const auto& line : QString::fromUtf8(*legacy).split('\n')) {
                         if (line.startsWith("Статус: ")) row.status = line.mid(8).trimmed();
                         if (line.startsWith("Модель: ")) row.model = line.mid(8).trimmed();
                     }
