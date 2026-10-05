@@ -1,0 +1,44 @@
+# Проверка кандидатов стабилизации
+
+Статусы: «пройдено» только с проверкой указанного SHA; «не проверено» при
+отсутствии результата. Этот документ не объявляет готовность к выпуску.
+Перечень сценариев: [stabilization-scenarios.md](stabilization-scenarios.md).
+
+## Исходный снимок
+
+SHA `ec4f2d0755f9cd873bb74531fc7e311b87afb0b8`, проверка CI получена 2026-10-05.
+[Run 37235121107](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107): success.
+
+| Job | Результат |
+|---|---|
+| [Windows MSVC CLI](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579308) | Пройдено |
+| [Arch](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579524) | Пройдено |
+| [Ubuntu GCC](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579527) | Пройдено |
+| [Static analysis](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579534) | Пройдено |
+| [Windows Qt GUI/ZIP](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579549) | Пройдено; smoke staging, проверка распакованного итогового ZIP отсутствует |
+| [Linux Qt 6.8.3](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579557) | Пройдено |
+| [Debian](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579574) | Пройдено |
+| [Ubuntu Clang 18](https://github.com/khdobromir/lecture-transcriber/actions/runs/37235121107/job/111532579645) | Пройдено |
+
+Логи доступны в каждом job; лог Windows GUI/ZIP получен отдельно через GitHub
+API. Артефакт `Transcribe-windows-x64`, ID `11315457314`, размер 137725713 bytes,
+digest upload archive `46716f6db4713e09e0475024e521c2d0f325dcb90c49e14df13452905318d82d`.
+Это digest контейнера GitHub artifact, **не** отдельного пользовательского ZIP.
+Закреплённые зависимости: [dependencies.json](../packaging/windows/dependencies.json)
+и [models.tsv](../scripts/models.tsv). Qt 6.8.3, MSVC x64, whisper.cpp
+`927cfce34f31707e17f2bff35c349632fb9e2c3a`; FFmpeg/yt-dlp сверяются builder по SHA-256.
+
+Новые FILE/SPLIT/MODEL/HISTORY/PROTOCOL/GUI регрессии плана на исходном SHA не
+проверены. Исходный CI не доказывает их исправление. Native readers, 256 частей,
+416 recovery и насыщение истории имеют воспроизводящие сценарии в перечне.
+
+## Ручные границы допуска
+
+Чистая Windows 11 без Qt/VS/Python/Git: не проверено. Настоящая русская запись с
+фиксированным SHA на обеих ОС: не проверено для нового кандидата. Установленный
+GUI на Ubuntu и Omarchy/Hyprland (portal dialogs, clipboard, exports, DPI,
+палитры, клавиатура): не проверено для нового кандидата. X11, Windows multi-group
+и ограничения Linux cgroup требуют отдельного описания испытанного окружения.
+
+Кандидат не допускается к выпуску, пока обязательные ручные сценарии остаются
+не проверенными. Release/tag в рамках реализации плана автоматически не создаются.
