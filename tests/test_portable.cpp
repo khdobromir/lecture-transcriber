@@ -74,6 +74,16 @@ int execute(const std::vector<std::string>& args) {
     for (const auto& value : values) expected += std::to_string(value.size()) + ':' + value + '\n';
     run(command, temp.path / "process.log", [&](std::string_view bytes) { output += bytes; });
     require(output == expected && !fs::exists(temp.path / "PWNED"));
+#ifdef _WIN32
+    const std::string quotedValue = R"(😀 \" \)";
+    const auto size = quote_windows(wide_utf8(binary)).size() + 1 + 1 + quote_windows(wide_utf8(quotedValue)).size();
+    require(command_line_size({binary, quotedValue}) == size);
+    require(!command_line_fits({binary, std::string(32767, 'x')}));
+    const auto payloadLimit = 32767 - command_line_size({binary, ""});
+    require(command_line_size({binary, std::string(payloadLimit, 'x')}) == 32767);
+    require(command_line_fits({binary, std::string(payloadLimit, 'x')}));
+    require(!command_line_fits({binary, std::string(payloadLimit + 1, 'x')}));
+#endif
     std::cout << "PASS Unicode and literal argument transport\n";
     const auto unicode = temp.path / utf8_path("Файл 😀.txt");
     put(unicode, "old"); put(temp.path / "replacement", "new"); replace_file(temp.path / "replacement", unicode);

@@ -50,6 +50,14 @@ integration/CI → packaging/report. Регрессия входит в тот �
 Исторические release notes/отчёты v0.3.0 сохраняются. Проверка нового SHA не
 наследует статус затронутых сценариев предыдущего кандидата.
 
+Windows preflight: output parent до 169 UTF-16 единиц, локальный input до 240;
+резерв для фиксированных worker options оставляется до запуска обработки.
+Фактическая строка CreateProcessW проверяется с quoting и NUL (32767 единиц).
+Все команды разбиения планируются до запуска первой группы; максимум 64 выхода
+в группе, меньше при достижении предела по реальным путям. Точные sample bounds
+не меняются. FFmpeg 6–8 использует обнаруженный `-filter_complex_script`, FFmpeg 9
+использует `-/filter_complex`; описание графа в обоих случаях читается из файла.
+
 Основания: [CreateFileW](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew),
 [CreateProcessW](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw),
 [Qt QProcess](https://doc.qt.io/qt-6.8/qprocess.html),

@@ -170,6 +170,15 @@ private slots:
         backend.start("", fixture.options()); QVERIFY(!backend.busy()); QVERIFY(!backend.error().isEmpty());
         QVERIFY(!QDir(fixture.output).exists());
     }
+#ifdef Q_OS_WIN
+    void longOutputFailsPreflight() {
+        Fixture fixture; Backend backend({QCoreApplication::applicationFilePath(), fixture.ini, fixture.root});
+        auto options = fixture.options(); const auto output = fixture.temp.path() + '/' + QString(175, 'x');
+        options.insert("output", output);
+        backend.start(fixture.temp.path() + "/input.wav", options);
+        QVERIFY(!backend.busy()); QVERIFY(backend.error().contains("169")); QVERIFY(!QDir(output).exists());
+    }
+#endif
     void historyLegacyAndMissing() {
         QTemporaryDir temp; put(temp.path() + "/old/source.txt", "Статус: completed\nМодель: medium\n");
         const auto rows = HistoryModel::scan({temp.path()}, {temp.path() + "/missing"});

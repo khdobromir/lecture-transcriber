@@ -50,14 +50,22 @@ std::string safe_title(std::string_view title) {
 #endif
     return result;
 }
+void validate_result_parent(const fs::path& parent) {
+#ifdef _WIN32
+    if (fs::absolute(parent).native().size() > 169)
+        throw std::runtime_error("Каталог результатов слишком длинный: выберите более короткий путь (до 169 UTF-16 единиц)");
+#else
+    (void)parent;
+#endif
+}
 namespace {
 std::string result_title(const fs::path& parent, std::string_view title) {
+    validate_result_parent(parent);
     auto result = safe_title(title);
 #ifdef _WIN32
     // Keep space for timestamps, collision suffixes and the deepest tool export.
     // Some bundled tool paths still have stricter limits than our long-path manifest.
     const auto parentLength = fs::absolute(parent).native().size();
-    if (parentLength > 169) throw std::runtime_error("Каталог результатов слишком длинный: выберите более короткий путь (до 169 символов)");
     const auto budget = size_t{210} - parentLength - 1 - 20 - 12;
     while (utf8_path(result).native().size() > budget) {
         auto start = result.size() - 1;

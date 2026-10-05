@@ -6,6 +6,7 @@
 
 namespace transcribe {
 std::filesystem::path default_output();
+void validate_result_parent(const std::filesystem::path& parent);
 std::string safe_title(std::string_view title);
 struct ResultPaths {
     std::filesystem::path root;

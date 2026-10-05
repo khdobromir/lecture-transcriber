@@ -27,11 +27,14 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
         return *(item + 1);
     };
     if (kind == "ffmpeg") {
+        if (std::find(args.begin(), args.end(), "-h") != args.end()) { std::cout << "-filter_complex_script filename\n"; return 0; }
         if (args.back() == "-") return 0; // Silence detection returns no pauses in this fixture.
-        if (std::find(args.begin(), args.end(), "-filter_complex") != args.end()) {
+        if (std::find(args.begin(), args.end(), "-filter_complex_script") != args.end() || std::find(args.begin(), args.end(), "-/filter_complex") != args.end()) {
             std::ifstream input(utf8_path(value("-i")), std::ios::binary);
             const std::string wave{std::istreambuf_iterator<char>(input), {}};
-            const auto graph = value("-filter_complex");
+            const auto option = std::find(args.begin(), args.end(), "-filter_complex_script") != args.end() ? "-filter_complex_script" : "-/filter_complex";
+            std::ifstream graphFile(utf8_path(value(option)), std::ios::binary);
+            const std::string graph{std::istreambuf_iterator<char>(graphFile), {}};
             const std::regex trim("start_sample=([0-9]+):end_sample=([0-9]+)");
             size_t map = 0;
             for (auto match = std::sregex_iterator(graph.begin(), graph.end(), trim); match != std::sregex_iterator(); ++match) {
