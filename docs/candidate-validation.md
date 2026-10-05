@@ -49,6 +49,12 @@ UTF-8 WAV отбрасывался до декодирования с exit 2. П
 и QML/DPI tests используют native `windows` QPA с системными fonts: offscreen
 database требовала отсутствующий SDK/lib/fonts. Backend logs и result.json
 реального сценария сохраняются в artifacts также при ошибке.
+Native Windows tests выбирают также `windows` platform theme. На `d10cfb6`
+три QML suites воспроизвели access violation в создании native окна с `generic`:
+[Qt 6.8.3 QWindowsWindow](https://github.com/qt/qtbase/blob/v6.8.3/src/plugins/platforms/windows/qwindowswindow.cpp)
+обращается к `QWindowsTheme::instance()`, а generic theme не создаёт этот объект.
+Исправление меняет только тему тестового окружения; native QPA, DPI, keyboard
+и реальный Windows GUI smoke сохраняются обязательными проверками.
 GUI preflight использует tools рядом с выбранным CLI. Windows real harness
 оставляет data home без engine, чтобы распознавание выполнял именно оригинальный
 Whisper из Unicode-каталога распакованного ZIP; portable regression проверяет

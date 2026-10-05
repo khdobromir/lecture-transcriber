@@ -73,13 +73,17 @@ if(BUILD_TESTING)
     add_dependencies(test_qml test_gui)
     transcribe_warnings(test_qml)
     set(qml_test_platform offscreen)
+    set(qml_test_theme generic)
     if(WIN32)
         # Native font lookup uses the installed Windows fonts. Offscreen's
         # generic database expects SDK/lib/fonts, which Qt does not ship.
         set(qml_test_platform windows)
+        # Qt 6.8.3's native window creation dereferences QWindowsTheme::instance;
+        # the generic theme does not create that Windows-specific object.
+        set(qml_test_theme windows)
     endif()
     add_test(NAME gui_qml COMMAND test_qml -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_qml.log,txt")
-    set_tests_properties(gui_qml PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=generic" TIMEOUT 30 LABELS gui)
+    set_tests_properties(gui_qml PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=${qml_test_theme}" TIMEOUT 30 LABELS gui)
     foreach(scale IN ITEMS 150 200)
         if(scale EQUAL 150)
             set(scale_factor 1.5)
@@ -89,6 +93,6 @@ if(BUILD_TESTING)
         add_test(NAME gui_qml_scale${scale} COMMAND test_qml minimumWindowAndPalettes
             -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_qml_scale${scale}.log,txt")
         set_tests_properties(gui_qml_scale${scale} PROPERTIES TIMEOUT 30 LABELS gui
-            ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=generic;QT_SCALE_FACTOR=${scale_factor}")
+            ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=${qml_test_theme};QT_SCALE_FACTOR=${scale_factor}")
     endforeach()
 endif()

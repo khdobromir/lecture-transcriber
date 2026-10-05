@@ -115,7 +115,7 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
                         "--engine", str(copied / "tools/whisper-cli.exe")], check=True, timeout=600)
         prerequisites = json.loads((args.workspace / "prerequisites.json").read_text(encoding="utf-8"))
         real_environment = dict(os.environ, **prerequisites["environment"], QT_QPA_PLATFORM="windows",
-                                QT_QPA_PLATFORMTHEME="generic", QT_QUICK_BACKEND="software",
+                                QT_QPA_PLATFORMTHEME="windows", QT_QUICK_BACKEND="software",
                                 TRANSCRIBE_REAL_BINARY=str(copied / "transcribe.exe"),
                                 TRANSCRIBE_REAL_ARTIFACTS=str(args.workspace / "result"))
         # The test harness uses the SDK; the deployed executables were checked
