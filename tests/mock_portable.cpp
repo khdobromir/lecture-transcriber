@@ -9,6 +9,9 @@
 #include <regex>
 #include <thread>
 #include <vector>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -55,6 +58,22 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
         const std::string text = "Текст 😀 " + part + ".\n";
         std::cout << "\n[00:00:00.000 --> 00:00:00.100]  " << text << std::flush;
         std::cerr << "whisper_print_progress_callback: progress = 50%\n" << std::flush;
+        const auto barrier = environment_utf8("TRANSCRIBE_MOCK_BARRIER");
+        if (!barrier.empty()) {
+#ifdef _WIN32
+            const auto pid = GetCurrentProcessId();
+#else
+            const auto pid = getpid();
+#endif
+            put(utf8_path(barrier + "." + part + ".ready"), std::to_string(pid));
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+            while (!fs::exists(utf8_path(barrier + ".release"))) {
+                if (std::chrono::steady_clock::now() > deadline) throw std::runtime_error("mock barrier timeout");
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        }
+        const auto failure = environment_utf8("TRANSCRIBE_MOCK_FAIL");
+        if (!failure.empty()) return std::stoi(failure);
         const auto delay = environment_utf8("TRANSCRIBE_MOCK_DELAY");
         if (!delay.empty()) std::this_thread::sleep_for(std::chrono::milliseconds(std::stoi(delay)));
         put(utf8_path(prefix + ".txt"), text);

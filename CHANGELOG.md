@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Portable GUI integration запускает настоящий CLI с mock внешними tools;
+  проверяет live preview, экспорты, URL/cache, cancel/tree cleanup и retry.
+- CI проверяет GUI также с Qt 6.11.2 на Linux, запускает ASan/UBSan и включает
+  GUI compilation database в static analysis; диагностики сохраняются в artifacts.
+
 - GUI разделяет текущую задачу и выбранный результат; ошибки preflight не меняют
   историю. Добавлены повтор задачи, отдельные каталоги/журналы и контексты ошибок.
 - Состояния задачи/модели имеют guards; workers отменяются кооперативно,

@@ -1,0 +1,38 @@
+"""Select owned translation units and the Qt SDK's actual MOC revision."""
+import json
+from pathlib import Path
+import re
+import shlex
+import sys
+
+build, root, destination = map(lambda value: Path(value).resolve(), sys.argv[1:4])
+entries = []
+revisions = set()
+for entry in json.loads((build / "compile_commands.json").read_text()):
+    directory = Path(entry["directory"])
+    source = (directory / entry["file"]).resolve()
+    # Owned TUs are directly in these source directories. Nested Qt build/vendor
+    # trees must remain excluded even when somebody builds inside gui/.
+    if source.parent not in {root / "src", root / "tests", root / "gui"}:
+        continue
+    entries.append(entry)
+    arguments = entry.get("arguments") or shlex.split(entry["command"])
+    includes = []
+    for index, argument in enumerate(arguments):
+        if argument in {"-I", "-isystem"} and index + 1 < len(arguments):
+            includes.append(arguments[index + 1])
+        elif argument.startswith("-I"):
+            includes.append(argument[2:])
+    for include in includes:
+        for header in [directory / include / "qtmetamacros.h", directory / include / "QtCore/qtmetamacros.h"]:
+            if header.is_file():
+                match = re.search(r"^#define Q_MOC_OUTPUT_REVISION\s+(\d+)$", header.read_text(), re.MULTILINE)
+                if match:
+                    revisions.add(int(match[1]))
+if not entries:
+    sys.exit("No project sources in compilation database")
+if len(revisions) > 1:
+    sys.exit("Conflicting Qt MOC revisions in compilation database")
+(destination / "compile_commands.json").write_text(json.dumps(entries))
+(destination / "sources.txt").write_text("\n".join(sorted({str((Path(item["directory"]) / item["file"]).resolve()) for item in entries})) + "\n")
+(destination / "moc-revision.txt").write_text(str(next(iter(revisions))) if revisions else "")

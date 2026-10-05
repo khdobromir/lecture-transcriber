@@ -54,6 +54,14 @@ jobs:
         env:
           TEST_CASE_FILTER: cache_
         run: runuser -u tester -- ctest --test-dir /tmp/transcribe-build -R '^pipeline$' --repeat until-fail:20 --output-on-failure
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: logs-linux-${{ matrix.compiler }}
+          path: /tmp/transcribe-build/Testing/Temporary/*.log
+          if-no-files-found: warn
+          retention-days: 14
 
   debian:
     name: Debian 13 / GCC
@@ -78,6 +86,14 @@ jobs:
           runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
           runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
           runuser -u tester -- ctest --test-dir /tmp/transcribe-build --output-on-failure
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: logs-debian
+          path: /tmp/transcribe-build/Testing/Temporary/*.log
+          if-no-files-found: warn
+          retention-days: 14
 
   static:
     name: Static analysis
@@ -100,6 +116,14 @@ jobs:
         env:
           CLANG_TIDY: clang-tidy-18
         run: runuser -u tester -- bash scripts/check-static.sh /tmp/transcribe-build
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: logs-static
+          path: /tmp/transcribe-build/compile_commands.json
+          if-no-files-found: warn
+          retention-days: 14
 
   arch:
     name: Arch Linux
@@ -122,11 +146,23 @@ jobs:
           runuser -u tester -- cmake -S "$GITHUB_WORKSPACE" -B /tmp/transcribe-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
           runuser -u tester -- cmake --build /tmp/transcribe-build --parallel 2
           runuser -u tester -- ctest --test-dir /tmp/transcribe-build --output-on-failure
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: logs-arch
+          path: /tmp/transcribe-build/Testing/Temporary/*.log
+          if-no-files-found: warn
+          retention-days: 14
 
   gui-linux:
-    name: Linux / Qt 6.8.3 / GUI
+    name: Linux / Qt ${{ matrix.qt }} / GUI
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        qt: ['6.8.3', '6.11.2']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -134,14 +170,15 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ ffmpeg libgl-dev libglx-dev libopengl-dev libegl-dev libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
+          sudo apt-get install -y cmake g++ clang-18 clang-tidy-18 cppcheck shellcheck ffmpeg libgl-dev libglx-dev libopengl-dev libegl-dev libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
           python -m pip install aqtinstall==3.3.0
-          python -m aqt install-qt linux desktop 6.8.3 linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
+          python -m aqt install-qt linux desktop '${{ matrix.qt }}' linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
       - name: Configure and build
         run: |
-          cmake -S . -B "$RUNNER_TEMP/transcribe-gui-build" -DCMAKE_BUILD_TYPE=Release -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON -DTRANSCRIBE_BUILD_GUI=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/Qt/6.8.3/gcc_64"
+          git rev-parse HEAD
+          cmake -S . -B "$RUNNER_TEMP/transcribe-gui-build" -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON -DTRANSCRIBE_BUILD_GUI=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/Qt/${{ matrix.qt }}/gcc_64"
           cmake --build "$RUNNER_TEMP/transcribe-gui-build" --parallel 4
-      - name: Test controllers, downloads, QML and CLI
+      - name: Test controllers, GUI with actual CLI, downloads, QML and CLI
         env:
           QT_QPA_PLATFORM: offscreen
           QT_QPA_PLATFORMTHEME: generic
@@ -149,6 +186,60 @@ jobs:
         run: ctest --test-dir "$RUNNER_TEMP/transcribe-gui-build" --output-on-failure
       - name: QML lint
         run: cmake --build "$RUNNER_TEMP/transcribe-gui-build" --target all_qmllint
+      - name: GUI compilation database static analysis
+        if: matrix.qt == '6.8.3'
+        env:
+          CLANG_TIDY: clang-tidy-18
+        run: bash scripts/check-static.sh "$RUNNER_TEMP/transcribe-gui-build"
+      - name: Retain GUI test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gui-logs-qt-${{ matrix.qt }}
+          path: |
+            ${{ runner.temp }}/transcribe-gui-build/Testing/Temporary/*.log
+            ${{ runner.temp }}/transcribe-gui-build/compile_commands.json
+            ${{ runner.temp }}/transcribe-gui-build/CMakeCache.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+  sanitizers-linux:
+    name: Linux / ASan UBSan / Qt 6.8.3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang-18 g++ ffmpeg libgl-dev libglx-dev libopengl-dev libegl-dev libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
+          python -m pip install aqtinstall==3.3.0
+          python -m aqt install-qt linux desktop 6.8.3 linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
+      - name: Configure and build instrumented project
+        run: |
+          git rev-parse HEAD
+          cmake -S . -B "$RUNNER_TEMP/transcribe-sanitizers" -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_BUILD_TYPE=Debug -DTRANSCRIBE_BUILD_GUI=ON -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/Qt/6.8.3/gcc_64" -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer -O1' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+          cmake --build "$RUNNER_TEMP/transcribe-sanitizers" --parallel 4
+      - name: Sanitized project scenarios
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          QT_QPA_PLATFORM: offscreen
+          QT_QPA_PLATFORMTHEME: generic
+          QT_QUICK_BACKEND: software
+        run: ctest --test-dir "$RUNNER_TEMP/transcribe-sanitizers" --output-on-failure
+      - name: Retain sanitizer diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sanitizer-logs
+          path: |
+            ${{ runner.temp }}/transcribe-sanitizers/Testing/Temporary/*.log
+            ${{ runner.temp }}/transcribe-sanitizers/CMakeCache.txt
+          if-no-files-found: warn
+          retention-days: 14
 
   windows:
     name: Windows x64 / MSVC / CLI
@@ -167,6 +258,14 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Native process, Unicode, cache and machine protocol tests
         run: ctest --test-dir "$env:RUNNER_TEMP/transcribe-build" -C Release --output-on-failure
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: logs-windows
+          path: ${{ runner.temp }}/transcribe-build/Testing/Temporary/*.log
+          if-no-files-found: warn
+          retention-days: 14
 
   windows-package:
     name: Windows x64 / Qt GUI and ZIP smoke
@@ -190,4 +289,12 @@ jobs:
           name: Transcribe-windows-x64
           path: ${{ runner.temp }}/transcribe-artifacts/*
           if-no-files-found: error
+          retention-days: 14
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: logs-windows-package
+          path: ${{ runner.temp }}/transcribe-package/**/Testing/Temporary/*.log
+          if-no-files-found: warn
           retention-days: 14
