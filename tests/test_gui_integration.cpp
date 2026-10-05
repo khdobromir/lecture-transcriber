@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QTemporaryDir>
 #include <QTest>
+#include <cstdlib>
 #ifndef Q_OS_WIN
 #include <cerrno>
 #include <csignal>
@@ -20,8 +21,30 @@ void put(const QString& path, const QByteArray& bytes) {
 struct Environment {
     QByteArray name, previous; bool existed;
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters): environment key precedes its value, matching qputenv.
-    Environment(QByteArray key, const QByteArray& value) : name(std::move(key)), previous(qgetenv(name)), existed(qEnvironmentVariableIsSet(name)) { qputenv(name, value); }
-    ~Environment() { if (existed) qputenv(name, previous); else qunsetenv(name); }
+    Environment(QByteArray key, const QByteArray& value) : name(std::move(key)), previous(qEnvironmentVariable(name).toUtf8()), existed(qEnvironmentVariableIsSet(name)) { set(value); }
+    void set(const QByteArray& value) const {
+#ifdef Q_OS_WIN
+        // qputenv uses the ANSI CRT API; fixture paths must retain emoji in UTF-16.
+        const auto key = transcribe::wide_utf8(name.toStdString()), text = transcribe::wide_utf8(value.toStdString());
+        // Keep the CRT view used by Qt and the OS view inherited by children in sync.
+        if (_wputenv_s(key.c_str(), text.c_str()) != 0 || !SetEnvironmentVariableW(key.c_str(), text.c_str()))
+            qFatal("fixture environment failed");
+#else
+        if (!qputenv(name, value)) qFatal("fixture environment failed");
+#endif
+    }
+    ~Environment() {
+        if (existed) set(previous);
+        else {
+#ifdef Q_OS_WIN
+            const auto key = transcribe::wide_utf8(name.toStdString());
+            if (_wputenv_s(key.c_str(), L"") != 0 || !SetEnvironmentVariableW(key.c_str(), nullptr))
+                qFatal("fixture environment restore failed");
+#else
+            qunsetenv(name);
+#endif
+        }
+    }
 };
 QString suffix() {
 #ifdef Q_OS_WIN
@@ -89,6 +112,11 @@ QJsonObject manifest(const QString& directory) {
 class IntegrationTests : public QObject {
     Q_OBJECT
 private slots:
+    void fixtureEnvironmentPreservesUnicode() {
+        Environment value{"TRANSCRIBE_INTEGRATION_UNICODE", QString("Лекция 😀 с пробелами").toUtf8()};
+        QCOMPARE(qEnvironmentVariable("TRANSCRIBE_INTEGRATION_UNICODE"), QString("Лекция 😀 с пробелами"));
+        QCOMPARE(transcribe::environment_utf8("TRANSCRIBE_INTEGRATION_UNICODE"), QString("Лекция 😀 с пробелами").toUtf8().toStdString());
+    }
     void urlResultDirectoryTransitionAndCacheReuse() {
         Fixture fixture; Backend backend(fixture.paths()); fixture.release(); auto options = fixture.options();
         options.insert("cacheDirectory", fixture.directory + "/cache");

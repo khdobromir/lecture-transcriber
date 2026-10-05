@@ -5,6 +5,7 @@
 #include <QtQml/qqmlextensionplugin.h>
 #include <iostream>
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization): Qt requires this generated registration before QML engine startup.
 Q_IMPORT_QML_PLUGIN(TranscribePlugin)
 int main(int argc, char** argv) {
     QQuickStyle::setStyle("Fusion");

@@ -27,6 +27,12 @@ CI сохраняет GCC/Clang Linux и native MSVC с warnings-as-errors. GUI 
 [выпущенную Qt 6.11.2](https://www.qt.io/blog/qt-6.11.2-released).
 Сборка GUI формирует compilation database для clang-tidy/cppcheck. Оба анализатора
 выбирают только TUs из project src/tests/gui, исключая generated/vendor trees.
+Для clang-tidy 18 Qt includes переводятся из `-isystem` в `-I` только в
+копии compilation database анализатора: [LLVM #62985](https://github.com/llvm/llvm-project/issues/62985)
+ошибочно учитывает overloaded Qt delete дважды. Компиляция и остальные SDK
+не меняются; проверка NewDelete остаётся включённой. Исключения на строках
+QML registration macros относятся только к SDK enum marker и обязательной
+static plugin registration; пользовательские enums/initializers анализируются.
 Cppcheck использует Qt library definitions, реальную MOC revision из SDK headers
 и определение static QML plugin registration macro; diagnostics GUI не отключены.
 

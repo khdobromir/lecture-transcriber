@@ -20,7 +20,7 @@ static_dir="$(mktemp -d "${TMPDIR:-/tmp}/transcribe-static.XXXXXX")"
 trap 'rm -rf -- "$static_dir"' EXIT
 python3 scripts/static-project.py "$build_dir" "$project_dir" "$static_dir"
 mapfile -t sources < "$static_dir/sources.txt"
-"$tidy" -p "$build_dir" "${sources[@]}"
+"$tidy" -p "$static_dir/tidy" "${sources[@]}"
 checker_options=()
 moc_revision="$(<"$static_dir/moc-revision.txt")"
 if [[ -n "$moc_revision" ]]; then
