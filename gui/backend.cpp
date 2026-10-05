@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QStandardPaths>
 #include <QtConcurrent/QtConcurrentRun>
 #include <cmath>
@@ -142,6 +143,7 @@ void Backend::start(const QString& input, const QVariantMap& values) {
         settings_.setValue("roots", roots_);
         pending_.clear(); diagnostics_.clear(); result_.clear(); transcript_.clear(); eta_.clear();
         hello_ = terminal_ = protocolFailure_ = cancelRequested_ = false; terminalCode_ = -1; terminalStatus_.clear();
+        parser_ = transcribe::ProtocolParser{}; exit_.reset();
         busy_ = true; status_ = "processing"; stage_ = tr("Запуск…"); progress_ = -1;
         auto environment = QProcessEnvironment::systemEnvironment(); environment.insert("TRANSCRIBE_HOME", dataRoot_);
         process_.setProcessEnvironment(environment);
@@ -156,66 +158,84 @@ void Backend::cancel() {
     process_.write("{\"type\":\"cancel\"}\n"); cancelTimer_.start(); emit changed();
 }
 void Backend::readEvents() {
-    const auto bytes = process_.readAllStandardOutput();
-    if (protocolFailure_) return;
-    pending_ += bytes;
-    if (pending_.size() > qsizetype{256} * 1024) { protocolError(tr("Слишком большое событие backend")); pending_.clear(); return; }
-    for (auto end = pending_.indexOf('\n'); end >= 0; end = pending_.indexOf('\n')) {
-        const auto line = pending_.left(end); pending_.remove(0, end + 1);
-        QJsonParseError error{}; const auto document = QJsonDocument::fromJson(line, &error);
-        if (error.error != QJsonParseError::NoError || !document.isObject()) { protocolError(tr("Некорректное событие backend")); return; }
-        acceptEvent(document.object()); if (protocolFailure_) return;
+    if (protocolFailure_) { process_.readAllStandardOutput(); if (exit_) finishExit(); return; }
+    constexpr qsizetype readBudget = 65536;
+    qsizetype received = 0;
+    unsigned lines = 0;
+    while (lines < 64) {
+        const auto end = pending_.indexOf('\n');
+        if (end >= 0) {
+            const auto line = pending_.left(end); pending_.remove(0, end + 1);
+            const auto decoded = parser_.accept(std::string_view(line.constData(), static_cast<std::size_t>(line.size())));
+            if (const auto* problem = std::get_if<transcribe::ProtocolProblem>(&decoded)) {
+                protocolError(QString::fromUtf8(problem->message)); pending_.clear(); break;
+            }
+            acceptEvent(std::get<transcribe::ProtocolMessage>(decoded)); ++lines;
+        } else {
+            if (pending_.size() > static_cast<qsizetype>(transcribe::max_event_line)) {
+                protocolError(tr("Слишком большое событие backend")); pending_.clear(); break;
+            }
+            if (received >= readBudget || !process_.bytesAvailable()) break;
+            const auto bytes = process_.read(readBudget - received);
+            received += bytes.size(); pending_ += bytes;
+            if (bytes.isEmpty()) break;
+        }
     }
+    if (!protocolFailure_ && (pending_.contains('\n') || process_.bytesAvailable())) {
+        if (!eventsScheduled_) {
+            eventsScheduled_ = true;
+            QTimer::singleShot(0, this, [this] { eventsScheduled_ = false; readEvents(); });
+        }
+    } else if (exit_) finishExit();
 }
-void Backend::acceptEvent(const QJsonObject& event) {
-    if (event.value("protocol").toInt() != 1) { protocolError(tr("Несовместимая версия протокола backend")); return; }
-    const auto type = event.value("type").toString();
-    if (!hello_) {
-        if (type != "hello") { protocolError(tr("Backend не выполнил проверку протокола")); return; }
-        hello_ = true; return;
+void Backend::acceptEvent(const transcribe::ProtocolMessage& message) {
+    if (message.hello) { hello_ = true; return; }
+    const auto& event = message.event;
+    const auto directory = pathText(event.result);
+    if (!directory.isEmpty() && result_ != directory) {
+        result_ = directory; transcript_.clear(); emit transcriptChanged();
     }
-    const auto directory = event.value("result").toString();
-    if (!directory.isEmpty()) {
-        if (!QDir::isAbsolutePath(directory)) { protocolError(tr("Backend передал относительный путь результата")); return; }
-        if (result_ != directory) { result_ = directory; transcript_.clear(); emit transcriptChanged(); }
-    }
-    const auto stage = event.value("stage").toString();
-    if (!cancelRequested_ && (type == "stage" || type == "finalizing")) {
-        if (stage == "probe") stage_ = tr("Получение информации о видео…");
+    const auto stage = QString::fromStdString(event.stage);
+    if (!cancelRequested_ && (event.type == transcribe::EventType::stage || event.type == transcribe::EventType::finalizing)) {
+        if (stage == "local") stage_ = tr("Проверка локального входа…");
+        else if (stage == "probe") stage_ = tr("Получение информации о видео…");
         else if (stage == "download") stage_ = tr("Загрузка аудио…");
         else if (stage == "cache") stage_ = tr("Чтение аудио из кэша…");
         else if (stage == "prepare") stage_ = tr("Подготовка аудио…");
         else if (stage == "split") stage_ = tr("Подготовка частей…");
         else if (stage == "recognize") stage_ = tr("Распознавание речи…");
-        else if (stage == "merge" || type == "finalizing") stage_ = tr("Проверка и сохранение экспортов…");
-        if (stage != "recognize") progress_ = -1;
+        else if (stage == "merge" || event.type == transcribe::EventType::finalizing) stage_ = tr("Сохранение результата…");
+        if (stage != "recognize") { progress_ = -1; eta_.clear(); }
     }
-    if (type == "progress") {
-        const double fraction = event.value("fraction").toDouble(-1);
-        if (!std::isfinite(fraction) || fraction < 0 || fraction > 1) { protocolError(tr("Некорректный прогресс backend")); return; }
-        progress_ = fraction;
-        const auto eta = event.value("eta_seconds");
-        if (eta.isDouble() && std::isfinite(eta.toDouble()) && eta.toDouble() >= 0) {
-            const auto seconds = static_cast<qint64>(std::min(eta.toDouble(), 359999.0));
+    if (event.type == transcribe::EventType::progress) {
+        progress_ = event.fraction;
+        if (event.eta) {
+            const auto seconds = static_cast<qint64>(std::min(*event.eta, 359999.0));
             eta_ = tr("Осталось примерно %1:%2").arg(seconds / 60).arg(seconds % 60, 2, 10, QLatin1Char('0'));
         } else eta_ = tr("Оценка времени рассчитывается…");
-    } else if (type == "warning") error_ = tr("Предупреждение: %1").arg(event.value("message").toString());
-    else if (type == "completed" || type == "failed") {
-        if (terminal_) { protocolError(tr("Backend передал повторный итоговый статус")); return; }
-        terminal_ = true; terminalStatus_ = event.value("status").toString(); terminalCode_ = event.value("code").toInt(-1);
-        if (type == "failed") error_ = event.value("message").toString();
+    } else if (event.type == transcribe::EventType::warning) error_ = tr("Предупреждение: %1").arg(QString::fromStdString(event.message));
+    else if (event.type == transcribe::EventType::completed || event.type == transcribe::EventType::failed) {
+        terminal_ = true; terminalStatus_ = QString::fromStdString(event.status); terminalCode_ = event.code;
+        if (event.type == transcribe::EventType::failed) error_ = QString::fromStdString(event.message);
     }
     emit changed();
 }
 void Backend::protocolError(const QString& message) { protocolFailure_ = true; error_ = message; cancel(); emit changed(); }
 void Backend::exited(int code, QProcess::ExitStatus exitStatus) {
-    readEvents(); cancelTimer_.stop(); previewTimer_.stop(); readPreview();
-    if (!protocolFailure_ && hello_ && terminal_ && terminalStatus_ == "completed" && terminalCode_ == 0 && code == 0 && exitStatus == QProcess::NormalExit && pending_.trimmed().isEmpty()) {
+    exit_ = std::pair{code, exitStatus};
+    diagnostics_ += process_.readAllStandardError(); diagnostics_ = diagnostics_.right(65536);
+    cancelTimer_.stop(); previewTimer_.stop(); readPreview(); readEvents();
+}
+void Backend::finishExit() {
+    if (!exit_) return;
+    const auto [code, exitStatus] = *exit_; exit_.reset();
+    if (!protocolFailure_ && hello_ && terminal_ && terminalStatus_ == "completed" && terminalCode_ == 0 && code == 0 && exitStatus == QProcess::NormalExit && pending_.isEmpty()) {
         const auto directory = result_;
         completionWatcher_.setFuture(QtConcurrent::run([directory] { return verifyCompletion(directory); }));
         return;
     }
-    status_ = !protocolFailure_ && terminalStatus_ == "interrupted" && code != 0 ? "interrupted" : "failed";
+    status_ = !protocolFailure_ && terminal_ && terminalStatus_ == "interrupted" && terminalCode_ == code && code != 0 &&
+        exitStatus == QProcess::NormalExit && pending_.isEmpty() ? "interrupted" : "failed";
     if (error_.isEmpty()) error_ = tr("Backend завершился без подтверждённого результата. Проверьте журналы.");
     settled();
 }

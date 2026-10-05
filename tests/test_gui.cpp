@@ -26,12 +26,25 @@ int helper(const QStringList& args) {
     const QString mode = qEnvironmentVariable("TRANSCRIBE_TEST_MODE", "normal");
     const auto root = value("--out") + "/Лекция_😀";
     QDir().mkpath(root + "/transcripts"); QDir().mkpath(root + "/audio");
-    const auto send = [&](QJsonObject object) { object.insert("protocol", mode == "wrong_version" ? 2 : 1); std::cout << QJsonDocument(object).toJson(QJsonDocument::Compact).toStdString() << '\n' << std::flush; };
+    const auto send = [&](QJsonObject object) {
+        object.insert("protocol", mode == "wrong_version" ? 2 : 1);
+        if (object.value("type") != "hello") {
+            for (const auto* key : {"stage", "message", "result"}) if (!object.contains(key)) object.insert(key, "");
+        }
+        std::cout << QJsonDocument(object).toJson(QJsonDocument::Compact).toStdString() << '\n' << std::flush;
+    };
     send({{"type", "hello"}});
     if (mode == "bad_json") { std::cout << "not JSON\n" << std::flush; return 1; }
     send({{"type", "result"}, {"result", root}});
     send({{"type", "stage"}, {"stage", "recognize"}, {"result", root}});
-    send({{"type", "progress"}, {"fraction", 1.0}, {"result", root}, {"eta_seconds", QJsonValue::Null}});
+    if (mode == "unknown_type") send({{"type", "unexpected"}, {"result", root}});
+    if (mode == "duplicate_hello") send({{"type", "hello"}});
+    if (mode == "bad_counts") send({{"type", "progress"}, {"stage", "recognize"}, {"fraction", 0.5}, {"finished", 2}, {"total", 1}, {"result", root}, {"eta_seconds", QJsonValue::Null}});
+    if (mode == "long_line") { std::cout << std::string(transcribe::max_event_line + 1, 'x') << '\n' << std::flush; return 1; }
+    if (mode == "many_lines") {
+        for (int i = 0; i < 3000; ++i) send({{"type", "warning"}, {"result", root}, {"message", QString(128, 'w')}});
+    }
+    send({{"type", "progress"}, {"stage", "recognize"}, {"fraction", 1.0}, {"finished", 1}, {"total", 1}, {"result", root}, {"eta_seconds", QJsonValue::Null}});
     if (mode == "exit_only" || mode == "wrong_version") return 0;
     if (mode == "cancel") {
         put(root + "/transcripts/transcript.txt", "частичный текст\n");
@@ -45,11 +58,13 @@ int helper(const QStringList& args) {
         for (const auto* extension : {"txt", "srt", "vtt"}) put(root + "/transcripts/transcript." + extension, "текст\n");
     }
     if (mode == "split_utf8") {
-        const auto bytes = QJsonDocument(QJsonObject{{"protocol", 1}, {"type", "completed"}, {"result", root}, {"status", "completed"}, {"code", 0}}).toJson(QJsonDocument::Compact) + '\n';
+        const auto bytes = QJsonDocument(QJsonObject{{"protocol", 1}, {"type", "completed"}, {"stage", ""}, {"message", ""}, {"result", root}, {"status", "completed"}, {"code", 0}}).toJson(QJsonDocument::Compact) + '\n';
         const auto cut = bytes.indexOf(QString("Л").toUtf8()) + 1;
         std::cout.write(bytes.data(), cut); std::cout.flush(); QTest::qSleep(30);
         std::cout.write(bytes.data() + cut, bytes.size() - cut); std::cout.flush();
-    } else send({{"type", "completed"}, {"result", root}, {"status", "completed"}, {"code", 0}});
+    } else send({{"type", mode == "contradictory_terminal" ? "failed" : "completed"}, {"result", root}, {"status", "completed"}, {"code", 0}});
+    if (mode == "after_terminal") send({{"type", "warning"}, {"message", "late event"}, {"result", root}});
+    if (mode == "truncated_line") std::cout << "{\"protocol\":1" << std::flush;
     return 0;
 }
 struct Fixture {
@@ -157,7 +172,7 @@ private slots:
     }
     void unconfirmedCompletion_data() {
         QTest::addColumn<QString>("mode");
-        for (const auto* mode : {"exit_only", "missing_manifest", "wrong_version", "bad_json"}) QTest::newRow(mode) << QString::fromLatin1(mode);
+        for (const auto* mode : {"exit_only", "missing_manifest", "wrong_version", "bad_json", "unknown_type", "duplicate_hello", "bad_counts", "contradictory_terminal", "after_terminal", "long_line", "truncated_line"}) QTest::newRow(mode) << QString::fromLatin1(mode);
     }
     void unconfirmedCompletion() {
         QFETCH(QString, mode); qputenv("TRANSCRIBE_TEST_MODE", mode.toUtf8()); Fixture fixture;
@@ -175,6 +190,14 @@ private slots:
         QCOMPARE(backend.status(), QString("Прервано"));
         QVERIFY(QFile::exists(backend.resultDirectory() + "/transcripts/transcript.txt"));
         QVERIFY(QDir(backend.resultDirectory() + "/audio").exists());
+    }
+    void manyValidLinesRemainResponsive() {
+        qputenv("TRANSCRIBE_TEST_MODE", "many_lines"); Fixture fixture;
+        Backend backend({QCoreApplication::applicationFilePath(), fixture.ini, fixture.root});
+        int turns = 0; QTimer pulse; pulse.setInterval(0); connect(&pulse, &QTimer::timeout, this, [&] { ++turns; }); pulse.start();
+        backend.start(fixture.temp.path() + "/input.wav", fixture.options());
+        QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 5000); pulse.stop();
+        QCOMPARE(backend.status(), QString("Готово")); QVERIFY(turns > 1);
     }
     void invalidInputDoesNotLaunch() {
         Fixture fixture; Backend backend({QCoreApplication::applicationFilePath(), fixture.ini, fixture.root});

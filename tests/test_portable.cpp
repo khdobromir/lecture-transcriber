@@ -10,6 +10,10 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#ifndef _WIN32
+#include <csignal>
+#include <unistd.h>
+#endif
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -18,7 +22,17 @@
 namespace fs = std::filesystem;
 using namespace transcribe;
 namespace {
+constexpr std::size_t floodBytes = std::size_t{1024} * 1024;
 void require(bool value) { if (!value) throw std::runtime_error("portable regression failed"); }
+void require_dead(unsigned long pid) {
+#ifdef _WIN32
+    HANDLE child = OpenProcess(SYNCHRONIZE, FALSE, static_cast<DWORD>(pid));
+    if (child) { require(WaitForSingleObject(child, 0) == WAIT_OBJECT_0); CloseHandle(child); }
+    else require(GetLastError() == ERROR_INVALID_PARAMETER);
+#else
+    require(kill(static_cast<pid_t>(pid), 0) < 0 && errno == ESRCH);
+#endif
+}
 void put(const fs::path& path, std::string_view bytes) {
     std::ofstream out(path, std::ios::binary); out.exceptions(std::ios::failbit | std::ios::badbit);
     out.write(bytes.data(), static_cast<std::streamsize>(bytes.size())); out.close();
@@ -36,8 +50,21 @@ int execute(const std::vector<std::string>& args) {
         if (args[0] == "--wait") std::cout << "ready\n" << std::flush;
         for (;;) std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
+    if (!args.empty() && args[0] == "--pid-wait") {
 #ifdef _WIN32
+        std::cout << GetCurrentProcessId() << '\n' << std::flush;
+#else
+        std::cout << getpid() << '\n' << std::flush;
+#endif
+        for (;;) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    if (!args.empty() && args[0] == "--flood") {
+        std::cout << std::string(floodBytes, 'o') << std::flush;
+        std::cerr << std::string(floodBytes, 'e') << std::flush;
+        return 17;
+    }
     if (!args.empty() && args[0] == "--grandchild") {
+#ifdef _WIN32
         // Independent native launch, with no production Process/quoting helper.
         const auto binary = executable_directory() / "test_portable.exe";
         std::wstring command = L"\"" + binary.native() + L"\" --silent-wait";
@@ -48,10 +75,14 @@ int execute(const std::vector<std::string>& args) {
         CloseHandle(child.hThread);
         std::cout << child.dwProcessId << '\n' << std::flush;
         CloseHandle(child.hProcess);
+#else
+        const auto child = fork(); require(child >= 0);
+        if (!child) { for (;;) pause(); }
+        std::cout << child << '\n' << std::flush;
+#endif
         // Exit before the helper; the production job must reap the descendant.
         return 0;
     }
-#endif
     Temp temp;
     install_signal_handlers();
     const std::string environmentValue = "Лекция 😀 & spaces";
@@ -156,14 +187,26 @@ int execute(const std::vector<std::string>& args) {
     require(ready); cancellation_token().request(2); stop_all(children, 2);
     require(children[0]->done()); children.clear(); cancellation_token().reset();
     std::cout << "PASS worker cancellation\n";
-#ifdef _WIN32
     output.clear(); run({binary, "--grandchild"}, temp.path / "grandchild.log", [&](std::string_view bytes) { output += bytes; });
-    const auto pid = static_cast<DWORD>(std::stoul(output));
-    HANDLE child = OpenProcess(SYNCHRONIZE, FALSE, pid);
-    if (child) { require(WaitForSingleObject(child, 0) == WAIT_OBJECT_0); CloseHandle(child); }
-    else require(GetLastError() == ERROR_INVALID_PARAMETER);
-    std::cout << "PASS job object descendant cleanup\n";
-#endif
+    require_dead(std::stoul(output));
+    std::cout << "PASS exited parent, retained pipe and descendant cleanup\n";
+    unsigned long callbackPid = 0; bool threw = false;
+    output.clear();
+    try {
+        run({binary, "--pid-wait"}, temp.path / "callback.log", [&](std::string_view bytes) {
+            output += bytes;
+            if (output.find('\n') != output.npos) { callbackPid = std::stoul(output); throw std::runtime_error("callback failed"); }
+        });
+    } catch (const std::runtime_error& error) { threw = std::string_view(error.what()) == "callback failed"; }
+    require(threw && callbackPid > 0); require_dead(callbackPid);
+    std::cout << "PASS callback failure cleans worker\n";
+    std::size_t stdoutBytes = 0, stderrBytes = 0; int floodCode = 0;
+    try {
+        run({binary, "--flood"}, temp.path / "flood.log", [&](std::string_view bytes) { stdoutBytes += bytes.size(); },
+            [&](std::string_view bytes) { stderrBytes += bytes.size(); });
+    } catch (const ProcessError& error) { floodCode = error.code; }
+    require(floodCode == 17 && stdoutBytes == floodBytes && stderrBytes == floodBytes);
+    std::cout << "PASS stdout/stderr flood, final drain and primary exit code\n";
     cancellation_token().commit(); cancellation_token().request(2); require(cancellation_token().completed());
     cancellation_token().reset(); cancellation_token().request(2);
     bool rejected = false; try { cancellation_token().commit(); } catch (const ProcessError&) { rejected = true; }
