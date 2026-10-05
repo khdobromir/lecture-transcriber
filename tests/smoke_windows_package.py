@@ -81,9 +81,16 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
         out.writeframes(b"\0\0" * 1600)
     subprocess.run([str(copied / "tools/ffmpeg.exe"), "-nostdin", "-loglevel", "error", "-i", str(audio),
                     str(root / "Выход 😀.wav")], env=environment, check=True, timeout=30)
+    # No model download is needed to prove that Whisper accepts Unicode input:
+    # the missing model must fail initialization (3), not discard the input (2).
+    preflight = subprocess.run([str(copied / "tools/whisper-cli.exe"), "--no-gpu", "--file", str(audio),
+                                "--model", str(root / "missing-model.bin")], cwd=root, env=environment,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+    if preflight.returncode != 3 or b"failed to initialize whisper context" not in preflight.stderr:
+        raise RuntimeError(f"Whisper Unicode input preflight failed: {preflight.returncode}, {preflight.stderr!r}")
     settings = root / "settings.ini"
     settings.write_text("[General]\noutput=" + (root / "results").as_posix() + "\n", encoding="utf-8")
-    environment.update(QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software", QT_FORCE_STDERR_LOGGING="1",
+    environment.update(QT_QPA_PLATFORM="windows", QT_QUICK_BACKEND="software", QT_FORCE_STDERR_LOGGING="1",
                        TRANSCRIBE_HOME=str(root / "data"), TRANSCRIBE_GUI_SETTINGS_FILE=str(settings))
     child = subprocess.Popen([str(copied / "transcribe-gui.exe")], env=environment, cwd=root,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -107,7 +114,7 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
         subprocess.run([sys.executable, str(preparer), str(args.workspace), "--ffmpeg", str(copied / "tools/ffmpeg.exe"),
                         "--engine", str(copied / "tools/whisper-cli.exe")], check=True, timeout=600)
         prerequisites = json.loads((args.workspace / "prerequisites.json").read_text(encoding="utf-8"))
-        real_environment = dict(os.environ, **prerequisites["environment"], QT_QPA_PLATFORM="offscreen",
+        real_environment = dict(os.environ, **prerequisites["environment"], QT_QPA_PLATFORM="windows",
                                 QT_QPA_PLATFORMTHEME="generic", QT_QUICK_BACKEND="software",
                                 TRANSCRIBE_REAL_BINARY=str(copied / "transcribe.exe"),
                                 TRANSCRIBE_REAL_ARTIFACTS=str(args.workspace / "result"))
@@ -117,7 +124,7 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
                        env=real_environment, cwd=root, check=True, timeout=360)
 evidence = {"source": expected_source, "dirty": manifest["dirty"], "zip_sha256": digest(archive), "verified_files": len(manifest["files"]),
             "checks": ["final ZIP extraction and every file SHA-256", "app-local CRT in bin and tools", "embedded manifests, DPI and asInvoker", "minimal PATH",
-                       "bundled tools", "Unicode paths and different cwd", "deployed Qt/QML startup"],
+                       "bundled tools and Whisper Unicode input preflight", "Unicode paths and different cwd", "deployed native Windows Qt/QML startup"],
             "real_gui_cli_speech": bool(args.real_gui), "manual_clean_windows_11": "unverified"}
 archive.with_suffix(archive.suffix + ".validation.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
 print("Final ZIP smoke passed: file checksums, CRT, bundled tools, Unicode paths, deployed Qt/QML")

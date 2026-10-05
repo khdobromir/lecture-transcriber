@@ -65,6 +65,9 @@ private slots:
         QSettings settings(artifacts + "/settings.ini", QSettings::IniFormat);
         settings.setValue("output", artifacts + "/Результаты 😀"); settings.sync();
         const auto installedHome = artifacts + "/first-install";
+#ifndef Q_OS_WIN
+        // Linux installs the engine in the data home. Windows must use the
+        // original tools beside the actual unpacked CLI, without a shadow copy.
         const auto engineDirectory = installedHome + "/whisper.cpp/build/bin";
         QVERIFY(QDir().mkpath(engineDirectory));
         const QDir sourceEngine(home + "/whisper.cpp/build/bin");
@@ -72,6 +75,7 @@ private slots:
             const auto target = engineDirectory + '/' + file.fileName(); QVERIFY(QFile::copy(file.filePath(), target));
             QVERIFY(QFile::setPermissions(target, file.permissions()));
         }
+#endif
         Backend backend({binary, artifacts + "/settings.ini", installedHome});
         QQmlApplicationEngine engine;
         QStringList warnings, stages;

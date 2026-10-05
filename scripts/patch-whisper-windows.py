@@ -6,6 +6,7 @@ import sys
 PIN = "927cfce34f31707e17f2bff35c349632fb9e2c3a"
 HASHES = {
     "examples/cli/cli.cpp": "840f331f80a98c41fc21eb4cf109c4c6a5496b8f248e9bbce58dd733dece76b2",
+    "examples/common.cpp": "568d38cf668a74c9342533b082b387a16211bec8d0f57ceb2b4900b17b17ae58",
     "examples/common-whisper.cpp": "852fbc77d2461322a82b9c571cf4703bac3c78c5c51d3a90e80792ce0c04e313",
     "src/whisper.cpp": "c48686fbc2cba1b0ac0f9c8e964188c691e67fff5906f2629f3223ff64f92d16",
 }
@@ -46,7 +47,10 @@ int wmain(int argc, wchar_t** argv) {
                 result = ma_decoder_init_file(fname.c_str(), &decoder_config, &decoder);
 #endif""")
     core = originals["src/whisper.cpp"].replace("std::codecvt_utf8<wchar_t>", "std::codecvt_utf8_utf16<wchar_t>")
-    updates = {"examples/cli/cli.cpp": cli, "examples/common-whisper.cpp": common, "src/whisper.cpp": core}
+    utilities = originals["examples/common.cpp"].replace('#include "common.h"', '#include "transcribe-windows.hpp"\n#include "common.h"', 1)
+    utilities = utilities.replace("std::ifstream infile(filename);", "std::ifstream infile(transcribe_windows::path(filename));")
+    updates = {"examples/cli/cli.cpp": cli, "examples/common.cpp": utilities,
+               "examples/common-whisper.cpp": common, "src/whisper.cpp": core}
     for name, data in updates.items():
         (root / name).write_bytes(data.encode("utf-8"))
     helper = Path(__file__).resolve().parents[1] / "packaging/windows/whisper-unicode.hpp"

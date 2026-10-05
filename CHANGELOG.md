@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Windows Unicode-патч Whisper исправляет также предварительную проверку
+  существования WAV; model-free regression проверяет её в каждом итоговом ZIP.
 - История объединяет относительные, абсолютные и native Windows пути одного
   результата; legacy timestamps и недоступные известные записи сохраняются.
 - Итоговый Windows ZIP проверяется после упаковки: все file hashes, CRT,

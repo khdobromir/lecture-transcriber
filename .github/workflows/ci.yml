@@ -228,6 +228,8 @@ jobs:
             ${{ runner.temp }}/candidate-real-linux/result/validation.json
             ${{ runner.temp }}/candidate-real-linux/result/gui.png
             ${{ runner.temp }}/candidate-real-linux/gui-real.log
+            ${{ runner.temp }}/candidate-real-linux/result/**/logs/*.log
+            ${{ runner.temp }}/candidate-real-linux/result/**/result.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -333,5 +335,7 @@ jobs:
             ${{ runner.temp }}/transcribe-package/**/real-smoke/result/validation.json
             ${{ runner.temp }}/transcribe-package/**/real-smoke/result/gui.png
             ${{ runner.temp }}/transcribe-package/**/real-smoke/gui-real.log
+            ${{ runner.temp }}/transcribe-package/**/real-smoke/result/**/logs/*.log
+            ${{ runner.temp }}/transcribe-package/**/real-smoke/result/**/result.json
           if-no-files-found: warn
           retention-days: 14

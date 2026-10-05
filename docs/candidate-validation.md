@@ -42,6 +42,17 @@ bounds, ограничение пересекающегося сегмента, 
 старта задачи: legacy относительный root и новый абсолютный root указывали на
 один результат. Единая абсолютная lexical форма используется для discovery,
 known paths, timestamps и выбранного результата; регрессия проверяет оба aliases.
+Native Windows real smoke выявил узкий `ifstream` в `is_file_exist` Whisper:
+UTF-8 WAV отбрасывался до декодирования с exit 2. Патч закреплённого
+`examples/common.cpp` открывает filesystem path; model-free package regression
+проверяет, что Unicode input достигает model initialization. Windows GUI smoke
+и QML/DPI tests используют native `windows` QPA с системными fonts: offscreen
+database требовала отсутствующий SDK/lib/fonts. Backend logs и result.json
+реального сценария сохраняются в artifacts также при ошибке.
+GUI preflight использует tools рядом с выбранным CLI. Windows real harness
+оставляет data home без engine, чтобы распознавание выполнял именно оригинальный
+Whisper из Unicode-каталога распакованного ZIP; portable regression проверяет
+этот fallback отдельно от model download.
 
 Локальная разработческая проверка с Qt 6.11.2/GCC 16/FFmpeg 9 подтвердила
 installed GUI startup и реальный QML → CLI → Whisper с medium и small,

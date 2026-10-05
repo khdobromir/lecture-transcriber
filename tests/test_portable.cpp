@@ -1,5 +1,6 @@
 #include "audio.hpp"
 #include "cancellation.hpp"
+#include "cli.hpp"
 #include "platform.hpp"
 #include "process.hpp"
 #include "result.hpp"
@@ -85,6 +86,20 @@ int execute(const std::vector<std::string>& args) {
     }
     Temp temp;
     install_signal_handlers();
+#ifdef _WIN32
+    {
+        const auto tools = temp.path / utf8_path("Каталог CLI 😀") / "tools", home = temp.path / "data";
+        fs::create_directories(tools); fs::create_directories(home / "models");
+        const auto engine = tools / "whisper-cli.exe";
+        fs::copy_file(executable_directory() / "test_portable.exe", engine);
+        put(home / "models/ggml-small-q5_1.bin", "model"); put(temp.path / "input.wav", "audio");
+        Options options; options.input = "input.wav"; options.model = "small"; options.vad = false;
+        options.output = temp.path / "results";
+        const auto inputs = validate_inputs(options, {home, temp.path, tools});
+        require(inputs.engine == engine && !fs::exists(home / "whisper.cpp"));
+        std::cout << "PASS configured CLI Unicode bundle preflight without engine shadow copy\n";
+    }
+#endif
     const std::string environmentValue = "Лекция 😀 & spaces";
 #ifdef _WIN32
     require(SetEnvironmentVariableW(L"TRANSCRIBE_PORTABLE_ENV", wide_utf8(environmentValue).c_str()) != 0);
