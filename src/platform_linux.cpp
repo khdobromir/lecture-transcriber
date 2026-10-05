@@ -51,7 +51,7 @@ void create_private_file(const fs::path& path) {
     if (fd < 0) throw std::runtime_error("Не удалось создать файл: " + path_utf8(path));
     close(fd);
 }
-void replace_file(const fs::path& source, const fs::path& destination, std::function<void()> cancellation) {
+void replace_file(const fs::path& source, const fs::path& destination, const std::function<void()>& cancellation) {
     if (cancellation) cancellation();
     fs::rename(source, destination);
 }

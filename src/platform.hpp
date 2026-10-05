@@ -25,7 +25,7 @@ std::filesystem::path temporary_directory(const std::filesystem::path& parent, s
 bool indirect_path(const std::filesystem::path& path);
 void create_private_file(const std::filesystem::path& path);
 void replace_file(const std::filesystem::path& source, const std::filesystem::path& destination,
-                  std::function<void()> cancellation = {});
+                  const std::function<void()>& cancellation = {});
 // A bounded reader whose open handle permits atomic replacement by publishers.
 class SharedReader {
 public:

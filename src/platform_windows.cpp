@@ -130,7 +130,7 @@ void create_private_file(const fs::path& path) {
     WinHandle file(CreateFileW(path.c_str(), GENERIC_WRITE, 0, &security.attributes, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr));
     if (!file) windows_error("Create private file");
 }
-void replace_file(const fs::path& source, const fs::path& destination, std::function<void()> cancellation) {
+void replace_file(const fs::path& source, const fs::path& destination, const std::function<void()>& cancellation) {
     const auto target = fs::absolute(destination).native();
     std::vector<unsigned char> storage(sizeof(FILE_RENAME_INFO) + target.size() * sizeof(wchar_t));
     auto* rename = reinterpret_cast<FILE_RENAME_INFO*>(storage.data());
