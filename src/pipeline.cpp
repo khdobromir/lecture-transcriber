@@ -243,7 +243,9 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
         const auto start = std::chrono::steady_clock::now();
         recognize(chunks, o, files, paths, sink_);
         sink_(Event{.type = EventType::stage, .stage = "merge", .result = paths.root});
-        transcribe::merge_exports(chunks, paths.transcripts(), paths.staging());
+        transcribe::merge_exports(chunks, paths.transcripts(), paths.staging(), [&](std::string_view message) {
+            sink_(Event{.type = EventType::warning, .stage = "merge", .message = std::string(message), .result = paths.root});
+        });
         transcribe::check_cancelled();
         const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
         sink_(Event{.type = EventType::finalizing, .message = std::to_string(seconds / 60.0), .result = paths.root});

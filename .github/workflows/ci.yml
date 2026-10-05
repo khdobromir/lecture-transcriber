@@ -5,6 +5,11 @@ on:
     branches: [master, dev]
   pull_request:
   workflow_dispatch:
+    inputs:
+      real_smoke:
+        description: 'Run installed Linux/ZIP GUI with pinned public Russian speech and real Whisper'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -168,6 +173,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Dependencies
+        working-directory: ${{ runner.temp }}
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake g++ clang-18 clang-tidy-18 cppcheck shellcheck ffmpeg libgl-dev libglx-dev libopengl-dev libegl-dev libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
@@ -184,6 +190,24 @@ jobs:
           QT_QPA_PLATFORMTHEME: generic
           QT_QUICK_BACKEND: software
         run: ctest --test-dir "$RUNNER_TEMP/transcribe-gui-build" --output-on-failure
+      - name: Smoke the actual Linux install prefix
+        run: |
+          prefix="$RUNNER_TEMP/Установка 😀"
+          qt_root="$RUNNER_TEMP/Qt/${{ matrix.qt }}/gcc_64"
+          cmake --install "$RUNNER_TEMP/transcribe-gui-build" --prefix "$prefix"
+          LD_LIBRARY_PATH="$qt_root/lib" QT_PLUGIN_PATH="$qt_root/plugins" QML_IMPORT_PATH="$qt_root/qml" python tests/smoke_linux_install.py "$prefix"
+      - name: Candidate real Whisper and installed GUI smoke
+        if: github.event_name == 'workflow_dispatch' && inputs.real_smoke && matrix.qt == '6.8.3'
+        run: |
+          engine_source="$RUNNER_TEMP/candidate-whisper"
+          git init "$engine_source"
+          git -C "$engine_source" remote add origin https://github.com/ggml-org/whisper.cpp.git
+          git -C "$engine_source" fetch --depth 1 origin 927cfce34f31707e17f2bff35c349632fb9e2c3a
+          git -C "$engine_source" checkout --detach 927cfce34f31707e17f2bff35c349632fb9e2c3a
+          cmake -S "$engine_source" -B "$engine_source/build" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DWHISPER_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=OFF
+          cmake --build "$engine_source/build" --target whisper-cli --parallel 4
+          qt_root="$RUNNER_TEMP/Qt/${{ matrix.qt }}/gcc_64"
+          LD_LIBRARY_PATH="$qt_root/lib" QT_PLUGIN_PATH="$qt_root/plugins" QML_IMPORT_PATH="$qt_root/qml" python tests/run_real_smoke.py --harness "$RUNNER_TEMP/transcribe-gui-build/gui/test_gui_real" --binary "$RUNNER_TEMP/Установка 😀/bin/transcribe" --engine "$engine_source/build/bin/whisper-cli" --workspace "$RUNNER_TEMP/candidate-real-linux"
       - name: QML lint
         run: cmake --build "$RUNNER_TEMP/transcribe-gui-build" --target all_qmllint
       - name: GUI compilation database static analysis
@@ -200,6 +224,10 @@ jobs:
             ${{ runner.temp }}/transcribe-gui-build/Testing/Temporary/*.log
             ${{ runner.temp }}/transcribe-gui-build/compile_commands.json
             ${{ runner.temp }}/transcribe-gui-build/CMakeCache.txt
+            ${{ runner.temp }}/candidate-real-linux/prerequisites.json
+            ${{ runner.temp }}/candidate-real-linux/result/validation.json
+            ${{ runner.temp }}/candidate-real-linux/result/gui.png
+            ${{ runner.temp }}/candidate-real-linux/gui-real.log
           if-no-files-found: warn
           retention-days: 14
 
@@ -212,6 +240,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Dependencies
+        working-directory: ${{ runner.temp }}
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake clang-18 g++ ffmpeg libgl-dev libglx-dev libopengl-dev libegl-dev libxkbcommon0 libxcb-cursor0 libdbus-1-3 libfontconfig1 libfreetype6
@@ -276,13 +305,16 @@ jobs:
         with:
           persist-credentials: false
       - name: Install pinned Qt SDK
+        working-directory: ${{ runner.temp }}
         run: |
           python -m pip install aqtinstall==3.3.0
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build, test, deploy and smoke package
-        run: ./scripts/package-windows.ps1 -QtRoot "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64" -WorkDirectory "$env:RUNNER_TEMP/transcribe-package" -Destination "$env:RUNNER_TEMP/transcribe-artifacts"
+        run: |
+          $RealSmoke = ("${{ github.event_name }}" -eq 'workflow_dispatch') -and ("${{ inputs.real_smoke }}" -eq 'true')
+          ./scripts/package-windows.ps1 -QtRoot "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64" -WorkDirectory "$env:RUNNER_TEMP/transcribe-package" -Destination "$env:RUNNER_TEMP/transcribe-artifacts" -RealSmoke:$RealSmoke
       - name: Retain tested ZIP and checksums
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -295,6 +327,11 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: logs-windows-package
-          path: ${{ runner.temp }}/transcribe-package/**/Testing/Temporary/*.log
+          path: |
+            ${{ runner.temp }}/transcribe-package/**/Testing/Temporary/*.log
+            ${{ runner.temp }}/transcribe-package/**/real-smoke/prerequisites.json
+            ${{ runner.temp }}/transcribe-package/**/real-smoke/result/validation.json
+            ${{ runner.temp }}/transcribe-package/**/real-smoke/result/gui.png
+            ${{ runner.temp }}/transcribe-package/**/real-smoke/gui-real.log
           if-no-files-found: warn
           retention-days: 14

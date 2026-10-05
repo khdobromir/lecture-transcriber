@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Итоговый Windows ZIP проверяется после упаковки: все file hashes, CRT,
+  manifests, Unicode unpack и запуск с минимальным PATH; evidence сохраняется отдельно.
+- Linux install prefix проходит startup smoke; candidate workflow_dispatch
+  выполняет QML → установленный CLI → реальный Whisper с pinned public speech/model.
+- Конечные предсказанные timestamps пересекающихся аудио ASR-сегментов
+  ограничиваются длительностью части с предупреждением; wholly out-of-range
+  сегменты по-прежнему отклоняются. Допуск timestamp token исправлен до 20 ms.
+- `TRANSCRIBE_BIN_DIR` позволяет проверить CLI upgrade в отдельном prefix,
+  сохраняя обычную установку `install.sh` в `~/.local/bin`.
+
 - Portable GUI integration запускает настоящий CLI с mock внешними tools;
   проверяет live preview, экспорты, URL/cache, cancel/tree cleanup и retry.
 - CI проверяет GUI также с Qt 6.11.2 на Linux, запускает ASan/UBSan и включает

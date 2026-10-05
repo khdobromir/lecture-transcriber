@@ -20,5 +20,5 @@ std::vector<Chunk> split_audio(const std::filesystem::path& wav, const std::file
                                const std::filesystem::path& logs, const std::function<void(std::string_view, bool)>& notice = {});
 std::string segment_text(std::string_view line);
 void merge_exports(const std::vector<Chunk>& chunks, const std::filesystem::path& transcripts,
-                   const std::filesystem::path& staging);
+                   const std::filesystem::path& staging, const std::function<void(std::string_view)>& warning = {});
 }

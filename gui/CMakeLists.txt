@@ -36,6 +36,21 @@ if(WIN32)
     install(SCRIPT ${deploy_script})
 endif()
 if(BUILD_TESTING)
+    # Candidate-only smoke; external speech/model prerequisites are deliberate.
+    # Build it on every PR, run explicitly against the installed prefix/ZIP.
+    execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        OUTPUT_VARIABLE validation_source OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND git status --porcelain WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        OUTPUT_VARIABLE validation_changes OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(validation_changes)
+        string(APPEND validation_source "-dirty")
+    endif()
+    qt_add_executable(test_gui_real ../tests/test_gui_real.cpp)
+    set_target_properties(test_gui_real PROPERTIES WIN32_EXECUTABLE FALSE)
+    target_link_libraries(test_gui_real PRIVATE transcribe_gui_logic transcribe_gui_logicplugin Qt6::Test Qt6::QuickControls2)
+    target_compile_definitions(test_gui_real PRIVATE GUI_QML_SOURCE="${CMAKE_CURRENT_SOURCE_DIR}/Main.qml"
+        TRANSCRIBE_SOURCE_SHA="${validation_source}")
+    transcribe_warnings(test_gui_real)
     qt_add_executable(test_gui_integration ../tests/test_gui_integration.cpp)
     set_target_properties(test_gui_integration PROPERTIES WIN32_EXECUTABLE FALSE)
     target_link_libraries(test_gui_integration PRIVATE transcribe_gui_logic Qt6::Test)
@@ -59,4 +74,15 @@ if(BUILD_TESTING)
     transcribe_warnings(test_qml)
     add_test(NAME gui_qml COMMAND test_qml -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_qml.log,txt")
     set_tests_properties(gui_qml PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=generic" TIMEOUT 30 LABELS gui)
+    foreach(scale IN ITEMS 150 200)
+        if(scale EQUAL 150)
+            set(scale_factor 1.5)
+        else()
+            set(scale_factor 2)
+        endif()
+        add_test(NAME gui_qml_scale${scale} COMMAND test_qml minimumWindowAndPalettes
+            -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_qml_scale${scale}.log,txt")
+        set_tests_properties(gui_qml_scale${scale} PROPERTIES TIMEOUT 30 LABELS gui
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=generic;QT_SCALE_FACTOR=${scale_factor}")
+    endforeach()
 endif()

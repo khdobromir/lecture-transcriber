@@ -8,6 +8,8 @@
 #include <QDir>
 #include <QFile>
 #include <QTest>
+#include <QPalette>
+#include <QScopeGuard>
 #include <QtQml/qqmlextensionplugin.h>
 
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization): Qt requires this generated registration before QML engine startup.
@@ -15,6 +17,33 @@ Q_IMPORT_QML_PLUGIN(TranscribePlugin)
 class QmlTests : public QObject {
     Q_OBJECT
 private slots:
+    void minimumWindowAndPalettes_data() {
+        QTest::addColumn<bool>("dark"); QTest::newRow("light") << false; QTest::newRow("dark") << true;
+    }
+    void minimumWindowAndPalettes() {
+        QFETCH(bool, dark);
+        const auto previous = QGuiApplication::palette();
+        const auto restore = qScopeGuard([previous] { QGuiApplication::setPalette(previous); });
+        QPalette palette;
+        const auto background = dark ? QColor("#202020") : QColor("#f0f0f0"), foreground = dark ? QColor("#eeeeee") : QColor("#111111");
+        for (const auto role : {QPalette::Window, QPalette::Base, QPalette::Button}) palette.setColor(role, background);
+        for (const auto role : {QPalette::WindowText, QPalette::Text, QPalette::ButtonText}) palette.setColor(role, foreground);
+        QGuiApplication::setPalette(palette);
+        QTemporaryDir temp; Backend backend({"missing", temp.path() + "/settings.ini", temp.path() + "/data"});
+        QQmlApplicationEngine engine; QStringList warnings;
+        connect(&engine, &QQmlEngine::warnings, this, [&](const QList<QQmlError>& errors) { for (const auto& error : errors) warnings.append(error.toString()); });
+        engine.setInitialProperties({{"backend", QVariant::fromValue(&backend)}}); engine.load(QUrl::fromLocalFile(GUI_QML_SOURCE));
+        QVERIFY(!engine.rootObjects().isEmpty()); auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first()); QVERIFY(window);
+        window->resize(720, 600); auto* source = window->findChild<QQuickItem*>("sourceInput"); QVERIFY(source);
+        source->setProperty("text", QString(1024, QChar(0x044f))); source->forceActiveFocus();
+        QTRY_VERIFY(source->hasActiveFocus()); QTest::keyClick(window, Qt::Key_Tab); QTest::keyClick(window, Qt::Key_Backtab);
+        QTRY_VERIFY(source->hasActiveFocus());
+        const auto position = source->mapToScene(QPointF{}); QVERIFY(position.x() >= 0); QVERIFY(position.x() + source->width() <= window->width());
+        const auto screenshot = window->grabWindow(); QVERIFY(!screenshot.isNull());
+        const auto artifact = qEnvironmentVariable("TRANSCRIBE_GUI_VISUAL_DIRECTORY");
+        if (!artifact.isEmpty()) { QVERIFY(QDir().mkpath(artifact)); QVERIFY(screenshot.save(artifact + (dark ? "/dark.png" : "/light.png"))); }
+        QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+    }
     void windowLoadsAndKeyboardFocusWorks() {
         QTemporaryDir temp;
         QSettings settings(temp.path() + "/settings.ini", QSettings::IniFormat); settings.setValue("output", temp.path() + "/results"); settings.sync();

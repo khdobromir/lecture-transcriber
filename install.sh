@@ -17,7 +17,7 @@ project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/models.sh
 source "$project_dir/scripts/models.sh"
 root="${TRANSCRIBE_HOME:-${HOME:?Не задан HOME}/.local/share/transcribe}"
-bin_dir="${HOME:?Не задан HOME}/.local/bin"
+bin_dir="${TRANSCRIBE_BIN_DIR:-${HOME:?Не задан HOME}/.local/bin}"
 require_tools g++ cmake git curl ffmpeg yt-dlp sha256sum flock mktemp install mkdir mv rm
 model_info "$selection"
 model_info vad
@@ -79,8 +79,13 @@ binary_stage=''
 mv -f -- "$staging/default-model" "$root/default-model"
 printf '\nУстановлено: %s/transcribe\nМодель: %s\n' "$bin_dir" "$selection"
 # Print a command to copy, preserving the user's future HOME and PATH.
-# shellcheck disable=SC2016
-printf 'Добавь ~/.local/bin в PATH, если каталог ещё не включён:\nexport PATH="$HOME/.local/bin:$PATH"\n'
+if [[ -n "${TRANSCRIBE_BIN_DIR:-}" ]]; then
+  # shellcheck disable=SC2016
+  printf 'Добавь каталог CLI в PATH:\nexport PATH=%q:"$PATH"\n' "$bin_dir"
+else
+  # shellcheck disable=SC2016
+  printf 'Добавь ~/.local/bin в PATH, если каталог ещё не включён:\nexport PATH="$HOME/.local/bin:$PATH"\n'
+fi
 if [[ -n "${TRANSCRIBE_HOME:-}" ]]; then
   printf 'Для запуска сохраняй TRANSCRIBE_HOME=%s в окружении.\n' "$root"
 fi

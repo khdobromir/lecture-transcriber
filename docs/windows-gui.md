@@ -182,3 +182,44 @@ window/focus tests. Windows CI строит CLI с MSVC, проверяет nati
 заменяет их выполнение с MSVC на Windows. Windows GUI/ZIP и реальное
 распознавание установленной модели требуют отдельного runtime smoke на Windows;
 не следует считать добавление workflow доказательством успешного CI.
+
+## Проверка установленного кандидата
+
+Package smoke распаковывает **итоговый ZIP** в новый Unicode-каталог, сверяет
+source SHA и каждый файл с manifest, проверяет CRT в `bin` и `bin/tools`,
+embedded manifests и запускает GUI/tools с минимальным PATH без SDK variables.
+Рядом с ZIP сохраняются отдельные `.sha256` и `.validation.json`.
+`-RealSmoke` дополнительно запускает QML/Backend → CLI из распакованного ZIP
+с настоящим bundled Whisper и pinned small model. Test harness использует SDK;
+его проверка дополняет отдельный deployed GUI startup с очищенным окружением.
+Она не заменяет ручной сценарий на чистой Windows 11.
+
+Linux GUI с системным Qt после `cmake --install` использует системные runtime
+libraries. При установке с официальным SDK окружение задаётся явно:
+
+```sh
+qt_root=/path/to/Qt/6.8.3/gcc_64
+LD_LIBRARY_PATH="$qt_root/lib" QT_PLUGIN_PATH="$qt_root/plugins" \
+QML_IMPORT_PATH="$qt_root/qml" /path/to/prefix/bin/transcribe-gui
+```
+
+`tests/smoke_linux_install.py PREFIX` проверяет установленную структуру,
+desktop entry/icon, runtime dependencies и запуск из другого Unicode cwd.
+Для изолированного обновления CLI без изменения пользовательского HOME:
+
+```sh
+TRANSCRIBE_HOME=/path/to/data TRANSCRIBE_BIN_DIR=/path/to/bin bash install.sh small
+```
+
+Без `TRANSCRIBE_BIN_DIR` сохраняется установка в `~/.local/bin`.
+Candidate workflow_dispatch с `real_smoke=true` проверяет реальное распознавание
+на Linux/Windows. Public audio определяется [fixture metadata](../tests/fixtures/russian-speech.json):
+закреплённый OGG, фрагмент 30–60 секунд, mono PCM 16 kHz; model/input/export
+hashes сохраняются в evidence. Приватные лекции, модели и audio bytes в Git
+не добавляются. ASR-текст на разных CPU не обязан совпадать побайтово.
+
+Предсказанная конечная метка Whisper может выйти за длительность части.
+Если сегмент начинается внутри реального аудио, публикация ограничивает его
+конец длительностью части; заметное ограничение показывает предупреждение.
+Сегмент целиком за границей части (с допуском одного 20 ms timestamp token),
+обратный или некорректный интервал остаётся ошибкой с сохранением рабочих данных.
