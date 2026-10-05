@@ -18,6 +18,7 @@ class StaticProjectTests(unittest.TestCase):
             (qt / "QtCore").mkdir(parents=True)
             (qt / "QtNetwork").mkdir()
             (qt / "QtCore/qtmetamacros.h").write_text("#define Q_MOC_OUTPUT_REVISION 68\n")
+            (qt / "QtCore/qtmochelpers.h").write_text("#  define QT_MOC_HAS_STRINGDATA       1\n")
             entries = [{"directory": str(build), "file": str(root / source),
                         "arguments": ["clang++", "-isystem", str(qt), "-isystem", str(qt / "QtCore"),
                                       "-isystem", str(qt / "QtNetwork"), "-isystem", "/other-sdk", "-c", str(root / source)]}
@@ -32,6 +33,7 @@ class StaticProjectTests(unittest.TestCase):
                 self.assertEqual(entry["arguments"][1:9], ["-I", str(qt), "-I", str(qt / "QtCore"),
                                                           "-I", str(qt / "QtNetwork"), "-isystem", "/other-sdk"])
             self.assertEqual((output / "moc-revision.txt").read_text(), "68")
+            self.assertEqual((output / "cppcheck-qt-defines.txt").read_text(), "QT_MOC_HAS_STRINGDATA=1\n")
             self.assertEqual(json.loads((build / "compile_commands.json").read_text()), entries)
 
 

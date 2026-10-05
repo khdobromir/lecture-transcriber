@@ -34,7 +34,7 @@ CI сохраняет GCC/Clang Linux и native MSVC с warnings-as-errors. GUI 
 QML registration macros относятся только к SDK enum marker и обязательной
 static plugin registration; пользовательские enums/initializers анализируются.
 Cppcheck использует Qt library definitions, реальную MOC revision из SDK headers
-и определение static QML plugin registration macro; diagnostics GUI не отключены.
+и MOC helper markers из SDK, определение static QML plugin registration macro; diagnostics GUI не отключены.
 
 Отдельный Linux job инструментирует проект ASan/UBSan и запускает проектные
 сценарии с LSan включённым. Qt SDK не пересобирается с sanitizers. Диагностики SDK

@@ -9,6 +9,7 @@ build, root, destination = map(lambda value: Path(value).resolve(), sys.argv[1:4
 entries = []
 tidy_entries = []
 revisions = set()
+qt_defines = set()
 for entry in json.loads((build / "compile_commands.json").read_text()):
     directory = Path(entry["directory"])
     source = (directory / entry["file"]).resolve()
@@ -33,6 +34,11 @@ for entry in json.loads((build / "compile_commands.json").read_text()):
                 if match:
                     revisions.add(int(match[1]))
                     qt_includes.add(include)
+                    helper = header.with_name("qtmochelpers.h")
+                    if helper.is_file():
+                        marker = re.search(r"^\s*#\s*define\s+QT_MOC_HAS_STRINGDATA\s+(\d+)\s*$", helper.read_text(), re.MULTILINE)
+                        if marker:
+                            qt_defines.add("QT_MOC_HAS_STRINGDATA=" + marker[1])
         # Qt module includes have the same SDK root as QtCore.
         if (directory / include / "../QtCore/qtmetamacros.h").is_file():
             qt_includes.add(include)
@@ -54,3 +60,5 @@ if len(revisions) > 1:
 (destination / "tidy/compile_commands.json").write_text(json.dumps(tidy_entries))
 (destination / "sources.txt").write_text("\n".join(sorted({str((Path(item["directory"]) / item["file"]).resolve()) for item in entries})) + "\n")
 (destination / "moc-revision.txt").write_text(str(next(iter(revisions))) if revisions else "")
+
+(destination / "cppcheck-qt-defines.txt").write_text("".join(value + "\n" for value in sorted(qt_defines)))

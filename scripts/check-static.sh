@@ -28,5 +28,9 @@ if [[ -n "$moc_revision" ]]; then
   # QML's static-plugin registration macro expands to SDK/generated glue.
   checker_options+=(--library=qt "-DQ_MOC_OUTPUT_REVISION=$moc_revision" '-DQ_IMPORT_QML_PLUGIN(x)=')
 fi
+# Qt 6.8 MOC also checks a marker declared by qtmochelpers.h. Match the actual
+# SDK header, rather than suppressing generated-header configuration errors.
+mapfile -t qt_defines < "$static_dir/cppcheck-qt-defines.txt"
+for definition in "${qt_defines[@]}"; do checker_options+=("-D$definition"); done
 "$checker" --project="$static_dir/compile_commands.json" --std=c++23 \
   --enable=warning,performance,portability --error-exitcode=1 --inline-suppr "${checker_options[@]}"
