@@ -25,7 +25,12 @@ struct Inputs {
     bool url = false;
 };
 // Read-only preflight; relative paths are resolved against cwd, never process-wide chdir.
-struct ValidationPaths { std::filesystem::path root, cwd; };
+struct ValidationPaths {
+    std::filesystem::path root, cwd;
+    // GUI may use a CLI outside its own executable directory. Empty means the
+    // current executable's tools directory, preserving the CLI default.
+    std::filesystem::path bundled_tools{};
+};
 Inputs validate_inputs(const Options& options, const ValidationPaths& paths);
 std::string read_line(const std::filesystem::path& path);
 void require_file(const std::filesystem::path& path, const std::string& hint);

@@ -227,7 +227,7 @@ std::string segment_text(std::string_view line) {
     while (!line.empty() && (line.front() == ' ' || line.front() == '\t')) line.remove_prefix(1);
     return std::string(line);
 }
-void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts, const fs::path& staging) {
+void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts, const fs::path& staging, const std::function<void(std::string_view)>& warning) {
     for (const auto& chunk : chunks) for (const char* ext : {".txt", ".srt", ".vtt"})
         if (!fs::is_regular_file(utf8_path(path_utf8(chunk.prefix) + ext))) throw std::runtime_error("whisper-cli не создал ожидаемый файл " + std::string(ext));
     fs::create_directory(staging);
@@ -236,6 +236,7 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts
     auto vtt = writer(staging / "transcript.vtt");
     vtt << "WEBVTT\n\n";
     size_t index = 0;
+    bool warned = false;
     for (const auto& chunk : chunks) {
         std::ifstream text(utf8_path(path_utf8(chunk.prefix) + ".txt"), std::ios::binary);
         if (!text) throw std::runtime_error("Ошибка чтения TXT");
@@ -246,15 +247,23 @@ void merge_exports(const std::vector<Chunk>& chunks, const fs::path& transcripts
         }
         if (text.bad()) throw std::runtime_error("Ошибка чтения TXT");
         const int64_t duration_ms = (chunk.end - chunk.begin) * 1000 / 16000;
-        // whisper.cpp timestamps have a 10 ms resolution. Allow one tick of
-        // rounding, but keep the published interval within the actual chunk.
-        constexpr int64_t timestamp_resolution_ms = 10;
+        // Whisper timestamp tokens advance in 20 ms steps (whisper.cpp multiplies
+        // token indices by two centiseconds). Allow one token of rounding,
+        // but keep the published interval within the actual chunk.
+        constexpr int64_t timestamp_resolution_ms = 20;
         for (bool web : {false, true}) {
             auto& output = web ? vtt : srt;
             for (const auto& cue : read_cues(utf8_path(path_utf8(chunk.prefix) + (web ? ".vtt" : ".srt")), web)) {
                 check_cancelled();
-                if (cue.end > duration_ms + timestamp_resolution_ms)
+                if (cue.begin > duration_ms + timestamp_resolution_ms)
                     throw std::runtime_error("Субтитр выходит за границы части: " + path_utf8(chunk.prefix));
+                // Model-generated end timestamps are estimates: a segment that
+                // overlaps real audio is clipped to that interval. Entirely
+                // out-of-range segments still fail instead of inventing time.
+                if (cue.end > duration_ms + timestamp_resolution_ms && !warned) {
+                    warned = true;
+                    if (warning) warning("Конечные метки субтитров ограничены длительностью аудио.");
+                }
                 const int64_t offset = chunk.begin * 1000 / 16000;
                 if (!web) output << ++index << '\n';
                 output << time_string(std::min(cue.begin, duration_ms) + offset, web ? '.' : ',') << " --> "

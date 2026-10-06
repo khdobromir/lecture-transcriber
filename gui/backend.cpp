@@ -201,8 +201,10 @@ void Backend::start(const QString& input, const QVariantMap& values) {
         std::vector<std::string_view> views(raw.begin(), raw.end());
         const auto options = transcribe::parse_arguments(views, 1);
         // Read-only preflight gives useful feedback before a task appears as running.
-        // Windows package tools resolve relative to the GUI/CLI installation directory.
-        transcribe::validate_inputs(options, {transcribe::utf8_path(dataRoot_.toUtf8().toStdString()), std::filesystem::current_path()});
+        // Preflight must use the configured CLI's bundle, including when the
+        // GUI/harness and CLI live in different directories.
+        transcribe::validate_inputs(options, {transcribe::utf8_path(dataRoot_.toUtf8().toStdString()), std::filesystem::current_path(),
+            transcribe::utf8_path((QFileInfo(binary_).absolutePath() + "/tools").toUtf8().toStdString())});
         if (selection == "small" || selection == "medium" || selection == "turbo") {
             modelSelection_ = selection; settings_.setValue("model", selection);
         }

@@ -9,7 +9,7 @@
 #include <algorithm>
 
 QString historyPath(const QString& directory) {
-    return directory.isEmpty() ? QString{} : QDir::cleanPath(QDir::fromNativeSeparators(directory));
+    return directory.isEmpty() ? QString{} : QDir(QDir::fromNativeSeparators(directory)).absolutePath();
 }
 QString historyStatus(const QString& status) {
     if (status == "completed") return HistoryModel::tr("Готово");

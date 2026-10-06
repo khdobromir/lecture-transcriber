@@ -91,8 +91,8 @@ int main() {
             CHECK(!fs::exists(f.result / "transcript.srt") && !fs::exists(f.result / "transcript.vtt"));
         });
     for (bool web : {false, true}) for (const auto* interval : {
-            "00:00:00.000 --> 00:00:01.011", "00:00:01.011 --> 00:00:01.011",
-            "00:00:00.000 --> 00:00:20.000"})
+            "00:00:01.021 --> 00:00:01.021",
+            "00:00:20.000 --> 00:00:20.000"})
         suite.add(std::string("subtitle_bounds_rejects_") + (web ? "vtt_" : "srt_") + interval, [=] {
             Exports f; f.add(32000, "text\n", "1\n00:00:00,000 --> 00:00:00,100\ntext\n\n",
                 "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\ntext\n\n");

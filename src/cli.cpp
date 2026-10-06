@@ -78,7 +78,10 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
     files.engine = absolute(root) / "whisper.cpp/build/bin/whisper-cli";
 #ifdef _WIN32
     files.engine += ".exe";
-    if (!executable_file(files.engine)) files.engine = executable_directory() / "tools/whisper-cli.exe";
+    if (!executable_file(files.engine)) {
+        const auto bundled = paths.bundled_tools.empty() ? executable_directory() / "tools" : absolute(paths.bundled_tools);
+        files.engine = bundled / "whisper-cli.exe";
+    }
 #endif
     if (!executable_file(files.engine))
 #ifdef _WIN32

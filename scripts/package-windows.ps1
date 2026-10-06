@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory = $true)][string]$QtRoot,
     [string]$WorkDirectory = "$env:TEMP\transcribe-package",
     [string]$Destination = "$PSScriptRoot\..\dist",
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$RealSmoke
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -103,7 +104,6 @@ Invoke-Checked "$Bin\transcribe.exe" @('--version')
 Invoke-Checked "$Tools\ffmpeg.exe" @('-version')
 Invoke-Checked "$Tools\yt-dlp.exe" @('--version')
 Invoke-Checked "$Tools\whisper-cli.exe" @('--help')
-Invoke-Checked python @("$Project\tests\smoke_windows_package.py", $Bin)
 $Manifest = [ordered]@{
     version = 1; platform = 'Windows 11 x64'; qt = $QtVersion
     source = (& git -C $Project rev-parse HEAD).Trim()
@@ -117,6 +117,12 @@ $Manifest.files = @(Get-ChildItem $Bundle -Recurse -File | ForEach-Object {
 $Manifest | ConvertTo-Json -Depth 8 | Set-Content "$Bundle\package-manifest.json" -Encoding utf8
 $Zip = Join-Path $Destination ('Transcribe-windows-x64-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
 Compress-Archive -Path $Bundle -DestinationPath $Zip -CompressionLevel Optimal
+# Validate and run the actual final archive from a fresh Unicode directory.
+$SmokeArguments = @("$Project\tests\smoke_windows_package.py", $Zip, $Manifest.source)
+if ($RealSmoke) {
+    $SmokeArguments += @('--real-gui', "$Build\gui\Release\test_gui_real.exe", '--workspace', "$Stage\real-smoke")
+}
+Invoke-Checked python $SmokeArguments
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
     Set-Content ($Zip + '.sha256') -Encoding ascii
 Write-Host "Package: $Zip"
