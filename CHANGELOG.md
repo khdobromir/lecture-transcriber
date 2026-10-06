@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Собственные читатели TXT/result.json разрешают атомарную замену на Windows;
+  временные sharing/locking ошибки публикации имеют ограниченные отменяемые повторы.
+
 - Windows 11 x64 backend: Unicode argv/пути, Job Objects, межпроцессные блокировки,
   приватные ACL и атомарная публикация результатов; Linux API вынесен в адаптеры.
 - Qt Quick GUI для Linux/Windows: одна задача, прогресс/ETA, частичный текст,

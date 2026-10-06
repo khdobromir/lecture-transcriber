@@ -30,11 +30,14 @@ namespace fs = std::filesystem;
 namespace transcribe {
 namespace {
 void metadata(const fs::path& result, const std::string& details, const Options& options, std::string_view status, int code) {
+    // Failure metadata must remain publishable after cancellation has been accepted.
+    const std::function<void()> checkpoint = status == "failed" || status == "interrupted" ?
+        std::function<void()>{[] {}} : std::function<void()>{check_cancelled};
     std::ofstream out(result / ".source.tmp");
     out.exceptions(std::ios::badbit | std::ios::failbit);
     out << details << "Статус: " << status << "\nКод: " << code << '\n';
     out.close();
-    replace_file(result / ".source.tmp", result / "source.txt");
+    replace_file(result / ".source.tmp", result / "source.txt", checkpoint);
     nlohmann::json manifest{{"version", 1}, {"status", status}, {"code", code}, {"source", options.input},
         {"model", options.model}, {"language", "ru"}, {"threads", options.threads}, {"chunks", options.chunks},
         {"jobs", options.jobs}, {"vad", options.vad}, {"title", path_utf8(result.filename())},
@@ -42,7 +45,7 @@ void metadata(const fs::path& result, const std::string& details, const Options&
     std::ofstream json(result / ".result.tmp", std::ios::binary);
     json.exceptions(std::ios::badbit | std::ios::failbit);
     json << manifest.dump(2, ' ', false, nlohmann::json::error_handler_t::replace) << '\n'; json.close();
-    replace_file(result / ".result.tmp", result / "result.json");
+    replace_file(result / ".result.tmp", result / "result.json", checkpoint);
 }
 
 void recognize(const std::vector<transcribe::Chunk>& chunks, const Options& o,

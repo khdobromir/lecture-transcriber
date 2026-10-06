@@ -1,4 +1,5 @@
 #include "backend.hpp"
+#include "files.hpp"
 #include "cli.hpp"
 #include "platform.hpp"
 #include "result.hpp"
@@ -26,9 +27,9 @@ QString settingsFile() {
     return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/settings.ini";
 }
 QString verifyCompletion(const QString& directory) {
-    QFile file(directory + "/result.json");
-    if (directory.isEmpty() || file.size() > 65536 || !file.open(QIODevice::ReadOnly)) return Backend::tr("Не удалось подтвердить сохранение результата");
-    const auto json = QJsonDocument::fromJson(file.readAll()).object();
+    const auto bytes = readSmallFile(directory + "/result.json", 65536);
+    if (directory.isEmpty() || !bytes) return Backend::tr("Не удалось подтвердить сохранение результата");
+    const auto json = QJsonDocument::fromJson(*bytes).object();
     if (json.value("version").toInt() != 1 || json.value("status").toString() != "completed" || json.value("code").toInt(-1) != 0)
         return Backend::tr("Backend не подтвердил успешное завершение");
     for (const auto* suffix : {"txt", "srt", "vtt"}) {
@@ -221,12 +222,14 @@ void Backend::readPreview() {
     if (previewWatcher_.isRunning()) { previewDirty_ = true; return; }
     previewPath_ = result_; const auto directory = result_;
     previewWatcher_.setFuture(QtConcurrent::run([directory] {
-        QFile file(directory + "/transcripts/transcript.txt");
-        if (!file.open(QIODevice::ReadOnly)) return QString{};
-        constexpr qint64 budget = qint64{512} * 1024;
-        const bool tail = file.size() > budget;
-        if (tail) { file.seek(file.size() - budget); file.readLine(); }
-        return (tail ? Backend::tr("Показан конец текста; полный TXT сохранён в каталоге результата.\n\n") : QString{}) + QString::fromUtf8(file.read(budget));
+        try {
+            transcribe::SharedReader reader(transcribe::utf8_path((directory + "/transcripts/transcript.txt").toUtf8().toStdString()));
+            constexpr std::size_t budget = std::size_t{512} * 1024;
+            const bool tail = reader.size() > budget;
+            auto bytes = QByteArray::fromStdString(reader.read(tail ? reader.size() - budget : 0, budget));
+            if (tail) { const auto newline = bytes.indexOf('\n'); bytes = newline >= 0 ? bytes.mid(newline + 1) : QByteArray{}; }
+            return (tail ? Backend::tr("Показан конец текста; полный TXT сохранён в каталоге результата.\n\n") : QString{}) + QString::fromUtf8(bytes);
+        } catch (const std::exception&) { return QString{}; }
     }));
 }
 void Backend::refreshHistory() {

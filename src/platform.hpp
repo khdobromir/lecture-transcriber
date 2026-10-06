@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -23,7 +24,21 @@ void require_private_directory(const std::filesystem::path& path);
 std::filesystem::path temporary_directory(const std::filesystem::path& parent, std::string_view prefix);
 bool indirect_path(const std::filesystem::path& path);
 void create_private_file(const std::filesystem::path& path);
-void replace_file(const std::filesystem::path& source, const std::filesystem::path& destination);
+void replace_file(const std::filesystem::path& source, const std::filesystem::path& destination,
+                  const std::function<void()>& cancellation = {});
+// A bounded reader whose open handle permits atomic replacement by publishers.
+class SharedReader {
+public:
+    explicit SharedReader(const std::filesystem::path& path);
+    ~SharedReader();
+    SharedReader(const SharedReader&) = delete;
+    SharedReader& operator=(const SharedReader&) = delete;
+    std::uint64_t size() const;
+    std::string read(std::uint64_t offset, std::size_t limit);
+private:
+    struct Native;
+    std::unique_ptr<Native> native_;
+};
 bool rename_directory(const std::filesystem::path& source, const std::filesystem::path& destination);
 class FileLock {
 public:
