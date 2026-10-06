@@ -1,10 +1,13 @@
 #include "models.hpp"
+#include "files.hpp"
+#include "http_range.hpp"
 #include <QCryptographicHash>
 #include <QDir>
 #include <QException>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QtConcurrent/QtConcurrentRun>
+#include <algorithm>
 #include <stdexcept>
 
 namespace {
@@ -40,7 +43,7 @@ ModelManager::ModelManager(QString root, QObject* parent) : ModelManager(std::mo
 ModelManager::ModelManager(QString root, QVector<Record> records, QObject* parent)
     : QObject(parent), root_(std::move(root)), records_(std::move(records)) {
     connect(&lockWatcher_, &QFutureWatcherBase::finished, this, [this] {
-        try { lock_ = lockWatcher_.result(); next(); }
+        try { lock_ = lockWatcher_.future().takeResult(); next(); }
         catch (const std::exception& error) { finish(exceptionMessage(error)); }
         catch (...) { finish(cancel_ && cancel_->load() ? tr("Загрузка отменена") : tr("Не удалось получить блокировку моделей")); }
     });
@@ -54,6 +57,7 @@ ModelManager::ModelManager(QString root, QVector<Record> records, QObject* paren
                 if (!valid && probingPart_) { probingPart_ = false; fetch(); return; }
                 if (!valid) { QFile::remove(target + ".part"); finish(tr("SHA-256 модели не совпадает. Повторите загрузку.")); return; }
                 transcribe::replace_file(transcribe::utf8_path((target + ".part").toStdString()), transcribe::utf8_path(target.toStdString()));
+                QFile::remove(target + ".part.sha256");
                 ++index_; next();
             } else if (valid) { ++index_; next(); }
             else if (QFile::exists(target)) finish(tr("Установленная модель повреждена. Сохраните её отдельно перед повторной загрузкой."));
@@ -137,47 +141,77 @@ void ModelManager::next() {
     checkCancelled(cancel_);
     if (index_ == queue_.size()) { finish(); return; }
     const auto record = queue_[index_];
-    status_ = tr("Проверка %1…").arg(record.selection); progress_ = -1; verifyingPart_ = probingPart_ = false; emit changed();
+    status_ = tr("Проверка %1…").arg(record.selection); progress_ = -1; verifyingPart_ = probingPart_ = restarted_ = false; emit changed();
     const auto cancel = cancel_; const auto target = root_ + "/models/" + record.filename;
     verifyWatcher_.setFuture(QtConcurrent::run([target, record, cancel] { return verify(target, record.sha256, cancel); }));
 }
 void ModelManager::fetch() {
+    try {
     const auto record = queue_[index_];
     const auto partial = root_ + "/models/" + record.filename + ".part";
-    safeModelPath(partial);
+    safeModelPath(partial); safeModelPath(partial + ".sha256");
+    const auto identity = readSmallFile(partial + ".sha256", 128);
+    if (QFile::exists(partial) && (!identity || identity->trimmed() != record.sha256)) {
+        if (!QFile::remove(partial)) { finish(tr("Не удалось сбросить временный файл другой ревизии модели")); return; }
+    }
+    QSaveFile binding(partial + ".sha256");
+    if (!binding.open(QIODevice::WriteOnly) || binding.write(record.sha256) != record.sha256.size() || !binding.commit()) {
+        finish(tr("Не удалось сохранить ревизию временного файла модели")); return;
+    }
     part_.setFileName(partial);
-    if (!part_.open(QIODevice::ReadWrite)) { finish(tr("Не удалось открыть временный файл модели")); return; }
-    offset_ = part_.size(); part_.seek(offset_);
+    if (!part_.open(QIODevice::ReadWrite | QIODevice::Unbuffered)) { finish(tr("Не удалось открыть временный файл модели")); return; }
+    offset_ = part_.size();
+    if (!part_.seek(offset_)) { finish(tr("Не удалось продолжить временный файл модели")); return; }
     QNetworkRequest request(QUrl(record.url));
     request.setTransferTimeout(30000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     if (offset_) request.setRawHeader("Range", "bytes=" + QByteArray::number(offset_) + '-');
-    responseChecked_ = false; status_ = tr("Загрузка %1…").arg(record.selection); emit changed();
+    responseChecked_ = false; responseError_.clear(); expectedTotal_ = -1;
+    status_ = tr("Загрузка %1…").arg(record.selection); emit changed();
     reply_ = network_.get(request);
-    connect(reply_, &QNetworkReply::readyRead, this, [this] {
+    const QPointer<QNetworkReply> operation = reply_;
+    connect(reply_, &QNetworkReply::readyRead, this, [this, operation] {
+        if (!operation || reply_ != operation) return;
         if (!checkResponse()) return;
         const auto bytes = reply_->readAll();
-        if (part_.write(bytes) != bytes.size()) { status_ = tr("Не удалось записать модель: проверьте свободное место"); reply_->abort(); }
+        if (part_.write(bytes) != bytes.size()) { responseError_ = tr("Не удалось записать модель: проверьте свободное место"); reply_->abort(); }
     });
-    connect(reply_, &QNetworkReply::downloadProgress, this, [this](qint64 received, qint64 total) {
-        progress_ = total > 0 ? static_cast<double>(offset_ + received) / static_cast<double>(offset_ + total) : -1;
+    connect(reply_, &QNetworkReply::downloadProgress, this, [this, operation](qint64 received, qint64 total) {
+        if (!operation || reply_ != operation) return;
+        progress_ = total > 0 ? std::clamp((static_cast<double>(offset_) + static_cast<double>(received)) /
+            (static_cast<double>(offset_) + static_cast<double>(total)), 0.0, 1.0) : -1;
         emit changed();
     });
-    connect(reply_, &QNetworkReply::finished, this, [this] {
-        auto* reply = reply_.data();
-        if (!reply) return;
+    connect(reply_, &QNetworkReply::finished, this, [this, operation] {
+        if (!operation || reply_ != operation) return;
+        auto* reply = operation.data();
+        if (!cancel_->load() && reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 416 && !restarted_) {
+            const auto range = ContentRange::parse(reply->rawHeader("Content-Range"));
+            if (range && range->unsatisfied && offset_ >= range->total) {
+                part_.close(); reply->disconnect(this); reply->deleteLater(); reply_.clear();
+                restarted_ = true;
+                if (!QFile::remove(part_.fileName())) { finish(tr("Не удалось сбросить непригодный временный файл модели")); return; }
+                fetch(); return;
+            }
+        }
         if (reply->error() == QNetworkReply::NoError && checkResponse()) {
             const auto rest = reply->readAll();
             if (part_.write(rest) != rest.size()) { part_.close(); reply->deleteLater(); reply_.clear(); finish(tr("Ошибка записи модели")); return; }
+            if (expectedTotal_ >= 0 && part_.size() != expectedTotal_) {
+                part_.close(); reply->deleteLater(); reply_.clear(); finish(tr("Размер полученной модели не соответствует HTTP диапазону")); return;
+            }
+            if (!part_.flush()) { part_.close(); reply->deleteLater(); reply_.clear(); finish(tr("Не удалось сохранить временную модель")); return; }
             part_.close(); reply->deleteLater(); reply_.clear();
             const auto record = queue_[index_]; const auto target = root_ + "/models/" + record.filename + ".part"; const auto cancel = cancel_;
             verifyingPart_ = true; probingPart_ = false; status_ = tr("Проверка SHA-256 %1…").arg(record.selection); progress_ = -1; emit changed();
             verifyWatcher_.setFuture(QtConcurrent::run([target, record, cancel] { return verify(target, record.sha256, cancel); }));
         } else {
-            const auto message = cancel_->load() ? tr("Загрузка отменена; временный файл сохранён") : tr("Загрузка не завершена: %1").arg(reply->errorString());
+            const auto message = cancel_->load() ? tr("Загрузка отменена; временный файл сохранён") :
+                (!responseError_.isEmpty() ? responseError_ : tr("Загрузка не завершена: %1").arg(reply->errorString()));
             part_.close(); reply->deleteLater(); reply_.clear(); finish(message);
         }
     });
+    } catch (const std::exception& error) { finish(exceptionMessage(error)); }
 }
 bool ModelManager::checkResponse() {
     if (responseChecked_) return true;
@@ -186,9 +220,16 @@ bool ModelManager::checkResponse() {
     if (!status) return false;
     if (status == 200) {
         if (offset_) { if (!part_.resize(0) || !part_.seek(0)) { reply_->abort(); return false; } offset_ = 0; }
-    } else if (status == 206 && offset_) {
-        const auto prefix = "bytes " + QByteArray::number(offset_) + '-';
-        if (!reply_->rawHeader("Content-Range").startsWith(prefix)) { reply_->abort(); return false; }
+        bool ok = false; const auto size = reply_->rawHeader("Content-Length").toLongLong(&ok);
+        if (ok && size >= 0) expectedTotal_ = size;
+    } else if (status == 206) {
+        const auto range = ContentRange::parse(reply_->rawHeader("Content-Range"));
+        bool ok = false; const auto size = reply_->rawHeader("Content-Length").toLongLong(&ok);
+        if (!range || range->unsatisfied || range->begin != offset_ || range->end != range->total - 1 ||
+            (reply_->hasRawHeader("Content-Length") && (!ok || size != range->end - range->begin + 1))) {
+            responseError_ = tr("Некорректный Content-Range ответа модели; временный файл сохранён"); reply_->abort(); return false;
+        }
+        expectedTotal_ = range->total;
     } else { reply_->abort(); return false; }
     responseChecked_ = true; return true;
 }
@@ -228,7 +269,7 @@ void ModelManager::importModel(const QString& source, const QString& selection) 
                 checkCancelled(cancel); const auto bytes = input.read(qint64{1024} * 1024);
                 if (input.error() != QFileDevice::NoError || output.write(bytes) != bytes.size()) throw std::runtime_error("Ошибка копирования модели");
             }
-            output.close();
+            input.close(); output.close();
             if (!verify(partial, record.sha256, cancel)) return false;
             checkCancelled(cancel);
             // Publish while the cross-process installation lock is still held.

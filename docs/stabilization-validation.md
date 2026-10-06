@@ -32,7 +32,23 @@ digest upload archive `46716f6db4713e09e0475024e521c2d0f325dcb90c49e14df13452905
 проверены. Исходный CI не доказывает их исправление. Native readers, 256 частей,
 416 recovery и насыщение истории имеют воспроизводящие сценарии в перечне.
 
-## Ручные границы допуска
+## Последовательные кандидаты
+
+- PR [#5](https://github.com/khdobromir/lecture-transcriber/pull/5), source head
+  `d0339adbd598ec41376405d2992917c0718d3661`:
+  [CI 37281520322](https://github.com/khdobromir/lecture-transcriber/actions/runs/37281520322),
+  8/8 jobs success. FILE-1/FILE-2 подтверждены native Windows Server 2022 x64
+  (MSVC и Qt 6.8.3), включая воспроизведение старого QFile reader conflict,
+  публикацию при открытом SharedReader, release barrier, bounded lock/cancel.
+- PR [#6](https://github.com/khdobromir/lecture-transcriber/pull/6), source head
+  `1fe9d515fb4bf341c87c8adcf66b32dc203b05ac`:
+  [CI 37282320950](https://github.com/khdobromir/lecture-transcriber/actions/runs/37282320950),
+  8/8 jobs success. Настоящий pinned Windows FFmpeg прошёл 1/2/17/256 частей,
+  длинные Unicode paths, точные sample bounds, отмену и ошибку второй группы.
+  Linux FFmpeg 6.1 и 9 проверены теми же сценариями. Это проверка PR tree;
+  окончательный кандидат/ZIP потребует отдельного CI на точном source SHA.
+
+## Ручные границы допуска кандидата
 
 Чистая Windows 11 без Qt/VS/Python/Git: не проверено. Настоящая русская запись с
 фиксированным SHA на обеих ОС: не проверено для нового кандидата. Установленный

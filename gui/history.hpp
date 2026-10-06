@@ -2,9 +2,10 @@
 #include <cstdint>
 #include <QAbstractListModel>
 #include <QVector>
+#include <QVariantMap>
 #include <QtQml/qqmlregistration.h>
 
-struct HistoryRow { QString title, status, model, directory, date; bool available = true; };
+struct HistoryRow { QString title, status, model, directory, date; bool available = true; qint64 created = 0; };
 class HistoryModel : public QAbstractListModel {
     Q_OBJECT
     QML_ANONYMOUS
@@ -16,7 +17,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     void replace(QVector<HistoryRow> rows);
     QString statusFor(const QString& directory) const;
-    static QVector<HistoryRow> scan(const QStringList& roots, const QStringList& known);
+    static QVector<HistoryRow> scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps = {});
 private:
     QVector<HistoryRow> rows_;
 };

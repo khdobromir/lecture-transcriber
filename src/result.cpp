@@ -92,6 +92,7 @@ ResultPaths ResultPaths::create(const fs::path& parent, std::string_view title, 
     std::ostringstream date;
     date << std::put_time(&local, "%Y-%m-%d_%H-%M-%S");
     ResultPaths paths{{}, date.str()};
+    paths.created = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     const auto base = titlePart + '_' + paths.date;
     for (unsigned suffix = 1;; ++suffix) {
         const auto candidate = parent / utf8_path(base + (suffix == 1 ? "" : '_' + std::to_string(suffix)));

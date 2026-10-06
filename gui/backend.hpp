@@ -78,6 +78,7 @@ private:
     QFutureWatcher<QString> completionWatcher_;
     QString previewPath_;
     QStringList roots_, known_;
+    QVariantMap knownTimes_;
     void readEvents();
     void acceptEvent(const QJsonObject& event);
     void protocolError(const QString& message);
