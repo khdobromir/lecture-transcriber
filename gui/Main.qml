@@ -43,32 +43,35 @@ ApplicationWindow {
         id: inputDialog
         title: qsTr("Выберите видео или аудиофайл")
         fileMode: FileDialog.OpenFile
-        onAccepted: source.text = window.backend.filePath(selectedFile)
+        onAccepted: { source.text = window.backend.filePath(selectedFile); source.forceActiveFocus() }
+        onRejected: source.forceActiveFocus()
     }
     FolderDialog {
         id: outputDialog
         title: qsTr("Каталог результатов")
-        onAccepted: outputPath.text = window.backend.filePath(selectedFolder)
+        onAccepted: { outputPath.text = window.backend.filePath(selectedFolder); outputPath.forceActiveFocus() }
+        onRejected: outputPath.forceActiveFocus()
     }
     FileDialog {
         id: modelDialog
         property bool vadModel: false
         title: qsTr("Импорт модели из файла")
         nameFilters: [qsTr("Модель GGML (*.bin)")]
-        onAccepted: window.backend.importModel(window.backend.filePath(selectedFile), vadModel ? "vad" : modelPicker.currentText)
+        onAccepted: { window.backend.importModel(window.backend.filePath(selectedFile), vadModel ? "vad" : modelPicker.currentText); tabs.forceActiveFocus() }
+        onRejected: tabs.forceActiveFocus()
     }
     Dialog {
         id: closeDialog
         objectName: "closeConfirmation"
         width: Math.min(window.width - 48, 460)
-        title: qsTr("Задача ещё выполняется")
+        title: qsTr("Операция ещё выполняется")
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.NoButton
         contentItem: ColumnLayout {
-            Label { text: qsTr("Отменить задачу и закрыть окно после сохранения частичного результата?"); wrapMode: Text.WordWrap; Layout.maximumWidth: 400 }
+            Label { text: qsTr("Запросить отмену и закрыть окно после завершения операции? Частичные данные сохранятся; уже сохранённый результат останется готовым."); wrapMode: Text.WordWrap; Layout.maximumWidth: 400 }
             RowLayout {
-                Button { objectName: "stayButton"; text: qsTr("Остаться"); onClicked: closeDialog.close() }
+                Button { objectName: "stayButton"; text: qsTr("Остаться"); onClicked: { closeDialog.close(); source.forceActiveFocus() } }
                 Button { objectName: "cancelCloseButton"; text: qsTr("Отменить и закрыть"); onClicked: { window.closeRequested = true; window.backend.cancel(); closeDialog.close() } }
             }
         }
@@ -83,14 +86,6 @@ ApplicationWindow {
             Label { text: qsTr("Transcribe"); font.pointSize: window.font.pointSize + 8; font.bold: true }
             Item { Layout.fillWidth: true }
             Label { text: qsTr("Русская речь · локально · CPU"); opacity: 0.7 }
-        }
-        Label {
-            visible: window.backend.error.length > 0
-            text: window.backend.error
-            textFormat: Text.PlainText
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-            Accessible.name: text
         }
         TabBar {
             id: tabs
@@ -166,27 +161,52 @@ ApplicationWindow {
                             }
                             RowLayout {
                                 Button { text: qsTr("Начать расшифровку"); highlighted: true; enabled: !window.backend.active && source.text.trim().length > 0; onClicked: window.runTask() }
-                                Button { text: qsTr("Отменить"); visible: window.backend.busy; onClicked: window.backend.cancel() }
+                                Button { text: qsTr("Отменить"); visible: window.backend.busy; enabled: window.backend.canCancel; onClicked: window.backend.cancel() }
                                 Item { Layout.fillWidth: true }
                                 Label { text: qsTr("Ctrl+O · Ctrl+Enter"); opacity: 0.6 }
                             }
                         }
                     }
                     Frame {
-                        visible: window.backend.busy || window.backend.resultDirectory.length > 0
                         Layout.fillWidth: true
                         ColumnLayout {
                             anchors.fill: parent
-                            Label { text: window.backend.busy ? window.backend.stage : window.backend.status; font.bold: true; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                            Label { text: qsTr("Текущая задача · %1").arg(window.backend.status); font.bold: true; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                            Label { text: window.backend.stage; visible: window.backend.busy; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                            ScrollView {
+                                visible: window.backend.error.length > 0
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: Math.min(120, taskMessage.implicitHeight)
+                                TextArea { id: taskMessage; objectName: "taskError"; text: window.backend.error; readOnly: true; selectByMouse: true; wrapMode: TextEdit.Wrap; textFormat: TextEdit.PlainText; Accessible.name: qsTr("Ошибка текущей задачи") }
+                            }
+                            Label { text: qsTr("Предупреждение задачи: %1").arg(window.backend.warning); visible: window.backend.warning.length > 0; wrapMode: Text.WordWrap; Layout.fillWidth: true; textFormat: Text.PlainText }
                             ProgressBar { Layout.fillWidth: true; indeterminate: window.backend.progress < 0; value: window.backend.progress; visible: window.backend.busy; Accessible.name: qsTr("Прогресс распознавания") }
                             Label { text: window.backend.eta; visible: text.length > 0 && window.backend.busy }
                             RowLayout {
-                                Button { text: qsTr("Каталог"); onClicked: window.backend.openResult("") }
-                                Button { text: "TXT"; onClicked: window.backend.openResult("txt") }
-                                Button { text: "SRT"; enabled: !window.backend.busy; onClicked: window.backend.openResult("srt") }
-                                Button { text: "VTT"; enabled: !window.backend.busy; onClicked: window.backend.openResult("vtt") }
+                                Button { objectName: "retryTask"; text: qsTr("Повторить задачу"); visible: window.backend.canRetry; onClicked: window.backend.retry() }
+                                Button { text: qsTr("Каталог задачи"); enabled: window.backend.taskResultDirectory.length > 0; onClicked: window.backend.openTaskResult() }
+                                Button { text: qsTr("Журналы задачи"); enabled: window.backend.taskResultDirectory.length > 0; onClicked: window.backend.openTaskResult("logs") }
+                            }
+                        }
+                    }
+                    Frame {
+                        visible: window.backend.resultDirectory.length > 0
+                        Layout.fillWidth: true
+                        ColumnLayout {
+                            anchors.fill: parent
+                            Label { objectName: "selectedResultStatus"; text: qsTr("Выбранный результат · %1").arg(window.backend.selectedStatus); font.bold: true; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                            Label { text: window.backend.resultDirectory; textFormat: Text.PlainText; wrapMode: Text.WrapAnywhere; Layout.fillWidth: true; opacity: 0.7 }
+                            Button { text: qsTr("Показать результат текущей задачи"); visible: window.backend.taskResultDirectory.length > 0 && window.backend.resultDirectory !== window.backend.taskResultDirectory; onClicked: window.backend.viewCurrentResult() }
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Button { text: qsTr("Каталог"); onClicked: window.backend.openResult() }
+                                Button { text: qsTr("Полный TXT"); onClicked: window.backend.openResult("txt") }
+                                Button { text: "SRT"; onClicked: window.backend.openResult("srt") }
+                                Button { text: "VTT"; onClicked: window.backend.openResult("vtt") }
                                 Button { text: qsTr("Журналы"); onClicked: window.backend.openResult("logs") }
                             }
+                            Label { text: window.backend.previewError; visible: text.length > 0; textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         }
                     }
                     Label { text: qsTr("Текст расшифровки"); font.bold: true }
@@ -207,6 +227,7 @@ ApplicationWindow {
             }
             ColumnLayout {
                 RowLayout { Label { text: qsTr("Сохранённые результаты"); font.bold: true } Item { Layout.fillWidth: true } Button { text: qsTr("Обновить"); onClicked: window.backend.refreshHistory() } }
+                Label { text: window.backend.historyError; visible: text.length > 0; textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 ListView {
                     id: historyList
                     Layout.fillWidth: true
@@ -224,7 +245,7 @@ ApplicationWindow {
                         required property string date
                         required property bool available
                         width: historyList.width
-                        enabled: available && !window.backend.busy
+                        enabled: available
                         text: title + "\n" + (available ? status : qsTr("Результат недоступен")) + " · " + modelName + " · " + date
                         contentItem: Label { text: historyItem.text; textFormat: Text.PlainText; wrapMode: Text.WordWrap }
                         Accessible.name: text
@@ -247,9 +268,15 @@ ApplicationWindow {
                         Button { text: qsTr("Импорт %1…").arg(modelPicker.currentText); enabled: !window.backend.active; onClicked: { modelDialog.vadModel = false; modelDialog.open() } }
                         Button { text: qsTr("Импорт VAD…"); enabled: !window.backend.active; onClicked: { modelDialog.vadModel = true; modelDialog.open() } }
                     }
-                    Label { text: window.backend.modelStatus; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(160, modelMessage.implicitHeight)
+                        TextArea { id: modelMessage; text: window.backend.modelStatus; readOnly: true; selectByMouse: true; textFormat: TextEdit.PlainText; wrapMode: TextEdit.Wrap; Accessible.name: qsTr("Состояние установки модели") }
+                    }
+                    Button { text: qsTr("Сохранить резервную копию и восстановить"); visible: window.backend.modelCanRecover; enabled: !window.backend.active; onClicked: window.backend.recoverModel() }
+                    Label { text: qsTr("Резервная копия: %1").arg(window.backend.modelBackupPath); visible: window.backend.modelBackupPath.length > 0; textFormat: Text.PlainText; wrapMode: Text.WrapAnywhere; Layout.fillWidth: true }
                     ProgressBar { visible: window.backend.modelBusy; Layout.fillWidth: true; indeterminate: window.backend.modelProgress < 0; value: window.backend.modelProgress; Accessible.name: qsTr("Загрузка модели") }
-                    Button { text: qsTr("Отменить загрузку"); visible: window.backend.modelBusy; onClicked: window.backend.cancel() }
+                    Button { text: qsTr("Отменить операцию с моделью"); visible: window.backend.modelBusy; onClicked: window.backend.cancel() }
                     Label { text: qsTr("Каталог данных: %1").arg(window.backend.appHome); textFormat: Text.PlainText; wrapMode: Text.WrapAnywhere; Layout.fillWidth: true; opacity: 0.7 }
                     Label { text: qsTr("Перед использованием файл проверяется по SHA-256. Для работы с локальными записями после установки моделей интернет не нужен."); wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 }

@@ -12,6 +12,8 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTimer>
+#include <QSemaphore>
+#include <QElapsedTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <iostream>
@@ -52,7 +54,11 @@ int helper(const QStringList& args) {
         send({{"type", "failed"}, {"result", root}, {"status", "interrupted"}, {"code", 130}, {"message", "Отменено"}});
         return 130;
     }
-    QTest::qSleep(150);
+        const auto release = qEnvironmentVariable("TRANSCRIBE_TEST_RELEASE");
+    if (!release.isEmpty()) {
+        QElapsedTimer deadline; deadline.start();
+        while (!QFile::exists(release)) { if (deadline.elapsed() > 5000) return 1; QThread::msleep(1); }
+    }
     if (mode != "missing_manifest") {
         put(root + "/result.json", R"({"version":1,"status":"completed","code":0,"model":"medium"})");
         for (const auto* extension : {"txt", "srt", "vtt"}) put(root + "/transcripts/transcript." + extension, "текст\n");
@@ -159,10 +165,14 @@ private slots:
     void confirmedSuccessAndSplitUtf8() {
         QFETCH(QString, mode); qputenv("TRANSCRIBE_TEST_MODE", mode.toUtf8()); Fixture fixture;
         Backend backend({QCoreApplication::applicationFilePath(), fixture.ini, fixture.root});
+        const auto release = fixture.temp.path() + "/release";
+        qputenv("TRANSCRIBE_TEST_RELEASE", release.toUtf8());
         backend.start(fixture.temp.path() + "/input.wav", fixture.options());
+        qunsetenv("TRANSCRIBE_TEST_RELEASE");
         QVERIFY(backend.busy());
         QTRY_COMPARE_WITH_TIMEOUT(backend.progress(), 1.0, 3000);
-        QVERIFY(backend.busy()); // 100% recognition is not completion.
+        QVERIFY(backend.busy()); // Barrier holds publication after 100% recognition.
+        put(release, "ready");
         QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 3000);
         QCOMPARE(backend.status(), QString("Готово")); QVERIFY(backend.error().isEmpty());
         QTRY_VERIFY_WITH_TIMEOUT(backend.history()->rowCount() == 1, 3000);
@@ -213,6 +223,124 @@ private slots:
         QVERIFY(!backend.busy()); QVERIFY(backend.error().contains("169")); QVERIFY(!QDir(output).exists());
     }
 #endif
+    void stateTransitionGuards() {
+        QVERIFY(transitionAllowed(TaskState::idle, TaskState::starting));
+        QVERIFY(!transitionAllowed(TaskState::failed, TaskState::completed));
+        QVERIFY(!transitionAllowed(TaskState::completed, TaskState::cancel_requested));
+        QVERIFY(transitionAllowed(TaskState::cancel_requested, TaskState::finalizing));
+        QVERIFY(transitionAllowed(ModelState::cancelling, ModelState::ready));
+        QVERIFY(!transitionAllowed(ModelState::ready, ModelState::downloading));
+        QVERIFY(!transitionAllowed(ModelState::cancelling, ModelState::downloading));
+    }
+    void preflightFailurePreservesSelectedResultAndRetries() {
+        qputenv("TRANSCRIBE_TEST_MODE", "normal"); Fixture fixture;
+        const auto saved = fixture.output + "/saved";
+        put(saved + "/result.json", R"({"version":1,"status":"completed"})");
+        Backend backend({QCoreApplication::applicationFilePath(), fixture.ini, fixture.root});
+        QTRY_COMPARE(backend.history()->rowCount(), 1); backend.viewResult(saved);
+        QCOMPARE(backend.selectedStatus(), QString("Готово"));
+        backend.start("", fixture.options());
+        QCOMPARE(backend.state(), TaskState::failed); QCOMPARE(backend.resultDirectory(), saved);
+        QCOMPARE(backend.selectedStatus(), QString("Готово")); QVERIFY(backend.taskResultDirectory().isEmpty());
+        backend.start(fixture.temp.path() + "/input.wav", fixture.options());
+        QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 3000); QCOMPARE(backend.state(), TaskState::completed);
+    }
+    void failedBackendStartCanRetry() {
+        qputenv("TRANSCRIBE_TEST_MODE", "normal"); Fixture fixture;
+        const auto binary = fixture.temp.path() + "/backend"
+#ifdef Q_OS_WIN
+            ".exe"
+#endif
+            ;
+        Backend backend({binary, fixture.ini, fixture.root});
+        backend.start(fixture.temp.path() + "/input.wav", fixture.options());
+        QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 3000); QCOMPARE(backend.state(), TaskState::failed); QVERIFY(backend.canRetry());
+        QVERIFY(QFile::copy(QCoreApplication::applicationFilePath(), binary));
+#ifdef Q_OS_WIN
+        // The copied native Qt helper resolves its runtime beside the original SDK app.
+        const auto oldPath = qgetenv("PATH");
+        qputenv("PATH", QFileInfo(QCoreApplication::applicationFilePath()).absolutePath().toUtf8() + ';' + oldPath);
+#endif
+        backend.retry(); QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 3000); QCOMPARE(backend.state(), TaskState::completed);
+#ifdef Q_OS_WIN
+        qputenv("PATH", oldPath);
+#endif
+    }
+    void stalePreviewCannotChangeReselectedResult() {
+        Fixture fixture; auto ready = std::make_shared<std::atomic<bool>>(false);
+        auto release = std::make_shared<QSemaphore>(); auto calls = std::make_shared<std::atomic<int>>(0);
+        Backend::Readers readers;
+        readers.preview = [ready, release, calls](const QString&, const Backend::Cancel& cancel) {
+            if (calls->fetch_add(1) == 0) {
+                ready->store(true);
+                while (!release->tryAcquire(1, 10) && !cancel->load()) {}
+                return QString("stale A");
+            }
+            return QString("fresh A");
+        };
+        Backend backend({"missing", fixture.ini, fixture.root}, readers);
+        backend.viewResult("A"); QTRY_VERIFY(ready->load());
+        backend.viewResult("B"); backend.viewResult("A"); release->release();
+        QTRY_COMPARE(backend.transcript(), QString("fresh A")); QCOMPARE(backend.resultDirectory(), QString("A"));
+    }
+    void cancellationAfterCommitKeepsCompletedDuringVerification() {
+        qputenv("TRANSCRIBE_TEST_MODE", "normal"); Fixture fixture;
+        auto ready = std::make_shared<std::atomic<bool>>(false), release = std::make_shared<std::atomic<bool>>(false);
+        Backend::Readers readers;
+        readers.completion = [ready, release](const QString& directory, const Backend::Cancel& cancel) {
+            if (!QFile::exists(directory + "/result.json")) throw std::runtime_error("missing committed manifest");
+            ready->store(true);
+            while (!release->load() && !cancel->load()) QThread::msleep(1);
+            return QString{};
+        };
+        Backend backend({QCoreApplication::applicationFilePath(), fixture.ini, fixture.root}, readers);
+        backend.start(fixture.temp.path() + "/input.wav", fixture.options()); QTRY_VERIFY(ready->load());
+        QCOMPARE(backend.state(), TaskState::finalizing); QVERIFY(!backend.canCancel());
+        backend.cancel(); QCOMPARE(backend.state(), TaskState::finalizing);
+        release->store(true); QTRY_VERIFY(!backend.busy()); QCOMPARE(backend.state(), TaskState::completed);
+    }
+    void teardownCancelsPreviewAndHistoryWorkers() {
+        Fixture fixture; auto previews = std::make_shared<std::atomic<bool>>(false), histories = std::make_shared<std::atomic<bool>>(false);
+        Backend::Readers readers;
+        readers.preview = [previews](const QString&, const Backend::Cancel& cancel) -> QString {
+            previews->store(true); while (!cancel->load()) QThread::msleep(1); throw std::runtime_error("preview teardown");
+        };
+        readers.history = [histories](const QStringList&, const QStringList&, const QVariantMap&, const Backend::Cancel& cancel) -> QVector<HistoryRow> {
+            histories->store(true); while (!cancel->load()) QThread::msleep(1); throw std::runtime_error("history teardown");
+        };
+        auto backend = std::make_unique<Backend>(Backend::Paths{"missing", fixture.ini, fixture.root}, readers);
+        backend->viewResult("A"); QTRY_VERIFY(previews->load() && histories->load());
+        QElapsedTimer elapsed; elapsed.start(); backend.reset(); QVERIFY(elapsed.elapsed() < 1000);
+    }
+    void teardownCancelsCompletionVerification() {
+        qputenv("TRANSCRIBE_TEST_MODE", "normal"); Fixture fixture; auto ready = std::make_shared<std::atomic<bool>>(false);
+        Backend::Readers readers;
+        readers.completion = [ready](const QString&, const Backend::Cancel& cancel) -> QString {
+            ready->store(true); while (!cancel->load()) QThread::msleep(1); throw std::runtime_error("completion teardown");
+        };
+        auto backend = std::make_unique<Backend>(Backend::Paths{QCoreApplication::applicationFilePath(), fixture.ini, fixture.root}, readers);
+        backend->start(fixture.temp.path() + "/input.wav", fixture.options()); QTRY_VERIFY(ready->load());
+        QElapsedTimer elapsed; elapsed.start(); backend.reset(); QVERIFY(elapsed.elapsed() < 1000);
+    }
+    void outdatedHistoryScanCannotPublishRows() {
+        Fixture fixture; auto calls = std::make_shared<std::atomic<int>>(0), ready = std::make_shared<std::atomic<int>>(0);
+        Backend::Readers readers;
+        readers.history = [calls, ready](const QStringList&, const QStringList&, const QVariantMap&, const Backend::Cancel& cancel) {
+            if (calls->fetch_add(1) == 0) { ready->store(1); while (!cancel->load()) QThread::msleep(1); return QVector<HistoryRow>{{"obsolete", "completed", "medium", "obsolete", "", false}}; }
+            return QVector<HistoryRow>{{"current", "completed", "medium", "current", "", false}};
+        };
+        Backend backend({"missing", fixture.ini, fixture.root}, readers); QTRY_COMPARE(ready->load(), 1);
+        backend.refreshHistory(); backend.refreshHistory();
+        QTRY_COMPARE(backend.history()->rowCount(), 1);
+        QCOMPARE(backend.history()->data(backend.history()->index(0), HistoryModel::Directory).toString(), QString("current"));
+    }
+    void workerFailureHasItsOwnContext() {
+        Fixture fixture; Backend::Readers readers;
+        readers.preview = [](const QString&, const Backend::Cancel&) -> QString { throw std::runtime_error("preview failure"); };
+        readers.history = [](const QStringList&, const QStringList&, const QVariantMap&, const Backend::Cancel&) -> QVector<HistoryRow> { throw std::runtime_error("history failure"); };
+        Backend backend({"missing", fixture.ini, fixture.root}, readers); backend.viewResult("A");
+        QTRY_VERIFY(!backend.previewError().isEmpty()); QTRY_VERIFY(!backend.historyError().isEmpty()); QVERIFY(backend.error().isEmpty());
+    }
     void historyLegacyAndMissing() {
         QTemporaryDir temp; put(temp.path() + "/old/source.txt", "Статус: completed\nМодель: medium\n");
         const auto rows = HistoryModel::scan({temp.path()}, {temp.path() + "/missing"});
@@ -381,6 +509,69 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(!manager.busy(), 5000);
         QVERIFY(responsive); QCOMPARE(failed.count(), 1); QCOMPARE(server.requests, 0);
         QVERIFY(failed.front().front().toString().contains(QStringLiteral("отменена")));
+    }
+    void corruptInstalledModelRequiresExplicitBackupRecovery() {
+        QTemporaryDir temp; ModelServer server; const auto target = temp.path() + "/models/ggml-medium.bin";
+        put(target, "damaged installed model");
+        ModelManager manager(temp.path(), server.records()); QSignalSpy installed(&manager, &ModelManager::installed);
+        manager.download("medium"); QTRY_VERIFY(!manager.busy());
+        QCOMPARE(manager.state(), ModelState::failed); QVERIFY(manager.canRecover()); QCOMPARE(server.requests, 0);
+        server.corrupt = true; manager.recover(); QTRY_VERIFY(!manager.busy());
+        QCOMPARE(manager.state(), ModelState::failed); QVERIFY(QFile::exists(manager.backupPath()));
+        const auto original = readSmallFile(target, 100), backup = readSmallFile(manager.backupPath(), 100);
+        if (!original || !backup) QFAIL("recovery did not preserve the original and backup");
+        QCOMPARE(*original, QByteArray("damaged installed model"));
+        QCOMPARE(*backup, QByteArray("damaged installed model"));
+        // Failed recovery preserves the original; another explicit attempt verifies it again.
+        server.corrupt = false; manager.download("medium"); QTRY_VERIFY(!manager.busy()); QVERIFY(manager.canRecover());
+        manager.recover(); QTRY_VERIFY(!manager.busy()); QCOMPARE(manager.state(), ModelState::ready); QCOMPARE(installed.count(), 1);
+    }
+    void cancelHashAndPublicationCanRetry_data() {
+        QTest::addColumn<ModelState>("phase"); QTest::newRow("hash") << ModelState::verifying; QTest::newRow("publish") << ModelState::publishing;
+    }
+    void cancelHashAndPublicationCanRetry() {
+        QFETCH(ModelState, phase); QTemporaryDir temp; ModelServer server;
+        for (const auto& record : server.records()) put(temp.path() + "/models/" + record.filename + ".part", server.payload);
+        ModelManager manager(temp.path(), server.records()); bool cancelled = false;
+        auto connection = connect(&manager, &ModelManager::changed, this, [&] {
+            if (!cancelled && manager.state() == phase) { cancelled = true; manager.cancel(); }
+        });
+        manager.download("medium"); QTRY_VERIFY(!manager.busy()); QVERIFY(cancelled); QCOMPARE(manager.state(), ModelState::cancelled);
+        disconnect(connection); manager.download("medium"); QTRY_VERIFY(!manager.busy()); QCOMPARE(manager.state(), ModelState::ready);
+    }
+    void lateModelCancelKeepsCommittedInstallation() {
+        QTemporaryDir temp; ModelServer server; const auto source = temp.path() + "/import.bin"; put(source, server.payload);
+        auto ready = std::make_shared<std::atomic<bool>>(false); auto release = std::make_shared<QSemaphore>();
+        ModelManager::Workers workers{[ready, release] { ready->store(true); if (!release->tryAcquire(1, 5000)) throw std::runtime_error("commit barrier timeout"); }};
+        ModelManager manager(temp.path(), server.records(), workers);
+        manager.importModel(source, "medium"); QTRY_VERIFY(ready->load()); manager.cancel(); QCOMPARE(manager.state(), ModelState::cancelling);
+        release->release(); QTRY_VERIFY(!manager.busy()); QCOMPARE(manager.state(), ModelState::ready);
+        unsigned checkpoints = 0;
+        transcribe::FileLock lock(transcribe::utf8_path((temp.path() + "/.install.lock").toStdString()), [&] { if (++checkpoints > 1) throw std::runtime_error("installation lock held after commit"); });
+        QCOMPARE(checkpoints, 1U);
+    }
+    void teardownCancelsActiveModelHashAndImport() {
+        QTemporaryDir temp; ModelServer server; const auto source = temp.path() + "/models/ggml-medium.bin"; put(source, server.payload);
+        for (bool importing : {false, true}) {
+            auto ready = std::make_shared<std::atomic<bool>>(false); ModelManager::Workers workers;
+            workers.hashCheckpoint = [ready](const ModelManager::Cancel& cancel) { ready->store(true); while (!cancel->load()) QThread::msleep(1); };
+            auto manager = std::make_unique<ModelManager>(temp.path(), server.records(), workers);
+            if (importing) manager->importModel(source, "medium"); else manager->download("medium");
+            QTRY_VERIFY(ready->load());
+            QElapsedTimer elapsed; elapsed.start(); manager.reset(); QVERIFY(elapsed.elapsed() < 1000);
+            const auto preserved = readSmallFile(source, 8192); if (!preserved) QFAIL("teardown lost installed model");
+            QCOMPARE(*preserved, server.payload);
+        }
+    }
+    void teardownCancelsModelLockAndImport() {
+        QTemporaryDir temp; ModelServer server;
+        transcribe::FileLock lock(transcribe::utf8_path((temp.path() + "/.install.lock").toStdString()));
+        for (bool importing : {false, true}) {
+            auto manager = std::make_unique<ModelManager>(temp.path(), server.records());
+            if (importing) manager->importModel("missing", "medium"); else manager->download("medium");
+            QCOMPARE(manager->state(), ModelState::waiting_lock);
+            QElapsedTimer elapsed; elapsed.start(); manager.reset(); QVERIFY(elapsed.elapsed() < 1000);
+        }
     }
     void importVerifiesBeforeReplacing() {
         QTemporaryDir temp; ModelServer server;

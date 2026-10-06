@@ -55,6 +55,15 @@ digest upload archive `46716f6db4713e09e0475024e521c2d0f325dcb90c49e14df13452905
   Qt 6.8.3: 416/reset, strict ranges, разрыв/отмена/retry, lock release,
   импорт из установленного файла, 2000 known + новый, missing/restart и tie order.
 
+- PR [#8](https://github.com/khdobromir/lecture-transcriber/pull/8), source head
+  `c045e26`:
+  [CI 37320255441](https://github.com/khdobromir/lecture-transcriber/actions/runs/37320255441),
+  8/8 jobs success. Общие protocol vectors и GUI stream cases прошли Linux и
+  native Windows; process tests проверили exit code, flood/retained pipes,
+  callback exceptions и cleanup. Linux forced SIGKILL owner regression прошла
+  с независимым supervisor. Первоначальный static-analysis failure исправлен
+  с сохранением исходной диагностики и cleanup при провале regression.
+
 ## Ручные границы допуска кандидата
 
 Локальная проверка protocol/process tree выполнена Clang ASan/UBSan с

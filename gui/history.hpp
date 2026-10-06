@@ -3,6 +3,8 @@
 #include <QAbstractListModel>
 #include <QVector>
 #include <QVariantMap>
+#include <atomic>
+#include <memory>
 #include <QtQml/qqmlregistration.h>
 
 struct HistoryRow { QString title, status, model, directory, date; bool available = true; qint64 created = 0; };
@@ -17,7 +19,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     void replace(QVector<HistoryRow> rows);
     QString statusFor(const QString& directory) const;
-    static QVector<HistoryRow> scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps = {});
+    static QVector<HistoryRow> scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps = {},
+        const std::shared_ptr<std::atomic<bool>>& cancel = {});
 private:
     QVector<HistoryRow> rows_;
 };
