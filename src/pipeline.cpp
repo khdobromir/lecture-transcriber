@@ -194,8 +194,8 @@ RunResult Pipeline::run(Options o, const ToolPaths& tools) {
             }
             paths.name(source.title);
             details += "Название: " + transcribe::safe_title(source.title) + '\n';
-            metadata(paths, details, o, "processing", 0);
             sink_(Event{.type = EventType::result, .result = paths.root});
+            metadata(paths, details, o, "processing", 0);
             if (cached && cache) try {
                 input = paths.work() / "source.cached";
                 cache->copy(*cached, input, o.input);

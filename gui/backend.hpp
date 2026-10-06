@@ -1,8 +1,8 @@
 #pragma once
 #include "history.hpp"
 #include "models.hpp"
+#include "protocol.hpp"
 #include <QFutureWatcher>
-#include <QJsonObject>
 #include <QProcess>
 #include <QSettings>
 #include <QTimer>
@@ -71,6 +71,9 @@ private:
     QProcess process_;
     QTimer previewTimer_, cancelTimer_;
     QSettings settings_;
+    transcribe::ProtocolParser parser_;
+    bool eventsScheduled_ = false;
+    std::optional<std::pair<int, QProcess::ExitStatus>> exit_;
     HistoryModel history_;
     ModelManager models_;
     QFutureWatcher<QVector<HistoryRow>> historyWatcher_;
@@ -80,9 +83,10 @@ private:
     QStringList roots_, known_;
     QVariantMap knownTimes_;
     void readEvents();
-    void acceptEvent(const QJsonObject& event);
+    void acceptEvent(const transcribe::ProtocolMessage& message);
     void protocolError(const QString& message);
     void exited(int code, QProcess::ExitStatus exitStatus);
+    void finishExit();
     void readPreview();
     void settled();
 };

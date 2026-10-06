@@ -48,6 +48,7 @@ private:
     void drain(int& fd, const Output& callback, bool callbacks);
     bool group_alive() const;
     int pid_ = -1;
+    int group_ = -1, lease_ = -1;
     int out_ = -1, err_ = -1, status_ = 0;
     bool reaped_ = false, stopping_ = false, killed_ = false, released_ = false;
     std::chrono::steady_clock::time_point deadline_{};

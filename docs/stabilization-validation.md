@@ -48,7 +48,19 @@ digest upload archive `46716f6db4713e09e0475024e521c2d0f325dcb90c49e14df13452905
   Linux FFmpeg 6.1 и 9 проверены теми же сценариями. Это проверка PR tree;
   окончательный кандидат/ZIP потребует отдельного CI на точном source SHA.
 
+- PR [#7](https://github.com/khdobromir/lecture-transcriber/pull/7), source head
+  `31ec954e89516e7360bef7414ab775e568b98475`:
+  [CI 37285883531](https://github.com/khdobromir/lecture-transcriber/actions/runs/37285883531),
+  8/8 jobs success. MODEL-1/MODEL-2/HISTORY-1 прошли Linux и native Windows
+  Qt 6.8.3: 416/reset, strict ranges, разрыв/отмена/retry, lock release,
+  импорт из установленного файла, 2000 known + новый, missing/restart и tie order.
+
 ## Ручные границы допуска кандидата
+
+Локальная проверка protocol/process tree выполнена Clang ASan/UBSan с
+`detect_leaks=0`: LeakSanitizer с `detect_leaks=1` завершается собственной fatal
+диагностикой ограничения ptrace в данном окружении. Настройка ядра не менялась;
+проверка утечек этим прогоном не подтверждается. Проверка памяти и UB активна.
 
 Чистая Windows 11 без Qt/VS/Python/Git: не проверено. Настоящая русская запись с
 фиксированным SHA на обеих ОС: не проверено для нового кандидата. Установленный

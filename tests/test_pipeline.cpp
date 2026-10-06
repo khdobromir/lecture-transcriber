@@ -357,6 +357,23 @@ int main() {
         CHECK(child.wait().code == 143); CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(4));
         f.no_children(); CHECK(independent.running()); kill(independent.pid, SIGTERM); CHECK(independent.wait().code == 143); other.no_children();
     });
+    add("forced_backend_exit_cleans_managed_tree", [](Fixture& f) {
+        auto env = f.env; env["HANG_TOOL"] = "whisper-cli"; env["IGNORE_STOP"] = "1";
+        Child child(f.command({f.audio.string()}), env, f.root);
+        until([&] { return f.event_count("ready") == 1 && f.event_count("helper") == 1; });
+        CHECK(kill(child.pid, SIGKILL) == 0); CHECK(child.wait().code == 137);
+        try {
+            until([&] {
+                for (const auto& row : f.event_rows()) if (kill(static_cast<pid_t>(std::stoi(row[3])), 0) == 0) return false;
+                return true;
+            }, std::chrono::seconds(4));
+        } catch (...) {
+            // A failing regression still owns the deliberately exposed tools.
+            for (const auto& row : f.event_rows()) kill(static_cast<pid_t>(std::stoi(row[3])), SIGKILL);
+            throw;
+        }
+        f.no_children();
+    });
     add("worker_failure_stops_other_workers_and_queue", [](Fixture& f) {
         wav(f.audio, 4, 16000, 1);
         const auto result = f.invoke({"--chunks", "4", "--jobs", "2", f.audio.string()},
