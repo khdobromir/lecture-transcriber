@@ -8,6 +8,9 @@
 #include <QSet>
 #include <algorithm>
 
+QString historyPath(const QString& directory) {
+    return directory.isEmpty() ? QString{} : QDir::cleanPath(QDir::fromNativeSeparators(directory));
+}
 QString historyStatus(const QString& status) {
     if (status == "completed") return HistoryModel::tr("Готово");
     if (status == "interrupted") return HistoryModel::tr("Прервано");
@@ -32,19 +35,29 @@ QVariant HistoryModel::data(const QModelIndex& index, int role) const {
 QHash<int, QByteArray> HistoryModel::roleNames() const { return {{Title, "title"}, {Status, "status"}, {Model, "modelName"}, {Directory, "directory"}, {Date, "date"}, {Available, "available"}}; }
 void HistoryModel::replace(QVector<HistoryRow> rows) { beginResetModel(); rows_ = std::move(rows); endResetModel(); }
 QString HistoryModel::statusFor(const QString& directory) const {
-    for (const auto& row : rows_) if (row.directory == directory) return row.status;
+    for (const auto& row : rows_) if (row.directory == historyPath(directory)) return row.status;
     return "unknown";
 }
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters): scan roots first, restore known result directories second.
 QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps,
     const std::shared_ptr<std::atomic<bool>>& cancel) {
-    QSet<QString> directories(known.begin(), known.end());
+    QSet<QString> directories;
+    for (const auto& directory : known) {
+        if (cancel && cancel->load()) return {};
+        if (!directory.isEmpty()) directories.insert(historyPath(directory));
+    }
+    QVariantMap normalizedTimes;
+    for (auto item = timestamps.cbegin(); item != timestamps.cend(); ++item) {
+        if (cancel && cancel->load()) return {};
+        const auto key = historyPath(item.key());
+        normalizedTimes.insert(key, std::max(normalizedTimes.value(key, 0).toLongLong(), item.value().toLongLong()));
+    }
     for (const auto& root : roots) {
         if (cancel && cancel->load()) return {};
         const auto children = QDir(root).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDir::Time);
         for (const auto& child : children) {
             if (cancel && cancel->load()) return {};
-            if (QFile::exists(child.filePath() + "/result.json") || QFile::exists(child.filePath() + "/source.txt")) directories.insert(child.filePath());
+            if (QFile::exists(child.filePath() + "/result.json") || QFile::exists(child.filePath() + "/source.txt")) directories.insert(historyPath(child.filePath()));
         }
     }
     QVector<HistoryRow> rows;
@@ -53,7 +66,7 @@ QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringLi
         const QFileInfo info(directory);
         HistoryRow row{info.fileName(), "unknown", {}, directory, info.lastModified().toString(Qt::ISODate), info.isDir() && !info.isSymLink()};
         const auto birth = info.birthTime();
-        row.created = timestamps.value(directory, 0).toLongLong();
+        row.created = normalizedTimes.value(directory, 0).toLongLong();
         if (!row.created && row.available) row.created = (birth.isValid() ? birth : info.lastModified()).toMSecsSinceEpoch();
         if (row.available) {
             if (const auto bytes = readSmallFile(directory + "/result.json", 65536)) {

@@ -86,3 +86,5 @@ stderr после exit. Linux tools принадлежат отдельному 
 наблюдает lifetime pipe владельца и убирает группу даже после SIGKILL CLI.
 
 Состояния, владение workers и пользовательские действия: [gui-states.md](gui-states.md).
+
+Покрытие платформ и CI: [integration-coverage.md](integration-coverage.md).

@@ -10,6 +10,7 @@
 struct HistoryRow { QString title, status, model, directory, date; bool available = true; qint64 created = 0; };
 class HistoryModel : public QAbstractListModel {
     Q_OBJECT
+    // NOLINTNEXTLINE(performance-enum-size): Qt registration marker enum is SDK-generated and never stored in an object.
     QML_ANONYMOUS
 public:
     enum Role : std::uint16_t { Title = Qt::UserRole + 1, Status, Model, Directory, Date, Available };
@@ -24,4 +25,5 @@ public:
 private:
     QVector<HistoryRow> rows_;
 };
+QString historyPath(const QString& directory);
 QString historyStatus(const QString& status);

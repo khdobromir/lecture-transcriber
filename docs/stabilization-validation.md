@@ -64,6 +64,15 @@ digest upload archive `46716f6db4713e09e0475024e521c2d0f325dcb90c49e14df13452905
   с независимым supervisor. Первоначальный static-analysis failure исправлен
   с сохранением исходной диагностики и cleanup при провале regression.
 
+- PR [#9](https://github.com/khdobromir/lecture-transcriber/pull/9), source head
+  `88c0988`:
+  [CI 37323042836](https://github.com/khdobromir/lecture-transcriber/actions/runs/37323042836),
+  8/8 jobs success. GUI-1/GUI-2 проверены Linux и native Windows Qt 6.8.3:
+  preflight/FailedToStart/retry, независимость сохранённого результата,
+  A→B→A и stale history, cooperative teardown preview/history/completion/hash/import,
+  cancel hash/publish, поздняя отмена после commit, explicit backup recovery,
+  асинхронное закрытие при задаче/model lock и Tab/Shift+Tab.
+
 ## Ручные границы допуска кандидата
 
 Локальная проверка protocol/process tree выполнена Clang ASan/UBSan с

@@ -10,6 +10,7 @@
 #include <QTest>
 #include <QtQml/qqmlextensionplugin.h>
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization): Qt requires this generated registration before QML engine startup.
 Q_IMPORT_QML_PLUGIN(TranscribePlugin)
 class QmlTests : public QObject {
     Q_OBJECT
