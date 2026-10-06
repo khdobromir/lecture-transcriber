@@ -80,6 +80,7 @@ foreach ($Dependency in $Lock.downloads) {
             ForEach-Object { Copy-Item $_.FullName (Join-Path $Licenses ('FFmpeg-' + $_.Name)) }
     } else { throw "Unknown dependency $($Dependency.name)" }
 }
+if (-not $SkipTests) { Invoke-Checked "$Build\Release\test_split.exe" @("$Tools\ffmpeg.exe") }
 # A ZIP must run on a machine without Visual Studio or an installed VC runtime.
 # Deploy app-local CRT DLLs to both executable directories; child tools cannot
 # rely on DLLs located in their parent application's bin directory.

@@ -22,6 +22,9 @@ void check_cancelled();
 // A cancellation received before this transition still throws.
 void commit_completion();
 int physical_cpus();
+// Includes resolved executable, quoting and terminating NUL on Windows.
+std::size_t command_line_size(const std::vector<std::string>& args);
+bool command_line_fits(const std::vector<std::string>& args);
 
 // Each child owns a process group, two drained pipes and a diagnostic log.
 // Callbacks receive bytes, not necessarily complete UTF-8 characters or lines.

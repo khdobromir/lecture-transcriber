@@ -4,6 +4,8 @@
 #include <fstream>
 #include <stdexcept>
 #include "platform.hpp"
+#include "process.hpp"
+#include "result.hpp"
 
 namespace fs = std::filesystem;
 namespace transcribe {
@@ -69,6 +71,9 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
     const auto& root = paths.root;
     const auto& cwd = paths.cwd;
     const auto absolute = [&](const fs::path& path) { return path.is_absolute() ? path : cwd / path; };
+#ifdef _WIN32
+    validate_result_parent(o.output.empty() ? default_output() : absolute(o.output));
+#endif
     Inputs files;
     files.engine = absolute(root) / "whisper.cpp/build/bin/whisper-cli";
 #ifdef _WIN32
@@ -101,6 +106,13 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
         files.cookies = path_utf8(absolute(utf8_path(o.cookies)));
         require_file(utf8_path(files.cookies), "Проверь путь к файлу cookies");
     }
+#ifdef _WIN32
+    if (!files.url && files.input.native().size() > 240)
+        throw std::runtime_error("Путь входного файла превышает поддерживаемый предел 240 UTF-16 единиц; перенесите файл в более короткий каталог");
+    // Reserve fixed worker options/output paths before conversion or download.
+    if (command_line_size({path_utf8(files.engine), "--model", path_utf8(files.model), "--prompt", o.prompt}) > 30000)
+        throw std::runtime_error("Параметры распознавания превышают поддерживаемую длину Windows-команды; сократите prompt и пути");
+#endif
     return files;
 }
 Options parse_arguments(std::span<const std::string_view> args, int physical_cpus) {

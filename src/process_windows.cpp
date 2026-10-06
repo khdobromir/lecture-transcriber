@@ -26,6 +26,13 @@ std::wstring executable(std::string_view name) {
     buffer.resize(count); return buffer;
 }
 }
+std::size_t command_line_size(const std::vector<std::string>& args) {
+    if (args.empty()) throw std::runtime_error("Пустая команда");
+    std::size_t size = quote_windows(executable(args.front())).size() + 1;
+    for (std::size_t i = 1; i < args.size(); ++i) size += 1 + quote_windows(wide_utf8(args[i])).size();
+    return size;
+}
+bool command_line_fits(const std::vector<std::string>& args) { return command_line_size(args) <= 32767; }
 void install_signal_handlers() {
     cancellation_token().reset();
     if (!SetConsoleCtrlHandler(console_handler, TRUE)) windows_error("SetConsoleCtrlHandler");
@@ -69,6 +76,7 @@ Process::Process(const std::vector<std::string>& args, const std::filesystem::pa
       output_(std::move(output)), errors_(std::move(errors)) {
     log_.exceptions(std::ios::badbit | std::ios::failbit);
     check_cancelled();
+    if (!command_line_fits(args)) throw ProcessError("Команда превышает предел Windows (32767 UTF-16 единиц); сократите пути или параметры", 127);
     SECURITY_ATTRIBUTES security{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
     WinHandle out_write, err_write;
     const auto pipe = [&](WinHandle& reader, WinHandle& writer) {

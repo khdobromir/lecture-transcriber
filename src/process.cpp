@@ -16,6 +16,12 @@
 
 extern char** environ;
 namespace transcribe {
+std::size_t command_line_size(const std::vector<std::string>& args) {
+    std::size_t size = 0;
+    for (const auto& argument : args) size += argument.size() + 1;
+    return size;
+}
+bool command_line_fits(const std::vector<std::string>& args) { return command_line_size(args) <= 32767; }
 namespace {
 void on_signal(int signal) {
     cancellation_token().request(signal);

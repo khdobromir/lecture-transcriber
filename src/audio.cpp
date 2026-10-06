@@ -170,16 +170,41 @@ std::vector<Chunk> split_audio(const fs::path& wav, const fs::path& work, int co
                           count == 1 ? wav : dir / "audio.wav", dir / "transcript"});
     }
     if (count > 1) {
-        std::string graph = "[0:a]asplit=" + std::to_string(count);
-        for (int i = 0; i < count; ++i) graph += "[a" + std::to_string(i) + "]";
-        for (int i = 0; i < count; ++i) {
-            const auto& chunk = chunks[static_cast<size_t>(i)];
-            graph += ";[a" + std::to_string(i) + "]atrim=start_sample=" + std::to_string(chunk.begin) +
-                ":end_sample=" + std::to_string(chunk.end) + ",asetpts=PTS-STARTPTS[o" + std::to_string(i) + "]";
+        struct Group { std::size_t begin, end; fs::path graph; std::vector<std::string> args; };
+        std::vector<Group> groups;
+        bool legacyScript = false;
+        Lines capabilities([&](std::string_view line) { legacyScript = legacyScript || line.find("-filter_complex_script") != line.npos; });
+        run({tool_path("ffmpeg"), "-hide_banner", "-h", "long"}, logs / "ffmpeg-capabilities.log",
+            [&](std::string_view bytes) { capabilities.feed(bytes); });
+        capabilities.finish();
+        const std::string graphOption = legacyScript ? "-filter_complex_script" : "-/filter_complex";
+        // Plan all commands before any split group runs. The graph itself is never argv.
+        for (std::size_t begin = 0; begin < chunks.size();) {
+            Group group{begin, begin, work / ("split-" + std::to_string(groups.size() + 1) + ".ffgraph"), {}};
+            group.args = {tool_path("ffmpeg"), "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", path_utf8(wav), graphOption, path_utf8(group.graph)};
+            while (group.end < chunks.size() && group.end - group.begin < 64) {
+                auto candidate = group.args;
+                candidate.insert(candidate.end(), {"-map", "[o" + std::to_string(group.end) + "]", "-c:a", "pcm_s16le", path_utf8(chunks[group.end].wav)});
+                if (!command_line_fits(candidate)) break;
+                group.args = std::move(candidate); ++group.end;
+            }
+            if (group.end == begin) throw std::runtime_error("Пути частей превышают поддерживаемую длину команды FFmpeg; сократите каталог результата");
+            begin = group.end; groups.push_back(std::move(group));
         }
-        std::vector<std::string> args{tool_path("ffmpeg"), "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", path_utf8(wav), "-filter_complex", graph};
-        for (int i = 0; i < count; ++i) args.insert(args.end(), {"-map", "[o" + std::to_string(i) + "]", "-c:a", "pcm_s16le", path_utf8(chunks[static_cast<size_t>(i)].wav)});
-        run(args, logs / "split.log");
+        std::size_t groupNumber = 0;
+        for (const auto& group : groups) {
+            if (notice) notice("Нарезка группы " + std::to_string(++groupNumber) + "...", false);
+            check_cancelled();
+            std::string graph = "[0:a]asplit=" + std::to_string(group.end - group.begin);
+            for (auto i = group.begin; i < group.end; ++i) graph += "[a" + std::to_string(i) + "]";
+            for (auto i = group.begin; i < group.end; ++i) {
+                const auto& chunk = chunks[i];
+                graph += ";[a" + std::to_string(i) + "]atrim=start_sample=" + std::to_string(chunk.begin) +
+                    ":end_sample=" + std::to_string(chunk.end) + ",asetpts=PTS-STARTPTS[o" + std::to_string(i) + "]";
+            }
+            auto file = writer(group.graph); file << graph; file.close();
+            run(group.args, logs / (group.graph.stem().string() + ".log"));
+        }
         for (const auto& chunk : chunks) if (wav_samples(chunk.wav) != chunk.end - chunk.begin)
             throw std::runtime_error("Нарезка изменила число семплов аудио");
     }
