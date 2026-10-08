@@ -1,0 +1,58 @@
+name: Linux portable GUI
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      real_smoke:
+        description: 'Also verify public Russian speech and model with bundled Whisper'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: linux-portable-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build pinned environment and verify the final AppImage
+        run: bash scripts/package-linux.sh --container
+      - name: Check the one final file in clean Linux images without FUSE
+        run: |
+          mkdir -p "$RUNNER_TEMP/portable-inputs"
+          cp dist/*.AppImage "$RUNNER_TEMP/portable-inputs/Transcribe.AppImage"
+          for base in ubuntu:24.04 debian:13-slim; do
+            docker run --rm --network none \
+              -v "$RUNNER_TEMP/portable-inputs:/inputs:ro" \
+              -v "$GITHUB_WORKSPACE/tests/smoke_linux_clean.sh:/smoke.sh:ro" \
+              "$base" sh /smoke.sh
+          done
+      - name: Public speech and model through installed portable GUI
+        if: github.event_name == 'workflow_dispatch' && inputs.real_smoke
+        run: |
+          export TRANSCRIBE_PROJECT_DIR="$GITHUB_WORKSPACE"
+          export TRANSCRIBE_BUILD_UID="$(id -u)" TRANSCRIBE_BUILD_GID="$(id -g)"
+          docker compose -f packaging/linux/compose.yml run --rm builder \
+            python3 /source/scripts/package-linux.py --qt-root /opt/Qt/6.8.3/gcc_64 \
+            --work-directory /work --destination /output --real-smoke
+      - name: Retain verified package and build evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Transcribe-linux-x86_64
+          path: |
+            dist/*.AppImage
+            dist/*.sha256
+            dist/*.json
+            .cache/linux-package-container/run-*/*.log
+            .cache/linux-package-container/run-*/build/Testing/Temporary/*.log
+            .cache/linux-package-container/run-*/smoke-evidence/*
+          if-no-files-found: warn
+          retention-days: 14

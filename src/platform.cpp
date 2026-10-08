@@ -25,11 +25,19 @@ fs::path app_home() {
     return local / "Transcribe";
 #endif
 }
-std::string tool_path(std::string_view name) {
+bool portable_bundle(const fs::path& tools) {
+    return fs::is_regular_file(tools / ".transcribe-bundle");
+}
+std::string tool_path(std::string_view name, const fs::path& tools) {
+    const auto directory = tools.empty() ? executable_directory() / "tools" : tools;
+    auto filename = std::string(name);
 #ifdef _WIN32
-    const auto bundled = executable_directory() / "tools" / utf8_path(std::string(name) + ".exe");
-    if (executable_file(bundled)) return path_utf8(bundled);
+    filename += ".exe";
 #endif
+    const auto bundled = directory / utf8_path(filename);
+    if (executable_file(bundled)) return path_utf8(bundled);
+    if (portable_bundle(directory))
+        throw std::runtime_error("В переносимой сборке отсутствует инструмент " + filename + ". Замените файл приложения исправной сборкой.");
     return std::string(name);
 }
 fs::path temporary_directory(const fs::path& parent, std::string_view prefix) {

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Linux AppImage собирается одной командой в Ubuntu 24.04: Qt/QML, CPU Whisper,
+  FFmpeg/ffprobe и standalone yt-dlp упакованы внутрь; системная установка не нужна.
+  Проверяются pins/SHA-256, glibc baseline, состав пакета и запуск без FUSE.
+- Linux backend и GUI preflight находят встроенные инструменты относительно
+  исполняемого файла; неполный переносимый комплект не использует системный fallback.
+  Модели и результаты сохраняются отдельно; обычная CLI-установка совместима.
+- Qt Test больше не требуется при сборке GUI с `BUILD_TESTING=OFF`.
+
 - Windows Unicode-патч Whisper исправляет также предварительную проверку
   существования WAV; model-free regression проверяет её в каждом итоговом ZIP.
 - История объединяет относительные, абсолютные и native Windows пути одного

@@ -1,4 +1,5 @@
 #include "backend.hpp"
+#include <QScopeGuard>
 #include "models.hpp"
 #include "files.hpp"
 #include "http_range.hpp"
@@ -137,6 +138,19 @@ struct ModelServer {
 class GuiTests : public QObject {
     Q_OBJECT
 private slots:
+    void invalidPortableCertificateBundleFailsBeforeNetwork() {
+        QTemporaryDir temp; const auto previous = qgetenv("TRANSCRIBE_CA_BUNDLE");
+        const auto restore = qScopeGuard([previous] {
+            if (previous.isNull()) qunsetenv("TRANSCRIBE_CA_BUNDLE"); else qputenv("TRANSCRIBE_CA_BUNDLE", previous);
+        });
+        const auto bundle = temp.path() + "/invalid.crt"; put(bundle, "not a certificate");
+        qputenv("TRANSCRIBE_CA_BUNDLE", bundle.toUtf8());
+        ModelManager manager(temp.path(), {{"small", "model.bin", "https://example.invalid/model", QByteArray(64, '0')}});
+        QSignalSpy failures(&manager, &ModelManager::failed);
+        manager.download("small"); QTRY_VERIFY_WITH_TIMEOUT(!manager.busy(), 5000);
+        QCOMPARE(failures.count(), 1); QVERIFY(failures.first().first().toString().contains("сертификаты"));
+        QVERIFY(!QFileInfo::exists(temp.path() + "/models/model.bin"));
+    }
     void readersPermitPublication() {
         QTemporaryDir temp;
         for (const auto* name : {"transcript.txt", "result.json"}) {

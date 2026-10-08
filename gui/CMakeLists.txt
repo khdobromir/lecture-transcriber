@@ -1,4 +1,7 @@
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Network Concurrent Test)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Network Concurrent)
+if(BUILD_TESTING)
+    find_package(Qt6 6.8 REQUIRED COMPONENTS Test)
+endif()
 qt_standard_project_setup(REQUIRES 6.8)
 qt_add_library(transcribe_gui_logic STATIC backend.cpp backend.hpp history.cpp history.hpp models.cpp models.hpp)
 target_link_libraries(transcribe_gui_logic PUBLIC transcribe_core Qt6::Quick Qt6::Network Qt6::Concurrent)

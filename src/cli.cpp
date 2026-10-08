@@ -75,32 +75,43 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
     validate_result_parent(o.output.empty() ? default_output() : absolute(o.output));
 #endif
     Inputs files;
+    const auto bundled = paths.bundled_tools.empty() ? executable_directory() / "tools" : absolute(paths.bundled_tools);
+    const bool portable = portable_bundle(bundled);
     files.engine = absolute(root) / "whisper.cpp/build/bin/whisper-cli";
 #ifdef _WIN32
     files.engine += ".exe";
     if (!executable_file(files.engine)) {
-        const auto bundled = paths.bundled_tools.empty() ? executable_directory() / "tools" : absolute(paths.bundled_tools);
         files.engine = bundled / "whisper-cli.exe";
     }
+#else
+    if (portable || executable_file(bundled / "whisper-cli")) files.engine = bundled / "whisper-cli";
 #endif
-    if (!executable_file(files.engine))
+    if (!executable_file(files.engine)) {
 #ifdef _WIN32
         throw std::runtime_error("Нет tools/whisper-cli.exe. Распакуйте весь Windows ZIP заново");
 #else
+        if (portable) throw std::runtime_error("Нет встроенного whisper-cli. Замените файл приложения исправной сборкой.");
         throw std::runtime_error("Нет whisper-cli. Сначала выполни bash install.sh");
 #endif
+    }
     const std::string selected = o.model.empty() ? read_line(absolute(root) / "default-model") : o.model;
     files.model_selection = selected;
     files.model = selected == "small" || selected == "medium" || selected == "turbo"
         ? absolute(root) / "models" / ("ggml-" + preset(selected) + ".bin") : absolute(utf8_path(selected));
-    #ifdef _WIN32
+#ifdef _WIN32
     require_file(files.model, "Скачайте или импортируйте модель на вкладке «Модели» в GUI");
 #else
-    require_file(files.model, "Скачай модель: bash scripts/download-model.sh small|medium|turbo");
+    require_file(files.model, portable || o.machine ? "Скачайте или импортируйте модель на вкладке «Модели» в GUI" :
+                 "Скачай модель: bash scripts/download-model.sh small|medium|turbo");
 #endif
     files.vad_model = absolute(root) / "models/ggml-silero-v6.2.0.bin";
-    if (o.vad) require_file(files.vad_model, "Повтори установку или добавь --no-vad");
+    if (o.vad) require_file(files.vad_model, portable || o.machine ?
+        "Скачайте или импортируйте VAD на вкладке «Модели» либо отключите VAD" : "Повтори установку или добавь --no-vad");
     files.url = o.input.starts_with("https://") || o.input.starts_with("http://");
+    if (portable) {
+        (void)tool_path("ffmpeg", bundled);
+        if (files.url) { (void)tool_path("yt-dlp", bundled); (void)tool_path("ffprobe", bundled); }
+    }
     if (!files.url) {
         files.input = absolute(utf8_path(o.input));
         require_file(files.input, "Проверь имя локального видео/аудиофайла");

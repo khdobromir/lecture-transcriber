@@ -8,6 +8,8 @@
 #include <QException>
 #include <QRegularExpression>
 #include <QSaveFile>
+#include <QSslCertificate>
+#include <QSslConfiguration>
 #include <QtConcurrent/QtConcurrentRun>
 #include <algorithm>
 #include <stdexcept>
@@ -247,6 +249,14 @@ void ModelManager::fetch() {
     offset_ = part_.size();
     if (!part_.seek(offset_)) { finish(tr("Не удалось продолжить временный файл модели")); return; }
     QNetworkRequest request(QUrl(record.url));
+    const auto caBundle = qEnvironmentVariable("TRANSCRIBE_CA_BUNDLE");
+    if (request.url().scheme() == "https" && !caBundle.isEmpty()) {
+        const auto certificates = QSslCertificate::fromPath(caBundle);
+        if (certificates.isEmpty()) { finish(tr("Не удалось прочитать сертификаты переносимого приложения. Замените файл приложения.")); return; }
+        auto ssl = request.sslConfiguration();
+        ssl.setCaCertificates(QSslConfiguration::systemCaCertificates() + certificates);
+        request.setSslConfiguration(ssl);
+    }
     request.setTransferTimeout(30000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     if (offset_) request.setRawHeader("Range", "bytes=" + QByteArray::number(offset_) + '-');

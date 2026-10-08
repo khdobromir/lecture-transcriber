@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+# GGML scans the executable directory and cwd for dynamic CPU backends. Keep
+# both inside the bundle, even when the user's media directory contains .so's.
+tool_root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+cd -- "$tool_root"
+unset GGML_BACKEND_PATH
+exec "$tool_root/whisper-cli.bin" "$@"

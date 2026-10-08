@@ -1,5 +1,10 @@
 # Transcribe
 
+Для Linux доступна сборка одного переносимого GUI-файла со встроенными Qt,
+Whisper, FFmpeg и yt-dlp: `bash scripts/package-linux.sh --container`.
+На машине запуска зависимости приложения устанавливать не нужно; модели
+скачиваются или импортируются через GUI. [Сборка и запуск AppImage](docs/linux-portable.md).
+
 CLI поддерживает Linux и Windows 11 x64. Добавлен GUI на Qt Quick: одна задача,
 частичный текст, отмена, история и загрузка моделей. Linux `install.sh` по-прежнему
 устанавливает CLI; GUI включается через `-DTRANSCRIBE_BUILD_GUI=ON`.

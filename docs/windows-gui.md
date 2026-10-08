@@ -7,6 +7,9 @@ GUI на Qt Quick 6.8+ запускает отдельный CLI-процесс.
 
 ## Сборка и запуск Linux
 
+Для одного переносимого файла без установки runtime-зависимостей используйте
+[Linux AppImage](linux-portable.md). Ниже описана обычная динамическая сборка.
+
 Для CLI нужны CMake 3.20+, компилятор C++23, FFmpeg и установленный whisper.cpp.
 Для GUI дополнительно нужны CMake 3.24+ и Qt 6.8+ с Quick, QuickControls2, Network,
 Concurrent и Test. Существующий `install.sh` устанавливает Linux CLI как прежде.

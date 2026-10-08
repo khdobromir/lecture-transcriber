@@ -86,6 +86,43 @@ int execute(const std::vector<std::string>& args) {
     }
     Temp temp;
     install_signal_handlers();
+#ifndef _WIN32
+    {
+        const auto tools = temp.path / utf8_path("Каталог CLI 😀") / "tools", home = temp.path / "data";
+        fs::create_directories(tools); fs::create_directories(home / "models");
+        put(home / "models/ggml-small-q5_1.bin", "model"); put(temp.path / "input.wav", "audio");
+        for (const auto* tool : {"whisper-cli", "ffmpeg", "ffprobe", "yt-dlp"}) {
+            fs::copy_file(executable_directory() / "test_portable", tools / tool);
+        }
+        put(tools / ".transcribe-bundle", "1\n");
+        Options options; options.input = "input.wav"; options.model = "small"; options.vad = false;
+        const auto inputs = validate_inputs(options, {home, temp.path, tools});
+        require(inputs.engine == tools / "whisper-cli" && !fs::exists(home / "whisper.cpp"));
+        require(tool_path("ffmpeg", tools) == path_utf8(tools / "ffmpeg"));
+        // A broken portable bundle must not silently use an installed engine or PATH tool.
+        fs::create_directories(home / "whisper.cpp/build/bin");
+        fs::copy_file(tools / "whisper-cli", home / "whisper.cpp/build/bin/whisper-cli");
+        fs::remove(tools / "whisper-cli");
+        bool rejected = false;
+        try { (void)validate_inputs(options, {home, temp.path, tools}); } catch (const std::runtime_error&) { rejected = true; }
+        require(rejected);
+        fs::copy_file(home / "whisper.cpp/build/bin/whisper-cli", tools / "whisper-cli");
+        fs::remove(tools / "yt-dlp");
+        (void)validate_inputs(options, {home, temp.path, tools}); // Local input does not need the downloader.
+        options.input = "https://example.invalid/video"; rejected = false;
+        try { (void)validate_inputs(options, {home, temp.path, tools}); } catch (const std::runtime_error&) { rejected = true; }
+        require(rejected);
+        fs::remove(tools / "ffmpeg"); rejected = false;
+        try { (void)tool_path("ffmpeg", tools); } catch (const std::runtime_error&) { rejected = true; }
+        require(rejected);
+        fs::remove(tools / ".transcribe-bundle");
+        require(tool_path("ffmpeg", tools) == "ffmpeg");
+        options.input = "input.wav"; require(validate_inputs(options, {home, temp.path, tools}).engine == tools / "whisper-cli");
+        fs::remove(tools / "whisper-cli");
+        require(validate_inputs(options, {home, temp.path, tools}).engine == home / "whisper.cpp/build/bin/whisper-cli");
+        std::cout << "PASS relocatable Linux tools, strict bundle and legacy engine fallback\n";
+    }
+#endif
 #ifdef _WIN32
     {
         const auto tools = temp.path / utf8_path("Каталог CLI 😀") / "tools", home = temp.path / "data";

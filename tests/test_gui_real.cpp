@@ -10,7 +10,9 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QRegularExpression>
+#include <QSignalSpy>
 #include <QTest>
+#include <QTemporaryDir>
 #include <QtQml/qqmlextensionplugin.h>
 
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization): Qt requires this generated registration before QML engine startup.
@@ -46,6 +48,19 @@ QString checksum(const QString& path) {
 class RealGuiTests : public QObject {
     Q_OBJECT
 private slots:
+    void portableHttpsDownload() {
+        if (qEnvironmentVariableIsEmpty("TRANSCRIBE_CA_BUNDLE")) QSKIP("Portable certificate bundle not configured");
+        QTemporaryDir temporary; QVERIFY(temporary.isValid());
+        const QByteArray expected("94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d");
+        ModelManager manager(temporary.path(), {{"small", "network-probe.bin",
+            "https://raw.githubusercontent.com/ggml-org/whisper.cpp/927cfce34f31707e17f2bff35c349632fb9e2c3a/LICENSE", expected}});
+        QSignalSpy installed(&manager, &ModelManager::installed), failures(&manager, &ModelManager::failed);
+        manager.download("small");
+        QTRY_VERIFY_WITH_TIMEOUT(!manager.busy(), 60000);
+        QVERIFY2(failures.isEmpty(), qPrintable(failures.isEmpty() ? QString{} : failures.first().first().toString()));
+        QCOMPARE(installed.count(), 1);
+        QCOMPARE(checksum(temporary.path() + "/models/network-probe.bin").toLatin1(), expected);
+    }
     void installedCliWithRealSpeech() {
         const auto binary = qEnvironmentVariable("TRANSCRIBE_REAL_BINARY"), audio = qEnvironmentVariable("TRANSCRIBE_REAL_AUDIO");
         const auto home = qEnvironmentVariable("TRANSCRIBE_REAL_HOME"), artifacts = qEnvironmentVariable("TRANSCRIBE_REAL_ARTIFACTS");
@@ -68,12 +83,14 @@ private slots:
 #ifndef Q_OS_WIN
         // Linux installs the engine in the data home. Windows must use the
         // original tools beside the actual unpacked CLI, without a shadow copy.
-        const auto engineDirectory = installedHome + "/whisper.cpp/build/bin";
-        QVERIFY(QDir().mkpath(engineDirectory));
-        const QDir sourceEngine(home + "/whisper.cpp/build/bin");
-        for (const auto& file : sourceEngine.entryInfoList({"whisper-cli", "whisper-cli.exe", "*.dll"}, QDir::Files)) {
-            const auto target = engineDirectory + '/' + file.fileName(); QVERIFY(QFile::copy(file.filePath(), target));
-            QVERIFY(QFile::setPermissions(target, file.permissions()));
+        if (!transcribe::portable_bundle(transcribe::utf8_path((QFileInfo(binary).absolutePath() + "/tools").toUtf8().toStdString()))) {
+            const auto engineDirectory = installedHome + "/whisper.cpp/build/bin";
+            QVERIFY(QDir().mkpath(engineDirectory));
+            const QDir sourceEngine(home + "/whisper.cpp/build/bin");
+            for (const auto& file : sourceEngine.entryInfoList({"whisper-cli", "whisper-cli.exe", "*.dll"}, QDir::Files)) {
+                const auto target = engineDirectory + '/' + file.fileName(); QVERIFY(QFile::copy(file.filePath(), target));
+                QVERIFY(QFile::setPermissions(target, file.permissions()));
+            }
         }
 #endif
         Backend backend({binary, artifacts + "/settings.ini", installedHome});
