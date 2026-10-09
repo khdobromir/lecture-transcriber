@@ -13,6 +13,8 @@ if dpkg-query -W 'libqt6core6*' 2>/dev/null; then
     exit 1
 fi
 test -x /inputs/Transcribe.AppImage
+(cd /inputs && sha256sum -c SHA256SUMS)
+if [ "${REQUIRE_ASR:-0}" = 1 ]; then test -s /inputs/audio.wav && test -s /inputs/model.bin; fi
 export TRANSCRIBE_HOME=/tmp/transcribe-data
 export TRANSCRIBE_GUI_SETTINGS_FILE=/tmp/settings.ini
 export QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME=generic QT_QUICK_BACKEND=software
@@ -29,5 +31,13 @@ if [ -f /inputs/audio.wav ]; then
     test "$#" -eq 1 && test -d "$1"
     for extension in txt srt vtt; do test -s "$1/transcripts/transcript.$extension"; done
     grep '"status": "completed"' "$1/result.json" >/dev/null
+fi
+if [ -d /evidence ]; then
+    cp /tmp/gui.log /evidence/gui.log
+    cp /inputs/SHA256SUMS /evidence/SHA256SUMS
+    if [ -f /tmp/cli.log ]; then
+        cp /tmp/cli.log /evidence/cli.log
+        cp -r /tmp/results /evidence/results
+    fi
 fi
 printf 'Clean Linux package smoke passed (no Qt/Python/FFmpeg/yt-dlp installation).\n'

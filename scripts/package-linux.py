@@ -11,6 +11,8 @@ import subprocess
 import tarfile
 import tempfile
 import urllib.request
+from package_source import validate_identity
+from package_inputs import archive_inputs
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -21,6 +23,22 @@ def digest(path):
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             checksum.update(block)
     return checksum.hexdigest()
+
+
+def publish_file(source, target, expected):
+    """Expose a complete verified copy atomically, without replacing a candidate."""
+    with tempfile.NamedTemporaryFile(prefix=".candidate-", dir=target.parent, delete=False) as output:
+        partial = Path(output.name)
+        try:
+            with source.open("rb") as stream:
+                shutil.copyfileobj(stream, output)
+            output.close()
+            if digest(partial) != expected:
+                raise ValueError("Candidate bytes changed after verification")
+            partial.chmod(source.stat().st_mode & 0o777)
+            os.link(partial, target)
+        finally:
+            partial.unlink(missing_ok=True)
 
 
 def fetch(record, cache):
@@ -130,26 +148,6 @@ def complete_libraries(root, environment):
             if not target.exists():
                 shutil.copy2(Path(filename).resolve(), target)
 
-
-def source_identity(project):
-    # Git -c is local to this command and permits a read-only Docker source mount.
-    git = ["git", "-c", "safe.directory=" + str(project), "-C", str(project)]
-    revision = subprocess.check_output(git + ["rev-parse", "HEAD"], text=True).strip()
-    dirty = bool(subprocess.check_output(git + ["status", "--porcelain"]))
-    files = subprocess.check_output(git + ["ls-files", "-z", "--cached", "--others", "--exclude-standard"]).split(b"\0")
-    fingerprint = hashlib.sha256()
-    for name in sorted(set(files) - {b""}):
-        path = project / os.fsdecode(name)
-        fingerprint.update(name + b"\0")
-        if path.is_symlink():
-            fingerprint.update(os.fsencode(os.readlink(path)))
-        elif path.is_file():
-            fingerprint.update(digest(path).encode())
-        else:
-            fingerprint.update(b"deleted")
-    return {"source": revision, "dirty": dirty, "source_fingerprint": fingerprint.hexdigest()}
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--qt-root", type=Path, help="Pinned Qt SDK's gcc_64 directory")
@@ -158,8 +156,10 @@ def main():
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--build-directory", type=Path, help="Reuse a development CMake build; configure/build/tests still run")
     parser.add_argument("--whisper-build-directory", type=Path, help="Reuse a trusted development backend build after checking its source against the pinned archive")
+    parser.add_argument("--release", action="store_true", help="Require clean sources and full verification")
     parser.add_argument("--skip-tests", action="store_true", help="Diagnostic build; explicitly recorded in manifest")
     parser.add_argument("--real-smoke", action="store_true", help="Also download pinned public speech/model and verify installed GUI")
+    parser.add_argument("--result-file", type=Path, help="Write the exact candidate filename, hash and stage after verification")
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         parser.error("Build on Linux x86_64")
@@ -197,7 +197,7 @@ def main():
         if result.returncode:
             raise RuntimeError(f"{name} failed ({result.returncode}); see {log}")
 
-    identity = source_identity(PROJECT)
+    identity = validate_identity(PROJECT, release=args.release, skip_tests=args.skip_tests)
     dependencies = {name: fetch(record, cache) for name, record in lock["downloads"].items()}
     build = args.build_directory.resolve() if args.build_directory else stage / "build"
     appdir = stage / "Transcribe.AppDir"
@@ -330,9 +330,14 @@ def main():
     shutil.copy2(PROJECT / "packaging/linux/THIRD-PARTY.md", appdir / "usr/share/transcribe/THIRD-PARTY.md")
     shutil.copy2(PROJECT / "packaging/linux/dependencies.json", appdir / "usr/share/transcribe/dependencies.json")
     maximum = check_glibc(appdir, lock["minimum_glibc"])
-    if source_identity(PROJECT) != identity:
-        raise ValueError("Source changed during packaging; build again from a stable worktree")
+    validate_identity(PROJECT, identity, args.release, args.skip_tests)
+    compiler = re.search(r"^CMAKE_CXX_COMPILER:FILEPATH=(.+)$", (build / "CMakeCache.txt").read_text(), re.MULTILINE)
+    if not compiler:
+        raise ValueError("Cannot determine the configured C++ compiler")
     manifest = dict(identity, schema=1, platform="Linux x86_64", qt=qt_version,
+        release=args.release,
+        toolchain={name: subprocess.check_output(command, text=True).splitlines()[0] for name, command in
+                   [("compiler", [compiler[1], "--version"]), ("cmake", ["cmake", "--version"]), ("python", ["python3", "--version"])]},
         glibc_required=maximum, glibc_baseline=lock["minimum_glibc"], tested=not args.skip_tests,
         real_smoke=args.real_smoke, dependencies=lock, files=inventory(appdir))
     (appdir / "package-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
@@ -340,6 +345,7 @@ def main():
     run("appimage", [dependencies["appimagetool"], "--no-appstream", "--runtime-file", dependencies["runtime"],
         appdir, image], environment=dict(deploy_env, ARCH="x86_64", VERSION=identity["source"][:12]))
     image.chmod(0o755)
+    image_hash = digest(image)
     smoke = ["python3", PROJECT / "tests/smoke_linux_package.py", image, "--source", identity["source"],
              "--artifacts", stage / "smoke-evidence"]
     if args.real_smoke:
@@ -348,14 +354,23 @@ def main():
             "--ffmpeg", tools / "ffmpeg"])
         smoke += ["--real-gui", build / "gui/test_gui_real", "--prerequisites", prerequisites]
     run("package-smoke", smoke, environment=env)
+    inputs_archive = stage / "build-inputs.tar.gz"
+    archive_inputs(list(lock["downloads"].values()), cache, inputs_archive,
+                   [PROJECT / "packaging/linux/dependencies.json", appdir / "package-manifest.json"])
+    validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.
-    target = destination / ("Transcribe-linux-x86_64-" + identity["source"][:12] + "-" + stage.name + ".AppImage")
-    with target.open("xb") as output, image.open("rb") as source_file:
-        shutil.copyfileobj(source_file, output)
-    target.chmod(0o755)
+    target = destination / ("Transcribe-" + identity["application_version"] + "-linux-x86_64-" + ("release-" if args.release else "diagnostic-") + identity["source"][:12] + "-" + stage.name + ".AppImage")
+    publish_file(image, target, image_hash)
     target.with_suffix(target.suffix + ".sha256").write_text(digest(target) + "  " + target.name + "\n")
     target.with_suffix(target.suffix + ".json").write_text(json.dumps(manifest, indent=2) + "\n")
+    inputs_target = target.with_suffix(target.suffix + ".build-inputs.tar.gz")
+    publish_file(inputs_archive, inputs_target, digest(inputs_archive))
+    inputs_target.with_suffix(inputs_target.suffix + ".sha256").write_text(digest(inputs_target) + "  " + inputs_target.name + "\n")
+    if args.result_file:
+        result = dict(filename=target.name, sha256=digest(target), source=identity["source"],
+                      stage=stage.name, real_smoke=args.real_smoke)
+        args.result_file.write_text(json.dumps(result, indent=2) + "\n")
     print("Verified package: " + str(target), flush=True)
 
 

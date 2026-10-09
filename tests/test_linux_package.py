@@ -6,17 +6,37 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
 from linux_package import verify
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 spec = importlib.util.spec_from_file_location("linux_builder", Path(__file__).resolve().parents[1] / "scripts/package-linux.py")
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
 
 
 class LinuxPackageTests(unittest.TestCase):
+    def test_publication_rejects_changed_bytes_and_preserves_previous_candidate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "staging"; source.write_bytes(b"checked bytes")
+            target = root / "published.AppImage"
+            expected = builder.digest(source)
+            source.write_bytes(b"changed bytes")
+            with self.assertRaisesRegex(ValueError, "bytes changed"):
+                builder.publish_file(source, target, expected)
+            self.assertFalse(target.exists())
+            self.assertFalse(list(root.glob(".candidate-*")))
+            source.write_bytes(b"checked bytes")
+            builder.publish_file(source, target, expected)
+            self.assertEqual(target.read_bytes(), b"checked bytes")
+            with self.assertRaises(FileExistsError):
+                builder.publish_file(source, target, expected)
+            self.assertEqual(target.read_bytes(), b"checked bytes")
+
     def test_launchers_isolate_qt_and_cpu_backends_from_the_callers_directory(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "Приложение 😀"; tools = root / "usr/bin/tools"

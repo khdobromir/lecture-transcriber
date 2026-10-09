@@ -58,6 +58,36 @@ class MachineTests(unittest.TestCase):
         self.addCleanup(child.stderr.close)
         return child
 
+    def test_portable_missing_tools_refuse_before_processing(self):
+        tools = self.root / "tools"
+        (tools / ".transcribe-bundle").write_text("1\n")
+        suffix = ".exe" if os.name == "nt" else ""
+        # Valid lookalikes in both PATH and cwd must never mask a broken ZIP.
+        outside = self.root / "outside"
+        outside.mkdir()
+        self.env["PATH"] = str(outside) + os.pathsep + self.env["PATH"]
+        for name in ["ffmpeg", "yt-dlp", "whisper-cli"]:
+            shutil.copy2(MOCK, outside / (name + suffix))
+            shutil.copy2(MOCK, self.root / (name + suffix))
+        for name, source in [("ffmpeg", None), ("yt-dlp", "https://example.invalid/video"),
+                             ("whisper-cli", None)]:
+            with self.subTest(tool=name):
+                tool = tools / (name + suffix)
+                saved = tool.read_bytes()
+                tool.unlink()
+                try:
+                    child = self.launch(source=source)
+                    events = self.collect(child)
+                    self.assertNotEqual(child.returncode, 0)
+                    self.assertEqual(events[-1]["type"], "failed")
+                    self.assertFalse(self.output.exists())
+                    for flag in ["--help", "--version"]:
+                        subprocess.run([str(self.binary), flag], cwd=self.root, env=self.env,
+                                       check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                finally:
+                    tool.write_bytes(saved)
+                    tool.chmod(0o755)
+
     def collect(self, child, initial=()):
         # Keep control pipe open: communicate() closes stdin, which is cancellation.
         lines = []

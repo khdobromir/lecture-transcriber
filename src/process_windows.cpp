@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 #include <csignal>
+#include <cwchar>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -24,6 +26,38 @@ std::wstring executable(std::string_view name) {
     const DWORD count = SearchPathW(nullptr, wide.c_str(), L".exe", static_cast<DWORD>(buffer.size()), buffer.data(), nullptr);
     if (!count || count >= buffer.size()) throw ProcessError("Не удалось найти инструмент: " + std::string(name), 127);
     buffer.resize(count); return buffer;
+}
+std::vector<wchar_t> child_environment(const std::filesystem::path& tools) {
+    auto* inherited = GetEnvironmentStringsW();
+    if (!inherited) windows_error("GetEnvironmentStrings");
+    struct EnvironmentGuard { wchar_t* value; ~EnvironmentGuard() { FreeEnvironmentStringsW(value); } } guard{inherited};
+    std::vector<std::wstring> entries;
+    for (const auto* entry = inherited; *entry; entry += wcslen(entry) + 1) {
+        const std::wstring_view value(entry);
+        const auto named = [&](const wchar_t* name) {
+            const auto size = wcslen(name);
+            return value.size() > size && value[size] == L'=' && _wcsnicmp(entry, name, size) == 0;
+        };
+        if (named(L"GGML_BACKEND_PATH") || (!tools.empty() && named(L"PATH"))) continue;
+        entries.emplace_back(value);
+    }
+    if (!tools.empty()) {
+        std::array<wchar_t, 32768> system{};
+        const auto length = GetSystemDirectoryW(system.data(), static_cast<UINT>(system.size()));
+        if (!length || length >= system.size()) windows_error("GetSystemDirectory");
+        const auto path = L"PATH=" + tools.native() + L";" + std::wstring(system.data(), length);
+        entries.push_back(path);
+    }
+    std::sort(entries.begin(), entries.end(), [](const auto& left, const auto& right) {
+        return _wcsicmp(left.c_str(), right.c_str()) < 0;
+    });
+    std::vector<wchar_t> result;
+    for (const auto& entry : entries) {
+        result.insert(result.end(), entry.begin(), entry.end()); result.push_back(L'\0');
+    }
+    result.push_back(L'\0');
+    if (result.size() == 1) result.push_back(L'\0');
+    return result;
 }
 }
 std::size_t command_line_size(const std::vector<std::string>& args) {
@@ -102,6 +136,9 @@ Process::Process(const std::vector<std::string>& args, const std::filesystem::pa
     std::array<HANDLE, 3> inherited{input.get(), out_write.get(), err_write.get()};
     if (!UpdateProcThreadAttribute(attributes, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, inherited.data(), sizeof(inherited), nullptr, nullptr)) windows_error("UpdateProcThreadAttribute");
     const auto application = executable(args[0]);
+    const auto directory = std::filesystem::path(application).parent_path();
+    const auto tools = portable_bundle(directory) ? directory : std::filesystem::path{};
+    auto environment = child_environment(tools);
     std::wstring command = quote_windows(application);
     for (size_t i = 1; i < args.size(); ++i) { command += L' '; command += quote_windows(wide_utf8(args[i])); }
     STARTUPINFOEXW startup{};
@@ -111,7 +148,8 @@ Process::Process(const std::vector<std::string>& args, const std::filesystem::pa
     startup.lpAttributeList = attributes;
     PROCESS_INFORMATION created{};
     if (!CreateProcessW(application.c_str(), command.data(), nullptr, nullptr, TRUE,
-                        CREATE_SUSPENDED | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT, nullptr, nullptr, &startup.StartupInfo, &created))
+                        CREATE_SUSPENDED | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
+                        environment.data(), tools.empty() ? nullptr : tools.c_str(), &startup.StartupInfo, &created))
         throw ProcessError("Не удалось запустить " + name_ + ": Windows error " + std::to_string(GetLastError()), 127);
     native_->process.reset(created.hProcess);
     WinHandle thread(created.hThread);

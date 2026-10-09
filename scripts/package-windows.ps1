@@ -4,7 +4,8 @@ param(
     [string]$WorkDirectory = "$env:TEMP\transcribe-package",
     [string]$Destination = "$PSScriptRoot\..\dist",
     [switch]$SkipTests,
-    [switch]$RealSmoke
+    [switch]$RealSmoke,
+    [switch]$Release
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -37,6 +38,18 @@ function Get-Verified($Dependency) {
     Move-Item ($Target + '.part') $Target
     return $Target
 }
+function Get-SourceIdentity([string]$Expected = '') {
+    $Arguments = @("$Project\scripts\package_source.py", $Project)
+    if ($Expected) { $Arguments += @('--expect', $Expected) }
+    if ($Release) { $Arguments += '--release' }
+    if ($SkipTests) { $Arguments += '--skip-tests' }
+    $Result = & python @Arguments
+    if ($LASTEXITCODE -ne 0) { throw 'Source identity/release guard failed.' }
+    return ($Result | ConvertFrom-Json)
+}
+$Identity = Get-SourceIdentity
+$IdentityFile = Join-Path $Stage 'source-identity.json'
+$Identity | ConvertTo-Json | Set-Content $IdentityFile -Encoding utf8
 Invoke-Checked cmake @('-S', $Project, '-B', $Build, '-G', 'Visual Studio 17 2022', '-A', 'x64',
     "-DCMAKE_PREFIX_PATH=$QtRoot", '-DTRANSCRIBE_BUILD_GUI=ON', '-DBUILD_TESTING=ON', '-DTRANSCRIBE_WARNINGS_AS_ERRORS=ON')
 Invoke-Checked cmake @('--build', $Build, '--config', 'Release', '--parallel', '4')
@@ -47,6 +60,7 @@ $Bin = Join-Path $Bundle 'bin'
 $Tools = Join-Path $Bin 'tools'
 $Licenses = Join-Path $Bundle 'licenses'
 New-Item -ItemType Directory -Force -Path $Tools, $Licenses | Out-Null
+'1' | Set-Content "$Tools\.transcribe-bundle" -Encoding ascii
 Invoke-Checked git @('init', $Whisper)
 # The source SHA-256 pins are Git blob bytes (LF), independent of the host's
 # global Git settings. Configure this checkout before materializing the pin.
@@ -104,10 +118,17 @@ Invoke-Checked "$Bin\transcribe.exe" @('--version')
 Invoke-Checked "$Tools\ffmpeg.exe" @('-version')
 Invoke-Checked "$Tools\yt-dlp.exe" @('--version')
 Invoke-Checked "$Tools\whisper-cli.exe" @('--help')
+$null = Get-SourceIdentity $IdentityFile
+$CompilerMetadata = @(Get-ChildItem "$Build\CMakeFiles" -Recurse -Filter CMakeCXXCompiler.cmake)
+if ($CompilerMetadata.Count -ne 1) { throw 'Cannot identify the configured C++ compiler.' }
+$CompilerVersion = [regex]::Match((Get-Content $CompilerMetadata[0].FullName -Raw), 'set\(CMAKE_CXX_COMPILER_VERSION "([^"]+)"\)').Groups[1].Value
+if (-not $CompilerVersion) { throw 'Missing configured C++ compiler version.' }
 $Manifest = [ordered]@{
     version = 1; platform = 'Windows 11 x64'; qt = $QtVersion
-    source = (& git -C $Project rev-parse HEAD).Trim()
-    dirty = [bool](& git -C $Project status --porcelain)
+    application_version = $Identity.application_version
+    source = $Identity.source; dirty = $Identity.dirty
+    source_fingerprint = $Identity.source_fingerprint; release = [bool]$Release
+    toolchain = [ordered]@{ compiler = "MSVC $CompilerVersion"; cmake = (& cmake --version | Select-Object -First 1); python = (& python --version) }
     whisper = $Lock.whisper.revision; tested = (-not $SkipTests)
     downloads = $Lock.downloads; files = @()
 }
@@ -115,15 +136,39 @@ $Manifest.files = @(Get-ChildItem $Bundle -Recurse -File | ForEach-Object {
     [ordered]@{ path = $_.FullName.Substring($Bundle.Length + 1).Replace('\', '/'); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
 })
 $Manifest | ConvertTo-Json -Depth 8 | Set-Content "$Bundle\package-manifest.json" -Encoding utf8
-$Zip = Join-Path $Destination ('Transcribe-windows-x64-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
+$Mode = if ($Release) { 'release' } else { 'diagnostic' }
+$Name = 'Transcribe-' + $Identity.application_version + '-windows-x64-' + $Mode + '-' + $Identity.source.Substring(0, 12) + '-' + (Split-Path $Stage -Leaf) + '.zip'
+$Zip = Join-Path $Stage $Name
 Compress-Archive -Path $Bundle -DestinationPath $Zip -CompressionLevel Optimal
 # Validate and run the actual final archive from a fresh Unicode directory.
-$SmokeArguments = @("$Project\tests\smoke_windows_package.py", $Zip, $Manifest.source)
+$SmokeArguments = @("$Project\tests\smoke_windows_package.py", $Zip, $Manifest.source,
+    '--backend-probe', "$Build\Release\test_backend_probe.dll",
+    '--backend-dependency', "$Build\Release\test_backend_dependency.dll")
 if ($RealSmoke) {
     $SmokeArguments += @('--real-gui', "$Build\gui\Release\test_gui_real.exe", '--workspace', "$Stage\real-smoke")
 }
 Invoke-Checked python $SmokeArguments
+$WhisperArchive = Join-Path $Stage 'whisper-source.tar'
+Invoke-Checked git @('-C', $Whisper, 'archive', '--format=tar', "--output=$WhisperArchive", 'HEAD')
+$Inputs = [ordered]@{ downloads = @($Lock.downloads) + @([ordered]@{
+    name = 'whisper-source'; filename = 'whisper-source.tar'; revision = $Lock.whisper.revision
+    url = $Lock.whisper.repository; sha256 = (Get-FileHash $WhisperArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+}) }
+$InputsFile = Join-Path $Stage 'build-input-records.json'
+$Inputs | ConvertTo-Json -Depth 8 | Set-Content $InputsFile -Encoding utf8
+$InputsArchive = $Zip + '.build-inputs.tar.gz'
+Invoke-Checked python @("$Project\scripts\package_inputs.py", $InputsFile, $Stage, $InputsArchive,
+    '--material', "$Project\packaging\windows\dependencies.json", '--material', "$Project\scripts\patch-whisper-windows.py",
+    '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json")
+$null = Get-SourceIdentity $IdentityFile
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
     Set-Content ($Zip + '.sha256') -Encoding ascii
-Write-Host "Package: $Zip"
+(Get-FileHash $InputsArchive -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $InputsArchive -Leaf) |
+    Set-Content ($InputsArchive + '.sha256') -Encoding ascii
+$Published = Join-Path $Destination $Name
+if (Test-Path $Published) { throw 'Refusing to replace an existing candidate.' }
+Move-Item -LiteralPath ($Zip + '.sha256'), ($Zip + '.validation.json') -Destination $Destination
+Move-Item -LiteralPath $InputsArchive, ($InputsArchive + '.sha256') -Destination $Destination
+Move-Item -LiteralPath $Zip -Destination $Published
+Write-Host "Package: $Published"
 Write-Host "Build evidence and staged files: $Stage"

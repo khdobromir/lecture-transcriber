@@ -17,31 +17,20 @@ concurrency:
 jobs:
   package:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build pinned environment and verify the final AppImage
-        run: bash scripts/package-linux.sh --container
-      - name: Check the one final file in clean Linux images without FUSE
+      - name: Build and verify one final AppImage
+        env:
+          REAL_SMOKE: ${{ github.event_name == 'workflow_dispatch' && inputs.real_smoke }}
         run: |
-          mkdir -p "$RUNNER_TEMP/portable-inputs"
-          cp dist/*.AppImage "$RUNNER_TEMP/portable-inputs/Transcribe.AppImage"
-          for base in ubuntu:24.04 debian:13-slim; do
-            docker run --rm --network none \
-              -v "$RUNNER_TEMP/portable-inputs:/inputs:ro" \
-              -v "$GITHUB_WORKSPACE/tests/smoke_linux_clean.sh:/smoke.sh:ro" \
-              "$base" sh /smoke.sh
-          done
-      - name: Public speech and model through installed portable GUI
-        if: github.event_name == 'workflow_dispatch' && inputs.real_smoke
-        run: |
-          export TRANSCRIBE_PROJECT_DIR="$GITHUB_WORKSPACE"
-          export TRANSCRIBE_BUILD_UID="$(id -u)" TRANSCRIBE_BUILD_GID="$(id -g)"
-          docker compose -f packaging/linux/compose.yml run --rm builder \
-            python3 /source/scripts/package-linux.py --qt-root /opt/Qt/6.8.3/gcc_64 \
-            --work-directory /work --destination /output --real-smoke
+          options=(--result-file /output/candidate.json)
+          if [ "$REAL_SMOKE" = true ]; then options+=(--real-smoke); fi
+          bash scripts/package-linux.sh --container "${options[@]}"
+      - name: Verify that exact checksum in offline clean Ubuntu and Debian
+        run: python3 tests/check_linux_candidate.py dist/candidate.json
       - name: Retain verified package and build evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -51,6 +40,8 @@ jobs:
             dist/*.AppImage
             dist/*.sha256
             dist/*.json
+            dist/*.tar.gz
+            dist/clean-evidence/**
             .cache/linux-package-container/run-*/*.log
             .cache/linux-package-container/run-*/build/Testing/Temporary/*.log
             .cache/linux-package-container/run-*/smoke-evidence/*

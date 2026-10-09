@@ -8,10 +8,10 @@
 ## Локальные проверки
 
 Разработка ведётся в `dev`. В Arch/Omarchy дополнительно к зависимостям README
-нужен `shellcheck`:
+нужны `shellcheck` и Python 3:
 
 ```bash
-sudo pacman -S --needed shellcheck
+sudo pacman -S --needed shellcheck python
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
 cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
@@ -21,13 +21,18 @@ shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
 
 Для Clang добавьте `-DCMAKE_CXX_COMPILER=clang++` и выберите отдельный каталог
 сборки. CTest использует собранный бинарник, а не компилирует его другим GCC.
-Все тесты и подмены внешних инструментов — C++23, Python для них не требуется.
+Тесты используют C++23 и Python 3 Interpreter; CMake требует его при
+`BUILD_TESTING=ON` (по умолчанию). Для запуска переносимого пакета отдельный
+Python не нужен.
 Тесты установщика запускайте без sudo: они используют отдельный временный HOME,
 настоящие хеши и файловые операции, подменяют сеть и сборочные инструменты.
 Модели и доступ к аккаунту VK для автоматических тестов не нужны.
 
-CTest содержит пять suites: `unit_cli`, `unit_audio`, `pipeline`, `installation`
-и `smoke_preflight`. Unit-тесты не запускают FFmpeg или Whisper; pipeline
+Набор CTest зависит от платформы, GUI и наличия FFmpeg; актуальный список:
+`ctest --test-dir build -N`. В Linux CLI configuration с FFmpeg доступны 17 suites,
+в GUI — ещё пять (включая real-smoke harness с отдельными prerequisites).
+Метки: `unit`, `integration`, `installation`, `preflight`; GUI имеет также свои метки.
+Unit-тесты не запускают FFmpeg или Whisper; pipeline
 использует настоящий FFmpeg и управляемую подмену Whisper. Для выборочного запуска:
 
 ```bash
@@ -78,6 +83,7 @@ build/smoke_real --binary build/transcribe --app-home "$HOME/путь-к-уст�
 Без этого параметра используется удаляемый временный каталог.
 
 Обязательный CI проверяет Ubuntu 24.04 (GCC/Clang 18), Debian 13 (GCC) и Arch,
+Windows MSVC CLI/Qt ZIP, Qt 6.8.3/6.11.2 Linux, ASan/UBSan,
 а также clang-tidy, cppcheck и ShellCheck. Ubuntu GCC дополнительно повторяет
 сценарии `reliability_` двадцать раз. Обычные проверки доступны по PR, push в
 `dev`/`master` и ручному запуску.
@@ -90,6 +96,12 @@ SHA-256 во временный каталог runner и не запускает
 готовые модели и бинарники не кешируются и не загружаются как artifacts.
 Результаты локальной проверки этих изменений и её ограничения — в
 [отчёте проверки тестов и CI](docs/test-validation.md).
+
+GUI и упаковка: [Windows/Qt](docs/windows-gui.md), [AppImage](docs/linux-portable.md).
+Для приёмки на exact SHA вручную запускаются **CI** и **Linux portable GUI** с
+`real_smoke=true`, а также **Real Whisper smoke**. В portable workflow AppImage
+собирается один раз; builder и offline Ubuntu/Debian проверяют один checksum.
+Зелёный run с пропущенным real step не закрывает реальную приёмку.
 
 Сравнение скорости, памяти и границ дробления описано в README. Выполненные
 локальные проверки `dev` — в [отчёте](docs/dev-validation.md).

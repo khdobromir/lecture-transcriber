@@ -6,10 +6,12 @@ import json
 import ctypes
 import xml.etree.ElementTree as ET
 from package_archive import extract_verified, digest
+from pe_policy import dependent_load_flags
 import subprocess
 import sys
 import tempfile
 import wave
+import shutil
 
 def verify_executable_manifest(executable):
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -52,6 +54,8 @@ parser.add_argument("archive", type=Path)
 parser.add_argument("source")
 parser.add_argument("--real-gui", type=Path)
 parser.add_argument("--workspace", type=Path)
+parser.add_argument("--backend-probe", required=True, type=Path)
+parser.add_argument("--backend-dependency", required=True, type=Path)
 args = parser.parse_args()
 archive = args.archive.resolve()
 expected_source = args.source
@@ -60,10 +64,28 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
     root.mkdir()
     package, manifest = extract_verified(archive, root, expected_source)
     copied = package / "bin"
+    if not (copied / "tools/.transcribe-bundle").is_file():
+        raise RuntimeError("Windows ZIP must declare strict portable mode")
     for name in ["transcribe.exe", "transcribe-gui.exe"]:
         verify_executable_manifest(copied / name)
+    for binary in [copied / "transcribe.exe", copied / "transcribe-gui.exe", copied / "tools/whisper-cli.exe"]:
+        if dependent_load_flags(binary) != 0xA00:
+            raise RuntimeError("Missing application-directory/System32 import policy: " + str(binary))
     # Do not let the SDK or system tools mask missing DLLs in the package.
     environment = dict(os.environ, PATH=os.environ["SystemRoot"] + "\\System32")
+    # Positive control proves this is a working native DLL, not a false negative.
+    probe = root / "ggml-cpu-untrusted.dll"
+    shutil.copy2(args.backend_probe, probe)
+    marker = root / "backend-loaded.marker"
+    os.environ["TRANSCRIBE_BACKEND_PROBE"] = str(marker)
+    control = ctypes.WinDLL(str(probe))
+    if not marker.is_file():
+        raise RuntimeError("Backend probe positive control did not write its marker")
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.FreeLibrary.argtypes = [ctypes.c_void_p]
+    kernel.FreeLibrary(control._handle)
+    marker.unlink()
+    environment.update(GGML_BACKEND_PATH=str(probe), TRANSCRIBE_BACKEND_PROBE=str(marker))
     for key in ["QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH", "QML_IMPORT_PATH", "QML2_IMPORT_PATH",
                 "QT_QML_IMPORT_PATH", "QT_QPA_PLATFORMTHEME", "QT_STYLE_OVERRIDE", "QT_QUICK_CONTROLS_STYLE",
                 "QTDIR", "QT_ROOT", "Qt6_DIR", "CMAKE_PREFIX_PATH"]:
@@ -73,6 +95,10 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
                     [copied / "tools/yt-dlp.exe", "--version"]]:
         subprocess.run(list(map(str, command)), cwd=root, env=environment, check=True, timeout=30,
                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    version = subprocess.check_output([str(copied / "transcribe.exe"), "--version"],
+                                      cwd=root, env=environment, text=True, timeout=30).strip()
+    if version != "transcribe " + manifest["application_version"]:
+        raise RuntimeError("CLI version differs from package manifest")
     audio = root / "Тест 😀.wav"
     with wave.open(str(audio), "wb") as out:
         out.setnchannels(1)
@@ -88,6 +114,24 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
     if preflight.returncode != 3 or b"failed to initialize whisper context" not in preflight.stderr:
         raise RuntimeError(f"Whisper Unicode input preflight failed: {preflight.returncode}, {preflight.stderr!r}")
+    if b"loaded CPU backend from" not in preflight.stderr:
+        raise RuntimeError("Whisper did not dispatch a bundled CPU backend")
+    if marker.exists():
+        raise RuntimeError("Whisper loaded a backend from caller cwd or GGML_BACKEND_PATH")
+    # An eligible backend in trusted tools depends on a DLL available only in
+    # the hostile cwd/PATH. Loading it must not execute that dependency either.
+    dependency = root / "test_backend_probe.dll"
+    shutil.copy2(args.backend_probe, dependency)
+    backend = copied / "tools/ggml-cpu-dependency-probe.dll"
+    shutil.copy2(args.backend_dependency, backend)
+    try:
+        subprocess.run([str(copied / "tools/whisper-cli.exe"), "--help"], cwd=root,
+                       env=dict(environment, PATH=str(root) + os.pathsep + environment["PATH"]),
+                       check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        if marker.exists():
+            raise RuntimeError("Backend dependency DLL loaded from caller cwd/PATH")
+    finally:
+        backend.unlink()
     settings = root / "settings.ini"
     settings.write_text("[General]\noutput=" + (root / "results").as_posix() + "\n", encoding="utf-8")
     environment.update(QT_QPA_PLATFORM="windows", QT_QUICK_BACKEND="software", QT_FORCE_STDERR_LOGGING="1",
@@ -117,14 +161,17 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
         real_environment = dict(os.environ, **prerequisites["environment"], QT_QPA_PLATFORM="windows",
                                 QT_QPA_PLATFORMTHEME="windows", QT_QUICK_BACKEND="software",
                                 TRANSCRIBE_REAL_BINARY=str(copied / "transcribe.exe"),
-                                TRANSCRIBE_REAL_ARTIFACTS=str(args.workspace / "result"))
+                                TRANSCRIBE_REAL_ARTIFACTS=str(args.workspace / "result"),
+                                GGML_BACKEND_PATH=str(probe), TRANSCRIBE_BACKEND_PROBE=str(marker))
         # The test harness uses the SDK; the deployed executables were checked
         # independently above with a minimal PATH. No SDK is copied into the ZIP.
         subprocess.run([str(args.real_gui), "-o", str(args.workspace.resolve() / "gui-real.log") + ",txt"],
                        env=real_environment, cwd=root, check=True, timeout=360)
+    if marker.exists():
+        raise RuntimeError("Packaged GUI/CLI loaded an untrusted backend")
 evidence = {"source": expected_source, "dirty": manifest["dirty"], "zip_sha256": digest(archive), "verified_files": len(manifest["files"]),
             "checks": ["final ZIP extraction and every file SHA-256", "app-local CRT in bin and tools", "embedded manifests, DPI and asInvoker", "minimal PATH",
-                       "bundled tools and Whisper Unicode input preflight", "Unicode paths and different cwd", "deployed native Windows Qt/QML startup"],
+                       "bundled tools and Whisper Unicode input preflight", "native backend probe positive control and cwd/env rejection", "Unicode paths and different cwd", "deployed native Windows Qt/QML startup"],
             "real_gui_cli_speech": bool(args.real_gui), "manual_clean_windows_11": "unverified"}
 archive.with_suffix(archive.suffix + ".validation.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
 print("Final ZIP smoke passed: file checksums, CRT, bundled tools, Unicode paths, deployed Qt/QML")
