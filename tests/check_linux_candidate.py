@@ -1,6 +1,7 @@
 """Test one builder-selected AppImage offline; never build or select by glob."""
 import argparse
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -48,7 +49,10 @@ def main():
             output.mkdir()
             subprocess.run(["docker", "pull", base], check=True)
             image_id = subprocess.check_output(["docker", "image", "inspect", "--format", "{{.Id}}", base], text=True).strip()
-            command = ["docker", "run", "--rm", "--network", "none", "-e", "REQUIRE_ASR=" + str(int(record["real_smoke"])),
+            # Exercise ordinary-user launch and keep private result directories
+            # readable by the runner that uploads the evidence.
+            command = ["docker", "run", "--rm", "--network", "none", "--user", f"{os.getuid()}:{os.getgid()}",
+                       "-e", "REQUIRE_ASR=" + str(int(record["real_smoke"])),
                        "-v", str(inputs) + ":/inputs:ro", "-v", str(output) + ":/evidence",
                        "-v", str(project / "tests/smoke_linux_clean.sh") + ":/smoke.sh:ro", base, "sh", "/smoke.sh"]
             with (output / "container.log").open("wb") as log:

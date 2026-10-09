@@ -53,6 +53,10 @@ $Identity | ConvertTo-Json | Set-Content $IdentityFile -Encoding utf8
 Invoke-Checked cmake @('-S', $Project, '-B', $Build, '-G', 'Visual Studio 17 2022', '-A', 'x64',
     "-DCMAKE_PREFIX_PATH=$QtRoot", '-DTRANSCRIBE_BUILD_GUI=ON', '-DBUILD_TESTING=ON', '-DTRANSCRIBE_WARNINGS_AS_ERRORS=ON')
 Invoke-Checked cmake @('--build', $Build, '--config', 'Release', '--parallel', '4')
+# The GUI test executables share gui/Release. Their import policy, like the
+# shipped GUI's, excludes PATH, so deploy Qt (including QtTest) beside them
+# before CTest. This test-only deployment never enters the installed bundle.
+Invoke-Checked "$QtRoot\bin\windeployqt.exe" @('--release', '--qmldir', "$Project\gui", "$Build\gui\Release\test_qml.exe")
 if (-not $SkipTests) { Invoke-Checked ctest @('--test-dir', $Build, '-C', 'Release', '--output-on-failure') }
 Invoke-Checked cmake @('--install', $Build, '--config', 'Release', '--prefix', $Bundle)
 # Keep the app/CLI beside each other; qt.conf and deployed QML/plugins stay in bin.

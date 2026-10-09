@@ -53,12 +53,25 @@ Windows ZIP job остановился до configure: source guard читал U
 mode и затем проходит. Повтор на новом SHA обязателен; этот run не является
 допуском окончательного кандидата.
 
+Отдельный [Real Whisper smoke на e8260b4](https://github.com/khdobromir/lecture-transcriber/actions/runs/37978155093)
+завершился успешно с настоящим ASR. [Linux portable на 18fc2fa](https://github.com/khdobromir/lecture-transcriber/actions/runs/37974993815)
+прошёл единственную сборку и offline clean Ubuntu/Debian, но не upload evidence:
+root-owned results с приватными правами не читались uploader. Clean containers
+переведены на UID/GID runner; новый hosted run должен подтвердить исправление.
+
+[Windows CI на e8260b4](https://github.com/khdobromir/lecture-transcriber/actions/runs/37978147639)
+прошёл configure/build и CLI tests, но GUI tests не стартовали (0xc0000135):
+import policy исключает SDK из PATH, а test directory ещё не содержал Qt DLLs.
+Упаковщик теперь отдельно развёртывает Qt/QtTest около GUI test executables
+перед CTest. В поставляемый ZIP test-only deployment не входит. Native повтор
+обязателен; успешное закрытие F1/F2 пока не заявлено.
+
 | Gate | Статус / необходимое evidence |
 | --- | --- |
 | Окончательный clean source SHA | Открыт: commit, source identity и exact-SHA CI |
 | CI 10/10 и Linux portable | Открыт: links + conclusions + real steps не skipped |
 | F1/F2 native regressions | Открыт: Windows CI DLL probes, missing-tools, Unicode, process/cancel |
-| Real Whisper fresh container | Открыт: workflow с Python на candidate |
+| Real Whisper fresh container | Успех на e8260b4 (ссылка выше); повторить на окончательном SHA |
 | Один AppImage SHA во всех средах | Открыт: builder + clean Ubuntu/Debian + native smoke + published download |
 | Windows 11 без SDK | Открыт: среда сейчас недоступна, подтверждено пользователем |
 | Ubuntu 24.04 desktop X11/Wayland | Открыт: среда сейчас недоступна, подтверждено пользователем |
