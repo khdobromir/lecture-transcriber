@@ -33,7 +33,8 @@ def collect_qt_notices(records, cache, destination):
                 if not member.isfile():
                     continue
                 basename = PurePosixPath(name).name.lower()
-                if basename.startswith(("license", "copying", "copyright", "notice")) or basename == "qt_attribution.json":
+                if (basename.startswith(("license", "copying", "copyright", "notice")) or basename == "qt_attribution.json"
+                        or "licenses" in [part.lower() for part in PurePosixPath(name).parts[:-1]]):
                     safe_path(name)
                     selected.add(name)
                 if basename == "qt_attribution.json":

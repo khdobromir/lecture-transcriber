@@ -10,12 +10,12 @@ Exact candidate source SHA/fingerprint и package SHA фиксируются у�
 
 | Требование плана | Реализация | Подтверждение / остаток |
 | --- | --- | --- |
-| F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Native probe DLL, positive control, dependency probe добавлены; Windows run ожидается |
-| F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | machine/portable tests; Windows native run ожидается |
+| F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Windows native package job на b379811 прошёл; final SHA требует повтора |
+| F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | Windows native package job на b379811 прошёл; final SHA требует повтора |
 | F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container real ASR на 1edc4f3 прошёл; ссылка ниже |
-| F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Unit checksum/tampering test прошёл; hosted package run ожидается |
-| F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation и concurrent commit unit test прошёл; Windows packager run ожидается |
-| F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | Native packaging run ожидается |
+| F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Hosted run на 1edc4f3 прошёл; скачанный AppImage и build inputs сверены; native final smoke открыт |
+| F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation и concurrent commit unit test прошёл; Windows package job на b379811 прошёл |
+| F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | Windows package job на b379811 прошёл; final SHA требует повтора |
 | F7: материалы сторонних компонентов | Versioned build-input archives сохраняют pinned downloads, Whisper, Windows patch, FFmpeg/yt-dlp source snapshots и FFmpeg build recipes; mappings связаны с binary SHA | Полные corresponding source/build materials и сопоставление фактическому payload НЕ завершены |
 | F8: документация и VERSION | 0.4.0 candidate, Python/test/packaging/support/cancellation docs и release notes | Локальные help/version; окончательные manifests ожидаются |
 
@@ -122,6 +122,34 @@ traversal regressions проходят. Notices и sources теперь вклю
 packaging пути. Сопоставление всех фактических payload components и полный F7
 ещё не завершены.
 
+## Проверенные artifacts и последующие изменения
+
+[Linux portable на 1edc4f3](https://github.com/khdobromir/lecture-transcriber/actions/runs/37980000870)
+завершился успешно: builder real ASR, offline Ubuntu/Debian и сохранение artifacts.
+Скачан `Transcribe-0.4.0-linux-x86_64-release-1edc4f300f26-run-s1saiuit.AppImage`;
+SHA-256 `c39f7f53318fdc404e5f73802516056b1e2c2a2dcd64f5de748c199ffec87825`
+совпадает с candidate.json и sidecar. Build inputs SHA-256
+`fe8b9adc7db86bd8c565a47f29b29f8792a9c32b9c9f8bf1894271cb0a7adf7c`
+также сверён. Manifest: version 0.4.0, release/tested/real_smoke=true.
+Этот пакет предшествует последующим изменениям исходников и не является final RC.
+
+[Windows job на b379811](https://github.com/khdobromir/lecture-transcriber/actions/runs/37981271206/job/113992581355)
+завершился успешно, включая упаковку, native tests и настоящий small ASR.
+Скачанные журналы подтверждают gui_controller 62/62, gui_cli_integration 7/7,
+QML 7/7 и scale150/200 по 4/4; real GUI: 3 passed, 0 failed, 1 skipped
+(portableHttpsDownload без portable certificate bundle). Чистая Windows 11
+без SDK по-прежнему недоступна; эта ручная приёмка остаётся открытой.
+
+Linux packaging теперь формирует `linux-library-provenance.json`: payload и
+original hashes, binary/source package versions, скопированные copyright-файлы
+и common licenses. Неизвестные библиотеки отмечаются unresolved; third-party
+SDK libraries не считаются автоматически покрытыми исходниками Qt.
+Сводка также сохраняется в build inputs. Тесты проверяют usrmerge, неоднозначного
+владельца и отсутствующий copyright. Qt notice collector дополнительно сохраняет
+полные тексты из каталогов LICENSES; regression сначала воспроизвёл пропуск,
+затем прошёл. Реальная сборка нового payload в hosted builder ещё необходима.
+Полнота corresponding sources остаётся false до завершения F7.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -130,7 +158,7 @@ packaging пути. Сопоставление всех фактических p
 | Code review | Результат |
 | --- | --- |
 | Summary | Реализация Windows isolation, portable artifact identity и provenance подготовлена для hosted CI |
-| Critical issues | Подтверждённых критических дефектов в локально проверенной части не найдено; Windows результат ещё ожидается |
+| Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
 | Minor issues | Полный static analysis и pinned Qt matrix ещё должны подтвердиться в CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |

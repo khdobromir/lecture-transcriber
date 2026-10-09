@@ -10,6 +10,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 from linux_package import verify
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -19,6 +20,64 @@ spec.loader.exec_module(builder)
 
 
 class LinuxPackageTests(unittest.TestCase):
+    def test_system_library_owner_handles_usrmerge_and_rejects_ambiguous_ownership(self):
+        from package_linux_notices import package_owner
+        def output(command, **kwargs):
+            if command[-1] == "/usr/lib/transcribe-fixture.so.1":
+                raise subprocess.CalledProcessError(1, command)
+            self.assertEqual(command[-1], "/lib/transcribe-fixture.so.1")
+            return "libfixture1:amd64: /lib/transcribe-fixture.so.1\n"
+        with patch("package_linux_notices.subprocess.check_output", side_effect=output):
+            self.assertEqual(package_owner(Path("/usr/lib/transcribe-fixture.so.1")), "libfixture1:amd64")
+        with patch("package_linux_notices.subprocess.check_output",
+                   return_value="one:amd64, two:amd64: /lib/transcribe-fixture.so.1\n"):
+            with self.assertRaisesRegex(ValueError, "uniquely attribute"):
+                package_owner(Path("/lib/transcribe-fixture.so.1"))
+
+    def test_system_library_provenance_copies_package_and_common_notices(self):
+        from package_linux_notices import collect_system_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            app = root / "app"; libraries = app / "usr/lib"; libraries.mkdir(parents=True)
+            (libraries / "libdemo.so.1").write_bytes(b"\x7fELFpatched library")
+            (libraries / "libunresolved.so.1").write_bytes(b"\x7fELFunknown")
+            (libraries / "libQt6Core.so.6").write_bytes(b"\x7fELFQt")
+            sdk = root / "sdk"; sdk.mkdir(); (sdk / "libQt6Core.so.6").write_bytes(b"\x7fELFQt original")
+            system = root / "system"; original = system / "lib/libdemo.so.1"
+            original.parent.mkdir(parents=True); original.write_bytes(b"\x7fELForiginal library")
+            notice = system / "usr/share/doc/libdemo1/copyright"; notice.parent.mkdir(parents=True)
+            notice.write_bytes(b"Demo copyright; see /usr/share/common-licenses/LGPL-2.1")
+            common = system / "usr/share/common-licenses/LGPL-2.1"; common.parent.mkdir(parents=True)
+            common.write_bytes(b"LGPL license text")
+            def output(command, **kwargs):
+                if command == ["ldconfig", "-p"]:
+                    return f"libdemo.so.1 (libc6,x86-64) => {original}\n"
+                if command[:2] == ["dpkg-query", "-S"]:
+                    return "libdemo1:amd64: " + str(original) + "\n"
+                if command[:2] == ["dpkg-query", "-W"]:
+                    return "libdemo1:amd64\t1.2-3\tdemo\t1.2-3\n"
+                self.fail("Unexpected subprocess")
+            licenses = app / "licenses"; licenses.mkdir()
+            with patch("package_linux_notices.subprocess.check_output", side_effect=output):
+                result = collect_system_notices(app, licenses, sdk, system_root=system)
+            deb = next(entry for entry in result["libraries"] if entry["provider"] == "deb")
+            self.assertEqual(deb["source_package"], "demo")
+            self.assertEqual(deb["source_version"], "1.2-3")
+            self.assertNotEqual(deb["payload_sha256"], deb["original_sha256"])
+            self.assertEqual((licenses / deb["copyright"]).read_bytes(), notice.read_bytes())
+            self.assertEqual((licenses / "Linux-system/common-licenses/LGPL-2.1").read_bytes(), common.read_bytes())
+            self.assertEqual(result["unresolved"], ["usr/lib/libunresolved.so.1"])
+            self.assertFalse(result["corresponding_sources_complete"])
+            # Missing copyright cannot be reported as covered just because dpkg
+            # identified a package. Retain an explicit unresolved payload entry.
+            notice.unlink()
+            with patch("package_linux_notices.subprocess.check_output", side_effect=output):
+                missing = collect_system_notices(app, app / "missing-notices", sdk, system_root=system)
+            self.assertIn("usr/lib/libdemo.so.1", missing["unresolved"])
+            record = next(entry for entry in missing["libraries"] if entry["payload"].endswith("libdemo.so.1"))
+            self.assertEqual(record["provider"], "unresolved")
+            self.assertIn("Missing system package copyright", record["reason"])
+
     def test_publication_rejects_changed_bytes_and_preserves_previous_candidate(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

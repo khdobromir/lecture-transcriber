@@ -4,6 +4,11 @@ Transcribe is MIT licensed. The AppImage contains separately executed tools and
 dynamically linked libraries with their own licenses. Notices are under
 `usr/share/transcribe/licenses`; exact versions and SHA-256 pins are recorded in
 `dependencies.json` and the complete payload inventory in `package-manifest.json`.
+`usr/share/transcribe/linux-library-provenance.json` records copied system
+libraries, their binary/source package versions and copyright hashes. The
+copyright files and common license texts are retained under `licenses/Linux-system`.
+SDK third-party libraries and any unresolved mappings are listed explicitly;
+this inventory alone is not a complete corresponding-source deliverable.
 
 | Component | Source | License |
 | --- | --- | --- |

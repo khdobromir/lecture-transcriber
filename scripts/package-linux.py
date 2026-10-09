@@ -14,6 +14,7 @@ import urllib.request
 from package_source import validate_identity
 from package_inputs import archive_inputs, source_records
 from package_notices import collect_qt_notices
+from package_linux_notices import collect_system_notices, write_provenance
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -173,7 +174,7 @@ def main():
     lock = json.loads((PROJECT / "packaging/linux/dependencies.json").read_text())
     source_lock = json.loads((PROJECT / "packaging/source-inputs.json").read_text(encoding="utf-8"))
     sources = source_records(source_lock, lock["downloads"].values(), lock["qt"])
-    for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate"]:
+    for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate", "dpkg-query", "ldconfig"]:
         if not shutil.which(name):
             parser.error("Missing build tool " + name + "; use bash scripts/package-linux.sh --container")
     qmake = args.qt_root / "bin/qmake" if args.qt_root else Path(shutil.which("qmake6") or shutil.which("qmake") or "missing")
@@ -302,6 +303,8 @@ def main():
         command += ["--library", matches[0]]
     run("deploy", command, environment=deploy_env)
     complete_libraries(appdir, env)
+    library_provenance = appdir / "usr/share/transcribe/linux-library-provenance.json"
+    write_provenance(collect_system_notices(appdir, licenses, Path(qt_libs)), library_provenance)
     # linuxdeploy's executable deployment can also copy tools to usr/bin. Keep
     # the private tools directory as the single authoritative tool location.
     for name in ["whisper-cli", "ffmpeg", "ffprobe", "yt-dlp"]:
@@ -363,7 +366,7 @@ def main():
     inputs_archive = stage / "build-inputs.tar.gz"
     archive_inputs(list(lock["downloads"].values()) + sources, cache, inputs_archive,
                    [PROJECT / "packaging/linux/dependencies.json", PROJECT / "packaging/source-inputs.json",
-                    appdir / "package-manifest.json"])
+                    appdir / "package-manifest.json", library_provenance])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.

@@ -29,11 +29,13 @@ class SourceIdentityTests(unittest.TestCase):
                         archive.addfile(entry, io.BytesIO(content))
                 return [dict(name="qtbase", filename=source.name, sha256=hashlib.sha256(source.read_bytes()).hexdigest())]
             files = {"qtbase/LICENSE.txt": b"Qt license", "qtbase/src/TERMS": b"Third party terms",
+                     "qtbase/LICENSES/GPL-3.0-only.txt": b"Full GPL license",
                      "qtbase/src/qt_attribution.json": b'{"LicenseFile":"TERMS","Copyright":"literal\nnewline"}',
                      "qtbase/src/not-a-notice.cpp": b"source code"}
             records = fixture(files)
             collect_qt_notices(records, root, root / "notices")
             self.assertEqual((root / "notices/qtbase/src/TERMS").read_bytes(), b"Third party terms")
+            self.assertEqual((root / "notices/qtbase/LICENSES/GPL-3.0-only.txt").read_bytes(), b"Full GPL license")
             self.assertFalse((root / "notices/qtbase/src/not-a-notice.cpp").exists())
             metadata = json.loads((root / "notices/notices.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["components"][0]["source"]["sha256"], records[0]["sha256"])
