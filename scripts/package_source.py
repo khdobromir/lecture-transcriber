@@ -37,7 +37,7 @@ def source_identity(project):
 
 
 def application_version(project):
-    match = re.search(r"project\(transcribe VERSION (\d+\.\d+\.\d+)\b", (project / "CMakeLists.txt").read_text())
+    match = re.search(r"project\(transcribe VERSION (\d+\.\d+\.\d+)\b", (project / "CMakeLists.txt").read_text(encoding="utf-8"))
     if not match:
         raise ValueError("Cannot determine application version")
     return match[1]

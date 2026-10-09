@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -15,6 +16,17 @@ from package_inputs import archive_inputs
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_application_version_is_independent_of_windows_ansi_locale(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "CMakeLists.txt").write_text('project(transcribe VERSION 0.4.0 DESCRIPTION "Транскрипция русской речи")\n', encoding="utf-8")
+            script = "import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); from package_source import application_version; print(application_version(Path(sys.argv[2])))"
+            environment = dict(os.environ, PYTHONUTF8="0", PYTHONCOERCECLOCALE="0", LC_ALL="C")
+            result = subprocess.run([sys.executable, "-c", script, str(Path(__file__).resolve().parents[1] / "scripts"), str(root)],
+                                    env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.assertEqual(result.returncode, 0, result.stderr.decode("ascii", errors="replace"))
+            self.assertEqual(result.stdout.strip(), b"0.4.0")
+
     def test_build_inputs_preserve_exact_bytes_and_reject_tampering(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

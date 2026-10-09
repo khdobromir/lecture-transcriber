@@ -45,6 +45,14 @@ container и native Windows packaging должны быть выполнены �
 
 ## Обязательные gates до RC и публикации
 
+Первый hosted candidate `18fc2fa1fead34c4c87319984cb3241835d8737a`
+([CI](https://github.com/khdobromir/lecture-transcriber/actions/runs/37974886332))
+прошёл Windows MSVC CLI, Arch, Debian, Ubuntu GCC/Clang, Qt 6.11.2 и sanitizers.
+Windows ZIP job остановился до configure: source guard читал UTF-8 CMakeLists
+через CP1252. Исправлено явным UTF-8; regression воспроизводит отказ без UTF-8
+mode и затем проходит. Повтор на новом SHA обязателен; этот run не является
+допуском окончательного кандидата.
+
 | Gate | Статус / необходимое evidence |
 | --- | --- |
 | Окончательный clean source SHA | Открыт: commit, source identity и exact-SHA CI |
