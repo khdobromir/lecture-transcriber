@@ -316,7 +316,7 @@ jobs:
       - name: Build, test, deploy and smoke package
         run: |
           $RealSmoke = ("${{ github.event_name }}" -eq 'workflow_dispatch') -and ("${{ inputs.real_smoke }}" -eq 'true')
-          ./scripts/package-windows.ps1 -QtRoot "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64" -WorkDirectory "$env:RUNNER_TEMP/transcribe-package" -Destination "$env:RUNNER_TEMP/transcribe-artifacts" -RealSmoke:$RealSmoke
+          ./scripts/package-windows.ps1 -QtRoot "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64" -WorkDirectory "$env:RUNNER_TEMP/transcribe-package" -Destination "$env:RUNNER_TEMP/transcribe-artifacts" -Release -RealSmoke:$RealSmoke
       - name: Retain tested ZIP and checksums
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

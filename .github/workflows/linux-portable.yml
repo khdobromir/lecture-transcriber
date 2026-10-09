@@ -26,7 +26,7 @@ jobs:
         env:
           REAL_SMOKE: ${{ github.event_name == 'workflow_dispatch' && inputs.real_smoke }}
         run: |
-          options=(--result-file /output/candidate.json)
+          options=(--release --result-file /output/candidate.json)
           if [ "$REAL_SMOKE" = true ]; then options+=(--real-smoke); fi
           bash scripts/package-linux.sh --container "${options[@]}"
       - name: Verify that exact checksum in offline clean Ubuntu and Debian
