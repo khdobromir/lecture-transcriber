@@ -12,6 +12,12 @@ Set-StrictMode -Version Latest
 $Project = (Resolve-Path "$PSScriptRoot\..").Path
 $QtRoot = (Resolve-Path $QtRoot).Path
 $Lock = Get-Content "$Project\packaging\windows\dependencies.json" -Raw | ConvertFrom-Json
+$SourceLock = Get-Content "$Project\packaging\source-inputs.json" -Raw -Encoding utf8 | ConvertFrom-Json
+$BinaryHashes = @($Lock.downloads | ForEach-Object { $_.sha256 })
+foreach ($Source in $SourceLock.downloads) {
+    $MatchesBinary = @($Source.for_binary_sha256 | Where-Object { $BinaryHashes -contains $_ })
+    if ($MatchesBinary.Count -eq 0) { throw "Source input does not match pinned binary: $($Source.name)" }
+}
 if (-not [Environment]::Is64BitProcess) { throw 'Run 64-bit PowerShell on Windows x64.' }
 if (-not (Test-Path "$QtRoot\bin\windeployqt.exe")) { throw 'QtRoot must be the MSVC x64 Qt SDK directory.' }
 $QtVersion = (& "$QtRoot\bin\qmake.exe" -query QT_VERSION).Trim()
@@ -99,6 +105,7 @@ foreach ($Dependency in $Lock.downloads) {
             ForEach-Object { Copy-Item $_.FullName (Join-Path $Licenses ('FFmpeg-' + $_.Name)) }
     } else { throw "Unknown dependency $($Dependency.name)" }
 }
+foreach ($Source in $SourceLock.downloads) { $null = Get-Verified $Source }
 if (-not $SkipTests) { Invoke-Checked "$Build\Release\test_split.exe" @("$Tools\ffmpeg.exe") }
 # A ZIP must run on a machine without Visual Studio or an installed VC runtime.
 # Deploy app-local CRT DLLs to both executable directories; child tools cannot
@@ -134,7 +141,7 @@ $Manifest = [ordered]@{
     source_fingerprint = $Identity.source_fingerprint; release = [bool]$Release
     toolchain = [ordered]@{ compiler = "MSVC $CompilerVersion"; cmake = (& cmake --version | Select-Object -First 1); python = (& python --version) }
     whisper = $Lock.whisper.revision; tested = (-not $SkipTests)
-    downloads = $Lock.downloads; files = @()
+    downloads = $Lock.downloads; source_inputs = $SourceLock; files = @()
 }
 $Manifest.files = @(Get-ChildItem $Bundle -Recurse -File | ForEach-Object {
     [ordered]@{ path = $_.FullName.Substring($Bundle.Length + 1).Replace('\', '/'); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
@@ -154,7 +161,7 @@ if ($RealSmoke) {
 Invoke-Checked python $SmokeArguments
 $WhisperArchive = Join-Path $Stage 'whisper-source.tar'
 Invoke-Checked git @('-C', $Whisper, 'archive', '--format=tar', "--output=$WhisperArchive", 'HEAD')
-$Inputs = [ordered]@{ downloads = @($Lock.downloads) + @([ordered]@{
+$Inputs = [ordered]@{ downloads = @($Lock.downloads) + @($SourceLock.downloads) + @([ordered]@{
     name = 'whisper-source'; filename = 'whisper-source.tar'; revision = $Lock.whisper.revision
     url = $Lock.whisper.repository; sha256 = (Get-FileHash $WhisperArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 }) }
@@ -163,7 +170,8 @@ $Inputs | ConvertTo-Json -Depth 8 | Set-Content $InputsFile -Encoding utf8
 $InputsArchive = $Zip + '.build-inputs.tar.gz'
 Invoke-Checked python @("$Project\scripts\package_inputs.py", $InputsFile, $Stage, $InputsArchive,
     '--material', "$Project\packaging\windows\dependencies.json", '--material', "$Project\scripts\patch-whisper-windows.py",
-    '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json")
+    '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
+    '--material', "$Project\packaging\source-inputs.json")
 $null = Get-SourceIdentity $IdentityFile
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
     Set-Content ($Zip + '.sha256') -Encoding ascii

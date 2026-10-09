@@ -12,7 +12,7 @@ import tarfile
 import tempfile
 import urllib.request
 from package_source import validate_identity
-from package_inputs import archive_inputs
+from package_inputs import archive_inputs, source_records
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -170,6 +170,8 @@ def main():
     if os.geteuid() == 0:
         parser.error("Run packaging as a regular user (the container wrapper sets the caller's UID)")
     lock = json.loads((PROJECT / "packaging/linux/dependencies.json").read_text())
+    source_lock = json.loads((PROJECT / "packaging/source-inputs.json").read_text(encoding="utf-8"))
+    sources = source_records(source_lock, lock["downloads"].values())
     for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate"]:
         if not shutil.which(name):
             parser.error("Missing build tool " + name + "; use bash scripts/package-linux.sh --container")
@@ -199,6 +201,8 @@ def main():
 
     identity = validate_identity(PROJECT, release=args.release, skip_tests=args.skip_tests)
     dependencies = {name: fetch(record, cache) for name, record in lock["downloads"].items()}
+    for record in sources:
+        fetch(record, cache)
     build = args.build_directory.resolve() if args.build_directory else stage / "build"
     appdir = stage / "Transcribe.AppDir"
     configure = ["cmake", "-S", PROJECT, "-B", build, "-DCMAKE_BUILD_TYPE=Release", "-DTRANSCRIBE_BUILD_GUI=ON",
@@ -339,7 +343,7 @@ def main():
         toolchain={name: subprocess.check_output(command, text=True).splitlines()[0] for name, command in
                    [("compiler", [compiler[1], "--version"]), ("cmake", ["cmake", "--version"]), ("python", ["python3", "--version"])]},
         glibc_required=maximum, glibc_baseline=lock["minimum_glibc"], tested=not args.skip_tests,
-        real_smoke=args.real_smoke, dependencies=lock, files=inventory(appdir))
+        real_smoke=args.real_smoke, dependencies=lock, source_inputs=source_lock, files=inventory(appdir))
     (appdir / "package-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     image = stage / "Transcribe-x86_64.AppImage"
     run("appimage", [dependencies["appimagetool"], "--no-appstream", "--runtime-file", dependencies["runtime"],
@@ -355,8 +359,9 @@ def main():
         smoke += ["--real-gui", build / "gui/test_gui_real", "--prerequisites", prerequisites]
     run("package-smoke", smoke, environment=env)
     inputs_archive = stage / "build-inputs.tar.gz"
-    archive_inputs(list(lock["downloads"].values()), cache, inputs_archive,
-                   [PROJECT / "packaging/linux/dependencies.json", appdir / "package-manifest.json"])
+    archive_inputs(list(lock["downloads"].values()) + sources, cache, inputs_archive,
+                   [PROJECT / "packaging/linux/dependencies.json", PROJECT / "packaging/source-inputs.json",
+                    appdir / "package-manifest.json"])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.

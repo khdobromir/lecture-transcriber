@@ -77,6 +77,15 @@ AppImage runtime. Сопоставьте компоненты и версии с
 `packaging/windows/THIRD-PARTY.md`. Source archive Transcribe не заменяет этот
 комплект. До готовности этих материалов бинарники не публикуются как release assets.
 
+`packaging/source-inputs.json` закрепляет исходники FFmpeg и yt-dlp, а также
+snapshot BtbN build recipes точными revisions/SHA-256 и связывает их с binary
+pins обоих комплектов. Упаковщики сохраняют эти байты в build-inputs archive;
+обновление binary pin без соответствующего source mapping отклоняется.
+Это ещё не полный corresponding-source комплект: исходники Qt, зависимости
+FFmpeg/yt-dlp, AppImage runtime и скопированных Linux libraries собираются
+и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
+до фактического завершения этой работы.
+
 ## Слияние и публикация
 
 1. Слейте прошедший приёмку candidate через PR в `master`, Conventional Commit

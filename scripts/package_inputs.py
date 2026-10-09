@@ -8,6 +8,15 @@ import tarfile
 from package_source import digest
 
 
+def source_records(lock, binaries):
+    """Reject stale source mappings after a binary dependency is updated."""
+    available = {record["sha256"] for record in binaries}
+    for record in lock["downloads"]:
+        if not available.intersection(record["for_binary_sha256"]):
+            raise ValueError("Source input does not match pinned binary: " + record["name"])
+    return lock["downloads"]
+
+
 def archive_inputs(records, cache, destination, materials=()):
     selected = []
     hashes = {}

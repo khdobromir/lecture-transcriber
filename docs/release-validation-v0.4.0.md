@@ -16,7 +16,7 @@ Exact candidate source SHA/fingerprint и package SHA фиксируются у�
 | F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Unit checksum/tampering test прошёл; hosted package run ожидается |
 | F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation и concurrent commit unit test прошёл; Windows packager run ожидается |
 | F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | Native packaging run ожидается |
-| F7: материалы сторонних компонентов | Versioned build-input archives сохраняют pinned downloads, исходный Whisper и Windows patch; notices сохранены | Полные corresponding source/build materials и сопоставление фактическому payload НЕ завершены |
+| F7: материалы сторонних компонентов | Versioned build-input archives сохраняют pinned downloads, Whisper, Windows patch, FFmpeg/yt-dlp source snapshots и FFmpeg build recipes; mappings связаны с binary SHA | Полные corresponding source/build materials и сопоставление фактическому payload НЕ завершены |
 | F8: документация и VERSION | 0.4.0 candidate, Python/test/packaging/support/cancellation docs и release notes | Локальные help/version; окончательные manifests ожидаются |
 
 ## Локальные проверки
@@ -65,6 +65,16 @@ import policy исключает SDK из PATH, а test directory ещё не с
 Упаковщик теперь отдельно развёртывает Qt/QtTest около GUI test executables
 перед CTest. В поставляемый ZIP test-only deployment не входит. Native повтор
 обязателен; успешное закрытие F1/F2 пока не заявлено.
+
+Повтор Windows на `9ca2ad1` подтвердил исправление Qt startup: GUI integration
+и три QML suites прошли. Оставшийся `gui_controller/failedBackendStartCanRetry`
+копировал Qt helper в новый каталог и ожидал DLL через PATH; fixture теперь
+копирует app-local runtime вместе с helper. Hosted regression остаётся обязательной.
+
+Source snapshots (FFmpeg `330caae0c1ac`, yt-dlp `3a08beaf031a`, BtbN recipes
+`e88e49f62445`) скачаны, сверены с новым source manifest и проверены через
+archive_inputs: 5 entries, 20 025 391 bytes. Binary/source mismatch regression
+падает без guard и проходит с ним на обоих platform locks. Полнота F7 не заявлена.
 
 | Gate | Статус / необходимое evidence |
 | --- | --- |

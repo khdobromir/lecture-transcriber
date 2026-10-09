@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "corresponding_sources_complete": false,
+  "downloads": [
+    {
+      "name": "ffmpeg-source",
+      "revision": "330caae0c1acccd2222edc52a05940c574561ce5",
+      "filename": "ffmpeg-source-330caae0c1ac.tar.gz",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/330caae0c1acccd2222edc52a05940c574561ce5",
+      "sha256": "67b5876ee973a26f267280b2c1eb851a0ac7a502382d20e41b7a819111886af9",
+      "for_binary_sha256": ["bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4", "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"]
+    },
+    {
+      "name": "ffmpeg-build-recipes",
+      "revision": "e88e49f624457c455700b058f0a84ca87d499cc2",
+      "filename": "ffmpeg-build-recipes-e88e49f62445.tar.gz",
+      "url": "https://codeload.github.com/BtbN/FFmpeg-Builds/tar.gz/e88e49f624457c455700b058f0a84ca87d499cc2",
+      "sha256": "afb0e526ee89ea9871b49b1a60bb5fdf9847f85816fb47b5bbd6528aa0643eda",
+      "for_binary_sha256": ["bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4", "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"]
+    },
+    {
+      "name": "yt-dlp-source",
+      "revision": "3a08beaf031ab68f966401ead017ac81fe8486cf",
+      "filename": "yt-dlp-source-3a08beaf031a.tar.gz",
+      "url": "https://codeload.github.com/yt-dlp/yt-dlp/tar.gz/3a08beaf031ab68f966401ead017ac81fe8486cf",
+      "sha256": "7206981142eb461cfa603c360a55e0d08f3ed58cc754000ed821ad3ebac31ea0",
+      "for_binary_sha256": ["66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a", "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"]
+    }
+  ]
+}

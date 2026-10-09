@@ -12,10 +12,28 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from package_source import validate_identity
-from package_inputs import archive_inputs
+from package_inputs import archive_inputs, source_records
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_source_materials_must_match_the_binary_pin(self):
+        project = Path(__file__).resolve().parents[1]
+        source_lock = json.loads((project / "packaging/source-inputs.json").read_text(encoding="utf-8"))
+        self.assertFalse(source_lock["corresponding_sources_complete"])
+        for platform in ["linux", "windows"]:
+            lock = json.loads((project / f"packaging/{platform}/dependencies.json").read_text(encoding="utf-8"))
+            binaries = lock["downloads"]
+            binaries = list(binaries.values()) if isinstance(binaries, dict) else binaries
+            records = source_records(source_lock, binaries)
+            self.assertEqual({record["name"] for record in records},
+                             {"ffmpeg-source", "ffmpeg-build-recipes", "yt-dlp-source"})
+            for name in ["ffmpeg", "yt-dlp"]:
+                selected = lock["downloads"][name] if isinstance(lock["downloads"], dict) else next(
+                    record for record in binaries if record["name"] == name)
+                updated = [dict(record, sha256="0" * 64) if record == selected else record for record in binaries]
+                with self.assertRaisesRegex(ValueError, "does not match pinned binary"):
+                    source_records(source_lock, updated)
+
     def test_application_version_is_independent_of_windows_ansi_locale(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
