@@ -148,8 +148,8 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
     finally:
         child.terminate()
         _, diagnostics = child.communicate(timeout=10)
-    for marker in [b"failed to load", b"is not installed", b"TypeError", b"ReferenceError", b"Binding loop"]:
-        if marker in diagnostics:
+    for error_marker in [b"failed to load", b"is not installed", b"TypeError", b"ReferenceError", b"Binding loop"]:
+        if error_marker in diagnostics:
             raise RuntimeError(f"Deployed QML error: {diagnostics!r}")
     if args.real_gui:
         if not args.workspace:
