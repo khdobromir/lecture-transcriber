@@ -13,6 +13,7 @@ import tempfile
 import urllib.request
 from package_source import validate_identity
 from package_inputs import archive_inputs, source_records
+from package_notices import collect_qt_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -171,7 +172,7 @@ def main():
         parser.error("Run packaging as a regular user (the container wrapper sets the caller's UID)")
     lock = json.loads((PROJECT / "packaging/linux/dependencies.json").read_text())
     source_lock = json.loads((PROJECT / "packaging/source-inputs.json").read_text(encoding="utf-8"))
-    sources = source_records(source_lock, lock["downloads"].values())
+    sources = source_records(source_lock, lock["downloads"].values(), lock["qt"])
     for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate"]:
         if not shutil.which(name):
             parser.error("Missing build tool " + name + "; use bash scripts/package-linux.sh --container")
@@ -218,6 +219,7 @@ def main():
     run("install", ["cmake", "--install", build, "--prefix", appdir / "usr"])
     tools = appdir / "usr/bin/tools"; tools.mkdir()
     licenses = appdir / "usr/share/transcribe/licenses"; licenses.mkdir(parents=True)
+    collect_qt_notices(source_lock["qt"]["downloads"], cache, licenses / "Qt-source-notices")
     source = stage / "whisper-source"; extract_sources(dependencies["whisper"], source)
     whisper = source / ("whisper.cpp-" + lock["downloads"]["whisper"]["revision"])
     whisper_build = stage / "whisper-build"

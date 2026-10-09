@@ -8,13 +8,15 @@ import tarfile
 from package_source import digest
 
 
-def source_records(lock, binaries):
+def source_records(lock, binaries, qt_version):
     """Reject stale source mappings after a binary dependency is updated."""
     available = {record["sha256"] for record in binaries}
     for record in lock["downloads"]:
         if not available.intersection(record["for_binary_sha256"]):
             raise ValueError("Source input does not match pinned binary: " + record["name"])
-    return lock["downloads"]
+    if lock["qt"]["version"] != qt_version or any(record["revision"] != qt_version for record in lock["qt"]["downloads"]):
+        raise ValueError("Qt source input does not match pinned SDK")
+    return lock["downloads"] + lock["qt"]["downloads"]
 
 
 def archive_inputs(records, cache, destination, materials=()):

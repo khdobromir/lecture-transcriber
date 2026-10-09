@@ -77,12 +77,15 @@ AppImage runtime. Сопоставьте компоненты и версии с
 `packaging/windows/THIRD-PARTY.md`. Source archive Transcribe не заменяет этот
 комплект. До готовности этих материалов бинарники не публикуются как release assets.
 
-`packaging/source-inputs.json` закрепляет исходники FFmpeg и yt-dlp, а также
-snapshot BtbN build recipes точными revisions/SHA-256 и связывает их с binary
-pins обоих комплектов. Упаковщики сохраняют эти байты в build-inputs archive;
-обновление binary pin без соответствующего source mapping отклоняется.
-Это ещё не полный corresponding-source комплект: исходники Qt, зависимости
-FFmpeg/yt-dlp, AppImage runtime и скопированных Linux libraries собираются
+`packaging/source-inputs.json` закрепляет исходники FFmpeg и yt-dlp, snapshot
+BtbN build recipes и восемь Qt source modules точными revisions/SHA-256.
+Исходники связаны с binary pins и Qt SDK version обоих комплектов. Упаковщики
+сохраняют эти байты в build-inputs archive; обновление binary/Qt pin без
+соответствующего source mapping отклоняется. `package_notices.py` копирует
+Qt notices/attributions и указанные ими license/copyright files из проверенных
+архивов в пакет; `Qt-source-notices/notices.json` фиксирует hashes и происхождение.
+Это ещё не полный corresponding-source комплект: зависимости FFmpeg/yt-dlp,
+AppImage runtime, build configuration Qt и скопированных Linux libraries собираются
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 

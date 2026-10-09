@@ -1,6 +1,7 @@
 """Detect changed/committed source during packaging and reject unsafe release modes."""
 from pathlib import Path
 import hashlib
+import io
 import json
 import os
 import subprocess
@@ -13,9 +14,41 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from package_source import validate_identity
 from package_inputs import archive_inputs, source_records
+from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_qt_notices_include_referenced_files_and_reject_incomplete_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def fixture(files):
+                source = root / "qt-source.tar"
+                with tarfile.open(source, "w") as archive:
+                    for name, content in files.items():
+                        entry = tarfile.TarInfo(name); entry.size = len(content)
+                        archive.addfile(entry, io.BytesIO(content))
+                return [dict(name="qtbase", filename=source.name, sha256=hashlib.sha256(source.read_bytes()).hexdigest())]
+            files = {"qtbase/LICENSE.txt": b"Qt license", "qtbase/src/TERMS": b"Third party terms",
+                     "qtbase/src/qt_attribution.json": b'{"LicenseFile":"TERMS","Copyright":"literal\nnewline"}',
+                     "qtbase/src/not-a-notice.cpp": b"source code"}
+            records = fixture(files)
+            collect_qt_notices(records, root, root / "notices")
+            self.assertEqual((root / "notices/qtbase/src/TERMS").read_bytes(), b"Third party terms")
+            self.assertFalse((root / "notices/qtbase/src/not-a-notice.cpp").exists())
+            metadata = json.loads((root / "notices/notices.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["components"][0]["source"]["sha256"], records[0]["sha256"])
+            files.pop("qtbase/src/TERMS")
+            records = fixture(files)
+            with self.assertRaisesRegex(ValueError, "Missing source notice reference"):
+                collect_qt_notices(records, root, root / "missing")
+            (root / records[0]["filename"]).write_bytes(b"corrupt")
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                collect_qt_notices(records, root, root / "corrupt")
+            self.assertFalse((root / "corrupt").exists())
+            records = fixture({"qtbase/../LICENSE": b"escape"})
+            with self.assertRaisesRegex(ValueError, "Unsafe source notice path"):
+                collect_qt_notices(records, root, root / "unsafe")
+
     def test_source_materials_must_match_the_binary_pin(self):
         project = Path(__file__).resolve().parents[1]
         source_lock = json.loads((project / "packaging/source-inputs.json").read_text(encoding="utf-8"))
@@ -24,15 +57,20 @@ class SourceIdentityTests(unittest.TestCase):
             lock = json.loads((project / f"packaging/{platform}/dependencies.json").read_text(encoding="utf-8"))
             binaries = lock["downloads"]
             binaries = list(binaries.values()) if isinstance(binaries, dict) else binaries
-            records = source_records(source_lock, binaries)
-            self.assertEqual({record["name"] for record in records},
+            records = source_records(source_lock, binaries, lock["qt"])
+            self.assertEqual({record["name"] for record in records if "for_binary_sha256" in record},
                              {"ffmpeg-source", "ffmpeg-build-recipes", "yt-dlp-source"})
+            self.assertEqual({record["name"] for record in records if "for_binary_sha256" not in record},
+                             {"qtbase", "qtdeclarative", "qtwayland", "qtsvg", "qtimageformats",
+                              "qtshadertools", "qttranslations", "qttools"})
+            with self.assertRaisesRegex(ValueError, "does not match pinned SDK"):
+                source_records(source_lock, binaries, "0.0.0")
             for name in ["ffmpeg", "yt-dlp"]:
                 selected = lock["downloads"][name] if isinstance(lock["downloads"], dict) else next(
                     record for record in binaries if record["name"] == name)
                 updated = [dict(record, sha256="0" * 64) if record == selected else record for record in binaries]
                 with self.assertRaisesRegex(ValueError, "does not match pinned binary"):
-                    source_records(source_lock, updated)
+                    source_records(source_lock, updated, lock["qt"])
 
     def test_application_version_is_independent_of_windows_ansi_locale(self):
         with tempfile.TemporaryDirectory() as temporary:

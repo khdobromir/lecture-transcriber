@@ -12,7 +12,7 @@ Exact candidate source SHA/fingerprint и package SHA фиксируются у�
 | --- | --- | --- |
 | F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Native probe DLL, positive control, dependency probe добавлены; Windows run ожидается |
 | F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | machine/portable tests; Windows native run ожидается |
-| F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container run ожидается |
+| F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container real ASR на 1edc4f3 прошёл; ссылка ниже |
 | F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Unit checksum/tampering test прошёл; hosted package run ожидается |
 | F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation и concurrent commit unit test прошёл; Windows packager run ожидается |
 | F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | Native packaging run ожидается |
@@ -81,7 +81,7 @@ archive_inputs: 5 entries, 20 025 391 bytes. Binary/source mismatch regression
 | Окончательный clean source SHA | Открыт: commit, source identity и exact-SHA CI |
 | CI 10/10 и Linux portable | Открыт: links + conclusions + real steps не skipped |
 | F1/F2 native regressions | Открыт: Windows CI DLL probes, missing-tools, Unicode, process/cancel |
-| Real Whisper fresh container | Успех на e8260b4 (ссылка выше); повторить на окончательном SHA |
+| Real Whisper fresh container | Успех на 1edc4f3 (ссылка ниже); повторить на окончательном SHA |
 | Один AppImage SHA во всех средах | Открыт: builder + clean Ubuntu/Debian + native smoke + published download |
 | Windows 11 без SDK | Открыт: среда сейчас недоступна, подтверждено пользователем |
 | Ubuntu 24.04 desktop X11/Wayland | Открыт: среда сейчас недоступна, подтверждено пользователем |
@@ -101,6 +101,26 @@ archive_inputs: 5 entries, 20 025 391 bytes. Binary/source mismatch regression
 Не переносить historical green runs на кандидат и не отмечать отсутствующую
 native приёмку как пройденную. При изменении исходников или payload повторять
 затронутые проверки на новом SHA/комплекте. До закрытия всех gates цель остаётся активной.
+
+## Дополнительное evidence на 1edc4f3 и Qt sources
+
+[Fresh-container real smoke](https://github.com/khdobromir/lecture-transcriber/actions/runs/37980010698)
+завершился успешно. [Windows CI](https://github.com/khdobromir/lecture-transcriber/actions/runs/37979991730)
+прошёл 13/13 CTest, DLL probe/preflight checks и installedCliWithRealSpeech:
+first model import, live preview, small ASR, TXT/SRT/VTT. GUI screenshot и
+validation.json скачаны из native artifact. Portable HTTPS test был skipped:
+certificate bundle не настроен; Windows использует системный certificate store.
+Сам job failed: цикл QML diagnostics перезаписал Path `marker` значением bytes.
+Исправлено имя переменной цикла. Нельзя считать final marker check пройденным
+или переносить green acceptance на будущий пакет без повторного native run.
+
+Для Qt 6.8.3 скачаны и сверены с официальными SHA-256 qtbase, qtdeclarative,
+qtwayland, qtsvg, qtimageformats, qtshadertools, qttranslations и qttools.
+Из них извлечены 199 notice/attribution files, включая LicenseFile/CopyrightFile
+references. Qt version mismatch, missing reference, corrupt archive и path
+traversal regressions проходят. Notices и sources теперь включаются в оба
+packaging пути. Сопоставление всех фактических payload components и полный F7
+ещё не завершены.
 
 ## Самопроверка изменений кандидата
 

@@ -18,6 +18,9 @@ foreach ($Source in $SourceLock.downloads) {
     $MatchesBinary = @($Source.for_binary_sha256 | Where-Object { $BinaryHashes -contains $_ })
     if ($MatchesBinary.Count -eq 0) { throw "Source input does not match pinned binary: $($Source.name)" }
 }
+if ($SourceLock.qt.version -ne $Lock.qt -or @($SourceLock.qt.downloads | Where-Object { $_.revision -ne $Lock.qt }).Count -ne 0) {
+    throw 'Qt source input does not match pinned SDK.'
+}
 if (-not [Environment]::Is64BitProcess) { throw 'Run 64-bit PowerShell on Windows x64.' }
 if (-not (Test-Path "$QtRoot\bin\windeployqt.exe")) { throw 'QtRoot must be the MSVC x64 Qt SDK directory.' }
 $QtVersion = (& "$QtRoot\bin\qmake.exe" -query QT_VERSION).Trim()
@@ -105,7 +108,9 @@ foreach ($Dependency in $Lock.downloads) {
             ForEach-Object { Copy-Item $_.FullName (Join-Path $Licenses ('FFmpeg-' + $_.Name)) }
     } else { throw "Unknown dependency $($Dependency.name)" }
 }
-foreach ($Source in $SourceLock.downloads) { $null = Get-Verified $Source }
+foreach ($Source in @($SourceLock.downloads) + @($SourceLock.qt.downloads)) { $null = Get-Verified $Source }
+Invoke-Checked python @("$Project\scripts\package_notices.py", "$Project\packaging\source-inputs.json", $Stage,
+    "$Licenses\Qt-source-notices")
 if (-not $SkipTests) { Invoke-Checked "$Build\Release\test_split.exe" @("$Tools\ffmpeg.exe") }
 # A ZIP must run on a machine without Visual Studio or an installed VC runtime.
 # Deploy app-local CRT DLLs to both executable directories; child tools cannot
@@ -161,7 +166,7 @@ if ($RealSmoke) {
 Invoke-Checked python $SmokeArguments
 $WhisperArchive = Join-Path $Stage 'whisper-source.tar'
 Invoke-Checked git @('-C', $Whisper, 'archive', '--format=tar', "--output=$WhisperArchive", 'HEAD')
-$Inputs = [ordered]@{ downloads = @($Lock.downloads) + @($SourceLock.downloads) + @([ordered]@{
+$Inputs = [ordered]@{ downloads = @($Lock.downloads) + @($SourceLock.downloads) + @($SourceLock.qt.downloads) + @([ordered]@{
     name = 'whisper-source'; filename = 'whisper-source.tar'; revision = $Lock.whisper.revision
     url = $Lock.whisper.repository; sha256 = (Get-FileHash $WhisperArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 }) }
