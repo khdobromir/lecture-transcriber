@@ -9,7 +9,20 @@ from urllib.parse import urlsplit
 from package_source import digest
 
 
+def selected_paths(record):
+    if "git_archive_paths" not in record:
+        return []
+    paths = record["git_archive_paths"]
+    if (not isinstance(paths, list) or not paths
+            or any(not isinstance(path, str) or not re.fullmatch(r"[A-Za-z0-9._][A-Za-z0-9._/-]*", path)
+                   or any(part in {"", ".", ".."} for part in path.split("/")) for path in paths)
+            or len(set(paths)) != len(paths)):
+        raise ValueError("Invalid Git source path selection")
+    return paths
+
+
 def fetch_git_source(record, destination):
+    paths = selected_paths(record)
     url = urlsplit(record["url"])
     revision = record["revision"]
     prefix = record["git_archive_prefix"]
@@ -37,7 +50,7 @@ def fetch_git_source(record, destination):
 
         def run(arguments):
             result = subprocess.run(command + arguments, env=environment, cwd=root,
-                                    capture_output=True, timeout=120, check=False)
+                                    capture_output=True, timeout=300 if paths else 120, check=False)
             if result.returncode:
                 raise RuntimeError("Git source command failed for " + destination.name + ": "
                                    + result.stderr.decode("utf-8", errors="replace").strip())
@@ -51,7 +64,7 @@ def fetch_git_source(record, destination):
             raise ValueError("Git source commit mismatch")
         archive = root / "input.tar"
         run(["-C", str(repository), "archive", "--format=tar", "--prefix=" + prefix + "/",
-             "--output=" + str(archive), revision])
+             "--output=" + str(archive), revision] + (["--"] + paths if paths else []))
         if archive.is_symlink() or digest(archive) != expected:
             raise ValueError("Git source checksum mismatch: " + destination.name)
         try:
@@ -69,9 +82,12 @@ def main():
     parser.add_argument("prefix")
     parser.add_argument("destination", type=Path)
     parser.add_argument("sha256")
+    parser.add_argument("--path", action="append", dest="paths")
     args = parser.parse_args()
-    fetch_git_source(dict(url=args.url, revision=args.revision, git_archive_prefix=args.prefix,
-                          sha256=args.sha256), args.destination)
+    record = dict(url=args.url, revision=args.revision, git_archive_prefix=args.prefix, sha256=args.sha256)
+    if args.paths is not None:
+        record["git_archive_paths"] = args.paths
+    fetch_git_source(record, args.destination)
 
 
 if __name__ == "__main__":

@@ -47,7 +47,10 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
             text = archive.extractfile(matches[0]).read().decode("utf-8")
             # A recipe may name a tag; the retained archive still uses its resolved full commit.
             recipe_revision = record.get("recipe_revision", record["revision"])
-            for variable, expected in [("SCRIPT_REPO", record["repository"]), ("SCRIPT_COMMIT", recipe_revision)]:
+            revision_variable = "SCRIPT_REV" if record.get("svn_snapshot") is True else "SCRIPT_COMMIT"
+            if record.get("svn_snapshot") is True:
+                recipe_revision = record["revision"]
+            for variable, expected in [("SCRIPT_REPO", record["repository"]), (revision_variable, recipe_revision)]:
                 if re.findall(r'^' + variable + slot + r'="([^"\n]+)"$', text, re.MULTILINE) != [expected]:
                     raise ValueError("FFmpeg recipe does not match pinned dependency: " + record["name"])
             if any(flag not in flags or flag.replace("--enable-", "--disable-", 1) in flags

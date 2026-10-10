@@ -2395,6 +2395,116 @@
         ],
         "git_snapshot": true,
         "git_archive_prefix": "opencore-amr-7dba8c32238418ce0b316a852b2224df586ca896"
+      },
+      {
+        "name": "ffmpeg-lame-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6835",
+        "url": "https://svn.code.sf.net/p/lame/svn/!svn/bc/6835/trunk/lame/",
+        "filename": "ffmpeg-lame-svn-r6835.tar",
+        "sha256": "327c004523193b96e1aa2613c974f96d635b5717ba04ee9296d0aa60a477fa64",
+        "recipe": "scripts.d/50-libmp3lame.sh",
+        "recipe_slot": "",
+        "repository": "https://svn.code.sf.net/p/lame/svn/trunk/lame",
+        "required_notices": [
+          "LICENSE",
+          "COPYING",
+          "mpglib/AUTHORS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libmp3lame"
+        ],
+        "svn_snapshot": true,
+        "svn_archive_prefix": "lame-6835",
+        "svn_repository_uuid": "981c7233-bbb0-e711-95a9-001517a2e1a4"
+      },
+      {
+        "name": "ffmpeg-amf-headers-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6277e353fd625121a8f627b1d0540323ef372a49",
+        "url": "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git",
+        "filename": "ffmpeg-amf-headers-6277e353fd62.tar",
+        "sha256": "29439aca5019bc665264f8a0c3fb994e837cd7a7a6a0af21df9d3c7e4d463a8a",
+        "recipe": "scripts.d/50-amf.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git",
+        "required_notices": [
+          "LICENSE.txt",
+          "amf/public/include/components/AMFXInput.h",
+          "amf/public/include/components/Ambisonic2SRenderer.h",
+          "amf/public/include/components/AudioCapture.h",
+          "amf/public/include/components/Capture.h",
+          "amf/public/include/components/ChromaKey.h",
+          "amf/public/include/components/ColorSpace.h",
+          "amf/public/include/components/Component.h",
+          "amf/public/include/components/ComponentCaps.h",
+          "amf/public/include/components/CursorCapture.h",
+          "amf/public/include/components/DisplayCapture.h",
+          "amf/public/include/components/FFMPEGAudioConverter.h",
+          "amf/public/include/components/FFMPEGAudioDecoder.h",
+          "amf/public/include/components/FFMPEGAudioEncoder.h",
+          "amf/public/include/components/FFMPEGComponents.h",
+          "amf/public/include/components/FFMPEGEncoderAV1.h",
+          "amf/public/include/components/FFMPEGEncoderH264.h",
+          "amf/public/include/components/FFMPEGEncoderHEVC.h",
+          "amf/public/include/components/FFMPEGFileDemuxer.h",
+          "amf/public/include/components/FFMPEGFileMuxer.h",
+          "amf/public/include/components/FFMPEGVideoDecoder.h",
+          "amf/public/include/components/FRC.h",
+          "amf/public/include/components/HQScaler.h",
+          "amf/public/include/components/MediaSource.h",
+          "amf/public/include/components/PreAnalysis.h",
+          "amf/public/include/components/PreProcessing.h",
+          "amf/public/include/components/SupportedCodecs.h",
+          "amf/public/include/components/VQEnhancer.h",
+          "amf/public/include/components/VideoCapture.h",
+          "amf/public/include/components/VideoConverter.h",
+          "amf/public/include/components/VideoDecoderUVD.h",
+          "amf/public/include/components/VideoEncoderAV1.h",
+          "amf/public/include/components/VideoEncoderHEVC.h",
+          "amf/public/include/components/VideoEncoderVCE.h",
+          "amf/public/include/components/VideoStitch.h",
+          "amf/public/include/components/ZCamLiveStream.h",
+          "amf/public/include/core/AudioBuffer.h",
+          "amf/public/include/core/Buffer.h",
+          "amf/public/include/core/Compute.h",
+          "amf/public/include/core/ComputeFactory.h",
+          "amf/public/include/core/Context.h",
+          "amf/public/include/core/CurrentTime.h",
+          "amf/public/include/core/D3D12AMF.h",
+          "amf/public/include/core/Data.h",
+          "amf/public/include/core/Debug.h",
+          "amf/public/include/core/Dump.h",
+          "amf/public/include/core/Factory.h",
+          "amf/public/include/core/Interface.h",
+          "amf/public/include/core/Plane.h",
+          "amf/public/include/core/Platform.h",
+          "amf/public/include/core/PropertyStorage.h",
+          "amf/public/include/core/PropertyStorageEx.h",
+          "amf/public/include/core/Result.h",
+          "amf/public/include/core/Surface.h",
+          "amf/public/include/core/Trace.h",
+          "amf/public/include/core/Variant.h",
+          "amf/public/include/core/Version.h",
+          "amf/public/include/core/VulkanAMF.h"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-amf"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "AMF-6277e353fd625121a8f627b1d0540323ef372a49",
+        "git_archive_paths": [
+          "LICENSE.txt",
+          "amf/public/include"
+        ]
       }
     ]
   }

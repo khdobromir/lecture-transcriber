@@ -570,6 +570,83 @@ nested/generated inputs, Rust crates и toolchain/SDK materials также ос�
 в F7. Новый exact-SHA hosted прогон необходим; final manual gates открыты,
 `corresponding_sources_complete=false` сохраняется.
 
+## SVN source retention LAME
+
+На `e6e80957caf8dbfcf8ae48a9a7a39aa8892cc128`
+[CI](https://github.com/khdobromir/lecture-transcriber/actions/runs/38064104200)
+прошёл 10/10, включая Windows GUI/ZIP и прямые Git snapshots;
+[Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38064109235)
+тоже прошёл. [Linux portable](https://github.com/khdobromir/lecture-transcriber/actions/runs/38064106913)
+также прошёл, включая один exact AppImage в offline Ubuntu и Debian. Эти результаты относятся к 81-input tree,
+не к последующим изменениям SVN retention.
+
+Новый `package_svn_sources.py` получает LAME из primary SourceForge SVN DAV
+baseline revision 6835 без установки SVN client. Полный реальный smoke сохранил
+435 original files, 31 directories, 43 executable files и original SVN/custom
+properties, включая root ignore, EOL и keywords. Все 435 SHA-256 и modes
+совпали с ранее независимо проверенными исходниками. Raw repository bytes не
+подвергаются checkout keyword/EOL transformations; свойства сохраняются в
+`.transcribe-svn-properties.json` для восстановления этой семантики.
+
+Source TAR: 8 560 640 bytes, SHA-256
+`327c004523193b96e1aa2613c974f96d635b5717ba04ee9296d0aa60a477fa64`.
+Mapping привязан к исходному recipe `SCRIPT_REPO`/`SCRIPT_REV`, UUID,
+неизменяемому baseline URL и bundled `--enable-libmp3lame`. Сторонний код не
+выполняется. Обе платформы получают архив через общий helper и сохраняют его
+как build material.
+
+Текущий набор содержит 82 source inputs: 80 Linux и 78 Windows. Full collector
+на исходных FFmpeg archives/configurations дал 347 Linux и 320 Windows notices;
+все прежние notice hashes сохранились. LAME добавил original COPYING, LICENSE,
+mpglib/AUTHORS и debian/copyright. Source TAR и два helper materials упакованы и
+перечитаны с проверкой всех трёх hashes. Retained inputs SHA-256:
+`551c99ffd6b23f05c93476215053d5e8b77ab548442eb4d2d0cfbc6c5cbfadcd`.
+
+Новые regressions сначала отказали до реализации. Проверены wrong SVN recipe
+revision, несовпадение UUID/revision, unsafe paths, XML DTD/entities, special
+files, wrong file/final archive hashes, неверные mappings, cache preservation,
+failed temporary cleanup и разница retryable TLS EOF/certificate failure.
+Shared source tests прошли 12/12, Linux packaging — 14/14; packaging CTest — 6/6.
+Первый полный download встретил temporary TLS EOF; bounded transport retry
+позволил завершить чтение. Независимое повторное CLI чтение отказало после трёх
+TLS EOF на mpglib.h, сохранив пустой cache; отдельные probes того же baseline и
+rvr URL затем вернули HTTP 200 и исходный file hash. Последующий полный CLI
+smoke из пустого cache прошёл и независимо воспроизвёл тот же final TAR SHA-256.
+
+F7 остаётся partial: nested/generated sources, Rust crates,
+standalone/native dependencies и toolchain/SDK build materials требуют
+дальнейшей подготовки. `corresponding_sources_complete=false`, final manual
+gates и запрет публичного бинарного релиза сохраняются.
+
+## AMF used-header sources
+
+AMF source retention следует точному pinned recipe: он переносит только
+`amf/public/include` в FFmpeg include prefix. Source TAR сохраняет все 57 этих
+headers и original LICENSE.txt. Все 58 SHA-256 совпали с официальным исходным
+архивом AMF на `6277e353fd625121a8f627b1d0540323ef372a49`. Сторонние
+PDB/binary sample files вне этих путей в source deliverable не включены.
+
+Общий Git helper получил тот же source TAR из пустого cache через CLI с двумя
+явными `--path`. Полный commit и final SHA проверены до публикации. TAR:
+655 360 bytes, SHA-256
+`29439aca5019bc665264f8a0c3fb994e837cd7a7a6a0af21df9d3c7e4d463a8a`.
+Первоначальный эксперимент с blobless fetch всё равно загрузил около 345 MB
+Git objects при `git archive`; sparse network savings не заявляются. Temporary
+repository очищен. У выбранных inputs Git command timeout — 300 seconds.
+
+Текущий набор вырос до 83 inputs: 81 Linux и 79 Windows. Полный collector
+на original FFmpeg binary archives/recipes/configurations прошёл для обоих:
+405 Linux notices и 378 Windows notices. Все hashes предыдущего 82-input
+notice набора сохранились; AMF добавил 58 originals, включая каждый header с
+copyright. Final retained archive содержит два source TAR и три helpers,
+все пять entry hashes проверены после упаковки. Его SHA-256:
+`25183b3d4b19d28573b1f697132381ec64df623d9d50c3c524f6749f667b71a8`,
+2111835 bytes. Новые Git path-selection regressions сначала отказали;
+проверяются explicit arguments после `--`, traversal/options/patterns,
+empty/duplicate/неправильно типизированные lists и запрет selection без Git
+snapshot. Новый exact-SHA CI для LAME/AMF необходим. Полнота F7 и manual gates
+не объявляются закрытыми.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -577,10 +654,10 @@ nested/generated inputs, Rust crates и toolchain/SDK materials также ос�
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation, portable identity и canonical Gitiles downloads дополнены 81 FFmpeg source input, direct Git snapshots и bounded HTTP gateway retries |
+| Summary | Windows isolation, portable identity и canonical Gitiles downloads дополнены 83 FFmpeg source inputs, direct Git/SVN snapshots и bounded transport retries |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | CI 10/10 прошёл на 41f98e3; его Linux portable отказал на HTTP 502; direct Git source fix требует нового exact-SHA CI |
+| Minor issues | Все три workflow прошли на e6e8095; LAME/AMF retention требует нового exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |

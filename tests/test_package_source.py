@@ -20,6 +20,100 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_svn_sources_pin_raw_bytes_modes_properties_and_cache(self):
+        from package_svn_sources import fetch_svn_source, create_svn_archive
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            record = dict(url="https://example.invalid/svn/!svn/bc/12/trunk/tool/", revision="12",
+                          svn_snapshot=True, svn_archive_prefix="tool-12",
+                          svn_repository_uuid="981c7233-bbb0-e711-95a9-001517a2e1a4", sha256="a" * 64)
+            data = b"Original source\n"; checksum = hashlib.sha1(data).hexdigest()
+            base = "/svn/!svn/bc/12/trunk/tool/"
+            def listing(name="LICENSE", uuid=None, special="", version="12"):
+                uuid = uuid or record["svn_repository_uuid"]
+                return (f'<D:multistatus xmlns:D="DAV:" xmlns:V="http://subversion.tigris.org/xmlns/dav/" '
+                    f'xmlns:S="http://subversion.tigris.org/xmlns/svn/"><D:response><D:href>{base}</D:href>'
+                    f'<D:propstat><D:prop><D:resourcetype><D:collection/></D:resourcetype><V:repository-uuid>{uuid}</V:repository-uuid>'
+                    f'<D:version-name>{version}</D:version-name></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>'
+                    f'<D:response><D:href>{base}{name}</D:href><D:propstat><D:prop><D:resourcetype/>'
+                    f'<D:version-name>8</D:version-name><V:repository-uuid>{uuid}</V:repository-uuid>'
+                    f'<D:getcontentlength>{len(data)}</D:getcontentlength><V:sha1-checksum>{checksum}</V:sha1-checksum>'
+                    f'<S:executable>*</S:executable><S:eol-style>native</S:eol-style>{special}'
+                    '</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response></D:multistatus>').encode()
+            xml = listing(); body = data; redirected = False
+            def request(req, **kwargs):
+                response = io.BytesIO(xml if req.get_method() == "PROPFIND" else body)
+                response.geturl = lambda: "http://example.invalid/changed" if redirected else req.full_url
+                return response
+            source = root / "expected.tar"
+            with patch("package_svn_sources.urllib.request.urlopen", side_effect=request):
+                create_svn_archive(record, source)
+            with tarfile.open(source) as archive:
+                member = archive.getmember("tool-12/LICENSE")
+                self.assertEqual(member.mode, 0o755)
+                self.assertEqual(archive.extractfile(member).read(), data)
+                metadata = json.load(archive.extractfile("tool-12/.transcribe-svn-properties.json"))
+                self.assertEqual(metadata["entries"]["LICENSE"]["properties"]["{http://subversion.tigris.org/xmlns/svn/}eol-style"], "native")
+            record["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+            target = root / "verified.tar"
+            with patch("package_svn_sources.urllib.request.urlopen", side_effect=request):
+                fetch_svn_source(record, target)
+            self.assertEqual(target.read_bytes(), source.read_bytes())
+            target.unlink()
+            import ssl
+            import urllib.error
+            calls = []
+            def transient(req, **kwargs):
+                calls.append(req.full_url)
+                if len(calls) == 1:
+                    raise urllib.error.URLError(ssl.SSLEOFError("Unexpected TLS EOF"))
+                return request(req, **kwargs)
+            with patch("package_svn_sources.urllib.request.urlopen", side_effect=transient), patch("package_svn_sources.time.sleep") as sleep:
+                fetch_svn_source(record, target)
+            self.assertEqual(len(calls), 3)
+            sleep.assert_called_once_with(1)
+            target.unlink()
+            for reason, expected_calls in [(ssl.SSLEOFError("Unexpected TLS EOF"), 3),
+                                            (ssl.SSLCertVerificationError("Certificate rejected"), 1)]:
+                with patch("package_svn_sources.urllib.request.urlopen", side_effect=urllib.error.URLError(reason)) as network, patch("package_svn_sources.time.sleep"):
+                    with self.assertRaisesRegex(RuntimeError, "transport failed"):
+                        fetch_svn_source(record, target)
+                self.assertEqual(network.call_count, expected_calls)
+                self.assertFalse(target.exists())
+                self.assertFalse(any(p.name.startswith("svn-source-") for p in root.iterdir()))
+            target.write_bytes(source.read_bytes())
+            with patch("package_svn_sources.urllib.request.urlopen") as network:
+                fetch_svn_source(record, target)
+            network.assert_not_called()
+            target.write_bytes(b"Previous cache")
+            with self.assertRaisesRegex(ValueError, "cache checksum"):
+                fetch_svn_source(record, target)
+            self.assertEqual(target.read_bytes(), b"Previous cache"); target.unlink()
+            for changed in [listing(name="../escape"), listing(name="."), listing(name="LICENSE", uuid="wrong"),
+                            listing(special="<S:special>*</S:special>"), listing(version="13"),
+                            b'<!DOCTYPE x [<!ENTITY y "z">]><x/>']:
+                xml = changed
+                with patch("package_svn_sources.urllib.request.urlopen", side_effect=request):
+                    with self.assertRaises(ValueError): fetch_svn_source(record, target)
+                self.assertFalse(target.exists())
+                self.assertFalse(any(p.name.startswith("svn-source-") for p in root.iterdir()))
+            xml = listing(); body = b"Changed source"
+            with patch("package_svn_sources.urllib.request.urlopen", side_effect=request):
+                with self.assertRaisesRegex(ValueError, "file checksum"): fetch_svn_source(record, target)
+            body = data; redirected = True
+            with patch("package_svn_sources.urllib.request.urlopen", side_effect=request):
+                with self.assertRaisesRegex(ValueError, "redirect"): fetch_svn_source(record, target)
+            redirected = False
+            with patch("package_svn_sources.urllib.request.urlopen", side_effect=request):
+                with self.assertRaisesRegex(ValueError, "snapshot checksum"):
+                    fetch_svn_source(record | dict(sha256="b" * 64), target)
+            self.assertFalse(target.exists())
+            for changes in [dict(url="http://example.invalid/"), dict(revision="HEAD"),
+                            dict(url=record["url"].replace("/12/", "/13/")), dict(svn_archive_prefix="../escape")]:
+                with patch("package_svn_sources.urllib.request.urlopen") as network:
+                    with self.assertRaises(ValueError): fetch_svn_source(record | changes, target)
+                network.assert_not_called()
+
     def test_git_sources_verify_revision_and_archive_before_publication(self):
         from package_git_sources import fetch_git_source
         with tempfile.TemporaryDirectory() as temporary:
@@ -41,6 +135,8 @@ class SourceIdentityTests(unittest.TestCase):
                 self.assertEqual(environment["GIT_TERMINAL_PROMPT"], "0")
                 self.assertEqual(Path(environment["GIT_CONFIG_GLOBAL"]).read_bytes(), b"")
                 if "archive" in command:
+                    if "git_archive_paths" in record:
+                        self.assertEqual(command[command.index("--") + 1:], record["git_archive_paths"])
                     target = next(a[len("--output="):] for a in command if a.startswith("--output="))
                     Path(target).write_bytes(archive_bytes)
                 output = (returned_revision + "\n").encode() if "rev-parse" in command else b""
@@ -50,6 +146,10 @@ class SourceIdentityTests(unittest.TestCase):
                 fetch_git_source(record, target)
             self.assertEqual(target.read_bytes(), original)
             self.assertEqual(list(cache.iterdir()), [target])
+            target.unlink(); record["git_archive_paths"] = ["LICENSE.txt", "amf/public/include"]
+            with patch("package_git_sources.subprocess.run", side_effect=git):
+                fetch_git_source(record, target)
+            record.pop("git_archive_paths")
             with patch("package_git_sources.subprocess.run") as run:
                 fetch_git_source(record, target)
             run.assert_not_called()
@@ -86,7 +186,10 @@ class SourceIdentityTests(unittest.TestCase):
                     fetch_git_source(record, target)
             self.assertEqual(list(cache.iterdir()), [])
             for changes in [dict(url="http://example.invalid/source.git"), dict(url="https://user:secret@example.invalid/source.git"),
-                            dict(revision="--bad-option"), dict(git_archive_prefix="../escape")]:
+                            dict(revision="--bad-option"), dict(git_archive_prefix="../escape"),
+                            dict(git_archive_paths=["../escape"]), dict(git_archive_paths=["--option"]),
+                            dict(git_archive_paths=["*.h"]), dict(git_archive_paths=[]),
+                            dict(git_archive_paths=["LICENSE", "LICENSE"]), dict(git_archive_paths="LICENSE")]:
                 with patch("package_git_sources.subprocess.run") as run:
                     with self.assertRaises(ValueError):
                         fetch_git_source(record | changes, target)
@@ -187,6 +290,22 @@ class SourceIdentityTests(unittest.TestCase):
             source.pop("recipe_revision")
             (root / recipe["filename"]).write_bytes(original_recipe)
             recipe["sha256"] = original_checksum
+            svn_recipe = archive("recipes.tar", {"build/scripts.d/tool.sh":
+                b'SCRIPT_REPO2="https://github.com/example/tool.git"\nSCRIPT_REV2="12"\n'})
+            recipe["sha256"] = svn_recipe["sha256"]
+            source.update(svn_snapshot=True, revision="12", svn_archive_prefix="tool-12",
+                          svn_repository_uuid="981c7233-bbb0-e711-95a9-001517a2e1a4",
+                          url="https://example.invalid/svn/!svn/bc/12/trunk/tool/")
+            svn_result = collect_ffmpeg_notices(lock, pinned, root, root / "svn", "--enable-tool")
+            self.assertEqual(svn_result["sources"][0]["revision"], "12")
+            source["revision"] = "11"
+            source["url"] = source["url"].replace("/12/", "/11/")
+            with self.assertRaisesRegex(ValueError, "recipe does not match"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "wrong-svn", "--enable-tool")
+            for key in ["svn_snapshot", "svn_archive_prefix", "svn_repository_uuid", "url"]: source.pop(key)
+            source["revision"] = "a" * 40
+            (root / recipe["filename"]).write_bytes(original_recipe)
+            recipe["sha256"] = original_checksum
             with self.assertRaisesRegex(ValueError, "configuration"):
                 collect_ffmpeg_notices(lock, pinned, root, root / "disabled", "--enable-tool --disable-tool")
             self.assertFalse((root / "disabled").exists())
@@ -230,7 +349,26 @@ class SourceIdentityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Incomplete FFmpeg"):
                 ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
             record.clear(); record.update(previous)
+        record["git_archive_paths"] = ["LICENSE.txt", "amf/public/include"]
+        self.assertEqual(ffmpeg_source_records(lock, [{"sha256": "a" * 64}]), [record])
+        record["git_archive_paths"] = ["../escape"]
+        with self.assertRaises(ValueError): ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
         record.pop("git_snapshot"); record.pop("git_archive_prefix")
+        record["git_archive_paths"] = ["LICENSE"]
+        with self.assertRaisesRegex(ValueError, "requires a Git snapshot"):
+            ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
+        record.pop("git_archive_paths")
+        original = record.copy()
+        record.update(svn_snapshot=True, revision="12", svn_archive_prefix="tool-12",
+                      svn_repository_uuid="981c7233-bbb0-e711-95a9-001517a2e1a4", sha256="e" * 64,
+                      url="https://example.invalid/svn/!svn/bc/12/trunk/tool/")
+        self.assertEqual(ffmpeg_source_records(lock, [{"sha256": "a" * 64}]), [record])
+        for changes in [dict(svn_snapshot="true"), dict(git_snapshot=True), dict(canonical_tar=True),
+                        dict(revision="HEAD"), dict(svn_archive_prefix="../escape")]:
+            previous = record.copy(); record.update(changes)
+            with self.assertRaises(ValueError): ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
+            record.clear(); record.update(previous)
+        record.clear(); record.update(original)
         with self.assertRaisesRegex(ValueError, "FFmpeg.*pinned binary"):
             ffmpeg_source_records(lock, [{"sha256": "d" * 64}])
         record["for_binary_sha256"] = ["d" * 64]

@@ -7,6 +7,8 @@ from pathlib import Path
 import tarfile
 import re
 from package_source import digest
+from package_git_sources import selected_paths as selected_git_paths
+from package_svn_sources import validate_mapping as validate_svn_mapping
 
 
 def ffmpeg_source_records(lock, binaries):
@@ -21,14 +23,23 @@ def ffmpeg_source_records(lock, binaries):
     for record in group["downloads"]:
         if not record["for_binary_sha256"] or not set(record["for_binary_sha256"]).issubset(supported):
             raise ValueError("FFmpeg dependency source has an unknown binary mapping")
+        is_svn = record.get("svn_snapshot") is True
         if (record["kind"] != "ffmpeg-dependency-source" or not record["required_notices"]
-                or not record["configure_flags"] or not re.fullmatch(r"[a-f0-9]{40}", record["revision"])
+                or not record["configure_flags"]
+                or not re.fullmatch(r"[1-9][0-9]*" if is_svn else r"[a-f0-9]{40}", record["revision"])
+                or ("svn_snapshot" in record and (not is_svn or "git_snapshot" in record or "canonical_tar" in record))
                 or ("canonical_tar" in record and record["canonical_tar"] is not True)
                 or ("git_snapshot" in record and (record["git_snapshot"] is not True
                     or record.get("canonical_tar") is True
                     or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", record.get("git_archive_prefix", ""))))
                 or any(not re.fullmatch(r"--enable-[a-z0-9-]+", flag) for flag in record["configure_flags"])):
             raise ValueError("Incomplete FFmpeg dependency source mapping")
+        if "git_archive_paths" in record:
+            if record.get("git_snapshot") is not True:
+                raise ValueError("Git source selection requires a Git snapshot")
+            selected_git_paths(record)
+        if is_svn:
+            validate_svn_mapping(record)
         if available.intersection(record["for_binary_sha256"]):
             selected.append(record)
     if not selected:

@@ -115,8 +115,8 @@ toolchain/runtime details и build configuration Qt/SDK libraries собираю
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 
-`ffmpeg_dependencies` сохраняет частичный набор 81 pinned dependency source archives:
-79 для Linux и 77 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
+`ffmpeg_dependencies` сохраняет частичный набор 83 pinned dependency source archives:
+81 для Linux и 79 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
 archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
 каждой библиотеки, включая нумерованные recipe slots. Если recipe использует тег,
 `recipe_revision` сохраняет его имя, а `revision` и URL архива закрепляют полный
@@ -158,6 +158,27 @@ hooks, credential helpers и redirects исключены; cache публику�
 остаются в pinned TAR как данные; notice collector не следует по ссылкам.
 Helpers `package_git_sources.py`, `package_canonical_sources.py` и
 `package_source.py` сохраняются также в `materials/` build-inputs архива.
+Для LAME `svn_snapshot=true` использует неизменяемый SVN DAV baseline revision
+6835. Общий `package_svn_sources.py` проверяет repository UUID, числовые revisions,
+пути, per-file lengths/SHA-1 и окончательный TAR SHA-256. Raw repository bytes,
+executable bits и original SVN/custom properties сохраняются; свойства доступны
+в `.transcribe-svn-properties.json` внутри source TAR. Helper не разворачивает
+keywords/EOL и не выполняет исходники. Checkout reconstruction должен учитывать
+сохранённые properties; original FFmpeg recipe с `SCRIPT_REV` также сохраняется.
+Redirects, XML DTD/entities, externals и special files отвергаются, объём/число
+entries ограничены. Temporary files очищаются, готовый input публикуется без
+замены прежнего cache; helper включается в build materials на обеих платформах.
+SVN requests ограничены тремя попытками для HTTP 502/503/504, timeout,
+connection reset, incomplete read и unexpected TLS EOF. Certificate errors,
+invalid metadata и hash mismatch не повторяются.
+AMF сохраняет только используемые recipe пути `amf/public/include` и original
+`LICENSE.txt`: 57 headers и license, 58 original files. `git_archive_paths`
+задаёт явные относительные пути без patterns/options/traversal; helper передаёт
+их после `--` в `git archive` и сохраняет strict commit/TAR pins. Каждый header
+также включён в original notices. Git retrieval может загружать полное дерево
+objects (~345 MB для закреплённого AMF); это временный cache, а source TAR
+содержит лишь 58 выбранных файлов (~640 KiB). Для выбранных source paths предел
+одной Git команды — 300 секунд; обычные Git sources сохраняют предел 120 секунд.
 Linux downloader повторяет только HTTP 502/503/504, максимум три попытки
 с паузами 1 и 2 секунды; ошибка называет input. SHA mismatch, HTTP 404 и
 небезопасный redirect не повторяются. Эти retries не меняют закреплённые bytes.

@@ -23,6 +23,7 @@ from package_runtime_sources import runtime_source_records, collect_runtime_noti
 from package_ffmpeg_sources import collect_ffmpeg_notices
 from package_canonical_sources import canonicalize_verified_tar
 from package_git_sources import fetch_git_source
+from package_svn_sources import fetch_svn_source
 from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -60,6 +61,8 @@ def fetch(record, cache):
         if digest(target) != record["sha256"]:
             raise ValueError("Dependency cache checksum mismatch: " + target.name)
         return target
+    if record.get("svn_snapshot") is True:
+        return fetch_svn_source(record, target)
     if record.get("git_snapshot") is True:
         return fetch_git_source(record, target)
     # Unique partials also allow two builds to use the same cache safely.
@@ -411,7 +414,7 @@ def main():
                    [PROJECT / "packaging/linux/dependencies.json", PROJECT / "packaging/source-inputs.json",
                     appdir / "package-manifest.json", library_provenance, source_provenance,
                     PROJECT / "scripts/package_git_sources.py", PROJECT / "scripts/package_canonical_sources.py",
-                    PROJECT / "scripts/package_source.py"])
+                    PROJECT / "scripts/package_source.py", PROJECT / "scripts/package_svn_sources.py"])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.

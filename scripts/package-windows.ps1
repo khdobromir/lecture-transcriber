@@ -36,9 +36,18 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 }
 function Get-Verified($Dependency) {
     $Target = Join-Path $Stage $Dependency.filename
+    if (($Dependency.PSObject.Properties.Name -contains 'svn_snapshot') -and $Dependency.svn_snapshot -eq $true) {
+        Invoke-Checked python @("$Project\scripts\package_svn_sources.py", $Dependency.url, $Dependency.revision,
+            $Dependency.svn_repository_uuid, $Dependency.svn_archive_prefix, $Target, $Dependency.sha256)
+        return $Target
+    }
     if (($Dependency.PSObject.Properties.Name -contains 'git_snapshot') -and $Dependency.git_snapshot -eq $true) {
-        Invoke-Checked python @("$Project\scripts\package_git_sources.py", $Dependency.url, $Dependency.revision,
+        $GitArguments = @("$Project\scripts\package_git_sources.py", $Dependency.url, $Dependency.revision,
             $Dependency.git_archive_prefix, $Target, $Dependency.sha256)
+        if ($Dependency.PSObject.Properties.Name -contains 'git_archive_paths') {
+            foreach ($SourcePath in $Dependency.git_archive_paths) { $GitArguments += @('--path', [string]$SourcePath) }
+        }
+        Invoke-Checked python $GitArguments
         return $Target
     }
     Invoke-WebRequest -Uri $Dependency.url -UserAgent 'Transcribe-package/1' -OutFile ($Target + '.part')
@@ -188,7 +197,7 @@ Invoke-Checked python @("$Project\scripts\package_inputs.py", 'archive', $Inputs
     '--material', "$Project\packaging\windows\dependencies.json", '--material', "$Project\scripts\patch-whisper-windows.py",
     '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
     '--material', "$Project\packaging\source-inputs.json", '--material', "$Project\scripts\package_git_sources.py",
-    '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py")
+    '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py", '--material', "$Project\scripts\package_svn_sources.py")
 $null = Get-SourceIdentity $IdentityFile
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
     Set-Content ($Zip + '.sha256') -Encoding ascii
