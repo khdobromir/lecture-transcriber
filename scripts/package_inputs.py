@@ -5,11 +5,36 @@ import io
 import json
 from pathlib import Path
 import tarfile
+import re
 from package_source import digest
+
+
+def ffmpeg_source_records(lock, binaries):
+    available = {record["sha256"] for record in binaries}
+    group = lock["ffmpeg_dependencies"]
+    supported = set(group["for_binary_sha256"])
+    core = [record for record in lock["downloads"] if record["name"] == "ffmpeg-source"]
+    if (len(core) != 1 or supported != set(core[0]["for_binary_sha256"])
+            or len(available.intersection(supported)) != 1):
+        raise ValueError("FFmpeg dependency sources do not match pinned binary")
+    selected = []
+    for record in group["downloads"]:
+        if not record["for_binary_sha256"] or not set(record["for_binary_sha256"]).issubset(supported):
+            raise ValueError("FFmpeg dependency source has an unknown binary mapping")
+        if (record["kind"] != "ffmpeg-dependency-source" or not record["required_notices"]
+                or not record["configure_flags"] or not re.fullmatch(r"[a-f0-9]{40}", record["revision"])
+                or any(not re.fullmatch(r"--enable-[a-z0-9-]+", flag) for flag in record["configure_flags"])):
+            raise ValueError("Incomplete FFmpeg dependency source mapping")
+        if available.intersection(record["for_binary_sha256"]):
+            selected.append(record)
+    if not selected:
+        raise ValueError("Incomplete FFmpeg dependency source set")
+    return selected
 
 
 def source_records(lock, binaries, qt_version):
     """Reject stale source mappings after a binary dependency is updated."""
+    binaries = list(binaries)
     available = {record["sha256"] for record in binaries}
     for record in lock["downloads"]:
         if not available.intersection(record["for_binary_sha256"]):
@@ -28,7 +53,7 @@ def source_records(lock, binaries, qt_version):
                 raise ValueError("Standalone dependency source has an unknown binary mapping")
             if available.intersection(record["for_binary_sha256"]):
                 selected.append(record)
-    return selected
+    return selected + ffmpeg_source_records(lock, binaries)
 
 
 def archive_inputs(records, cache, destination, materials=()):

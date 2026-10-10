@@ -20,6 +20,75 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_ffmpeg_dependency_notices_require_exact_archive_recipe_and_configuration(self):
+        from package_ffmpeg_sources import collect_ffmpeg_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "ffmpeg.zip"; binary.write_bytes(b"pinned FFmpeg input")
+            checksum = hashlib.sha256(binary.read_bytes()).hexdigest()
+            def archive(filename, files):
+                path = root / filename
+                with tarfile.open(path, "w") as output:
+                    for name, content in files.items():
+                        member = tarfile.TarInfo(name); member.size = len(content)
+                        output.addfile(member, io.BytesIO(content))
+                return dict(filename=filename, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            recipe = archive("recipes.tar", {"build/scripts.d/tool.sh":
+                ('SCRIPT_REPO2="https://github.com/example/tool.git"\nSCRIPT_COMMIT2="' + "a" * 40 + '"\n').encode()})
+            recipe.update(name="ffmpeg-build-recipes", for_binary_sha256=[checksum])
+            source = archive("tool.tar", {"tool/LICENSE": b"Original terms", "tool/README": b"Further terms"})
+            source.update(name="tool", kind="ffmpeg-dependency-source", revision="a" * 40,
+                          repository="https://github.com/example/tool.git", recipe="scripts.d/tool.sh", recipe_slot="2",
+                          configure_flags=["--enable-tool"], required_notices=["LICENSE", "README"],
+                          for_binary_sha256=[checksum])
+            lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=[checksum]), recipe],
+                        ffmpeg_dependencies=dict(for_binary_sha256=[checksum], downloads=[source]))
+            pinned = dict(filename=binary.name, sha256=checksum)
+            result = collect_ffmpeg_notices(lock, pinned, root, root / "licenses", "configuration: --enable-tool")
+            self.assertFalse(result["corresponding_sources_complete"])
+            self.assertEqual(result["ffmpeg_input_sha256"], checksum)
+            self.assertEqual((root / "licenses/FFmpeg-dependency-source-notices/tool/README").read_bytes(), b"Further terms")
+            with self.assertRaisesRegex(ValueError, "configuration"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "disabled", "--enable-tool --disable-tool")
+            self.assertFalse((root / "disabled").exists())
+            source["revision"] = "b" * 40
+            with self.assertRaisesRegex(ValueError, "recipe does not match"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "wrong-commit", "--enable-tool")
+            self.assertFalse((root / "wrong-commit").exists())
+            source["revision"] = "a" * 40; source["recipe"] = "../escape"
+            with self.assertRaisesRegex(ValueError, "Unsafe"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "unsafe", "--enable-tool")
+            source["recipe"] = "scripts.d/tool.sh"; source["recipe_slot"] = "2.*"
+            with self.assertRaisesRegex(ValueError, "Unsafe FFmpeg recipe slot"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "unsafe-slot", "--enable-tool")
+            source["recipe_slot"] = "2"; source["required_notices"].append("missing.txt")
+            with self.assertRaisesRegex(ValueError, "required source notice"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "missing-notice", "--enable-tool")
+            source["required_notices"].pop()
+            original = (root / recipe["filename"]).read_bytes()
+            (root / recipe["filename"]).write_bytes(b"changed recipes")
+            with self.assertRaisesRegex(ValueError, "checksum"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "corrupt-recipe", "--enable-tool")
+            (root / recipe["filename"]).write_bytes(original); binary.write_bytes(b"tampered input")
+            with self.assertRaisesRegex(ValueError, "checksum"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "bad-binary", "--enable-tool")
+
+    def test_ffmpeg_sources_reject_stale_or_unknown_platform_mappings(self):
+        from package_inputs import ffmpeg_source_records
+        record = dict(name="library", kind="ffmpeg-dependency-source", for_binary_sha256=["a" * 64],
+                      revision="c" * 40, configure_flags=["--enable-library"], required_notices=["LICENSE"])
+        lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=["a" * 64, "b" * 64])],
+                    ffmpeg_dependencies=dict(for_binary_sha256=["a" * 64, "b" * 64], downloads=[record]))
+        self.assertEqual(ffmpeg_source_records(lock, [{"sha256": "a" * 64}]), [record])
+        with self.assertRaisesRegex(ValueError, "FFmpeg.*pinned binary"):
+            ffmpeg_source_records(lock, [{"sha256": "d" * 64}])
+        record["for_binary_sha256"] = ["d" * 64]
+        with self.assertRaisesRegex(ValueError, "unknown binary mapping"):
+            ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
+        record["for_binary_sha256"] = ["a" * 64]; record["required_notices"] = []
+        with self.assertRaisesRegex(ValueError, "Incomplete FFmpeg"):
+            ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
+
     def test_standalone_notices_are_read_without_running_the_executable(self):
         from package_standalone_notices import collect_notices
         with tempfile.TemporaryDirectory() as temporary:
@@ -98,7 +167,7 @@ class SourceIdentityTests(unittest.TestCase):
             binaries = lock["downloads"]
             binaries = list(binaries.values()) if isinstance(binaries, dict) else binaries
             records = source_records(source_lock, binaries, lock["qt"])
-            self.assertEqual({record["name"] for record in records if "for_binary_sha256" in record and record.get("kind") != "standalone-runtime-source"},
+            self.assertEqual({record["name"] for record in records if "for_binary_sha256" in record and record.get("kind") not in {"standalone-runtime-source", "ffmpeg-dependency-source"}},
                              {"ffmpeg-source", "ffmpeg-build-recipes", "yt-dlp-source"})
             self.assertEqual({record["name"] for record in records if "for_binary_sha256" not in record},
                              {"qtbase", "qtdeclarative", "qtwayland", "qtsvg", "qtimageformats",

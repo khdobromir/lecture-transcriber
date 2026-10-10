@@ -115,6 +115,18 @@ toolchain/runtime details и build configuration Qt/SDK libraries собираю
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 
+`ffmpeg_dependencies` сохраняет частичный набор 24 pinned dependency sources
+для обеих платформ. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
+archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
+каждой библиотеки, включая нумерованные recipe slots. Проверяются также enable
+flags настоящего bundled FFmpeg; notices из verified sources сохраняются в
+`licenses/FFmpeg-dependency-source-notices`, а связи — в
+`ffmpeg-source-provenance.json`. Для FFmpeg 8.1 используется recipe slot 2
+nv-codec-headers (SDK 13.0). Chromaprint использует FFTW с GPL notices; upstream
+имя `lgpl` не заменяет рассмотрение условий каждого компонента. Полнота набора
+не заявляется: оставшиеся библиотеки, nested/generated inputs и toolchains
+всё ещё требуют соответствующих материалов.
+
 ## Слияние и публикация
 
 1. Слейте прошедший приёмку candidate через PR в `master`, Conventional Commit

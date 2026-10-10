@@ -110,6 +110,8 @@ foreach ($Dependency in $Lock.downloads) {
 foreach ($Source in $Sources) { $null = Get-Verified $Source }
 Invoke-Checked python @("$Project\scripts\package_notices.py", "$Project\packaging\source-inputs.json", $Stage,
     "$Licenses\Qt-source-notices")
+Invoke-Checked python @("$Project\scripts\package_ffmpeg_sources.py", "$Project\packaging\source-inputs.json",
+    "$Project\packaging\windows\dependencies.json", $Stage, $Licenses, "$Tools\ffmpeg.exe")
 if (-not $SkipTests) { Invoke-Checked "$Build\Release\test_split.exe" @("$Tools\ffmpeg.exe") }
 # A ZIP must run on a machine without Visual Studio or an installed VC runtime.
 # Deploy app-local CRT DLLs to both executable directories; child tools cannot

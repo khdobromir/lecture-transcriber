@@ -18,6 +18,7 @@ from package_linux_notices import collect_system_notices, collect_data_notices, 
 from package_linux_sources import collect_sources
 from package_sdk_sources import sdk_source_records, collect_sdk_notices
 from package_runtime_sources import runtime_source_records, collect_runtime_notices
+from package_ffmpeg_sources import collect_ffmpeg_notices
 from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -274,6 +275,8 @@ def main():
     for path in ffmpeg.rglob("*"):
         if path.is_file() and path.name.startswith(("LICENSE", "COPYING")):
             shutil.copy2(path, licenses / ("FFmpeg-" + path.name))
+    collect_ffmpeg_notices(source_lock, lock["downloads"]["ffmpeg"], cache, licenses,
+                          subprocess.check_output([str(tools / "ffmpeg"), "-buildconf"], stderr=subprocess.STDOUT, text=True))
     shutil.copy2(dependencies["yt-dlp"], tools / "yt-dlp")
     for path in tools.iterdir():
         path.chmod(0o755)

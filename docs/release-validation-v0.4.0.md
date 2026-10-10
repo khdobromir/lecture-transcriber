@@ -1,6 +1,6 @@
 # v0.4.0: приёмка кандидата
 
-Дата: 9 октября 2026 года. Статус: **в работе; выпуск не допущен**.
+Начало: 9 октября 2026 года; обновлён 10 октября. Статус: **в работе; выпуск не допущен**.
 Исходная точка: dev `6dbd8c59f69e59021637f7d3004c092b88a2989c`.
 Ни результаты этого baseline, ни dirty локальная сборка не подтверждают final SHA.
 Exact candidate source SHA/fingerprint и package SHA фиксируются упаковщиками;
@@ -10,13 +10,13 @@ Exact candidate source SHA/fingerprint и package SHA фиксируются у�
 
 | Требование плана | Реализация | Подтверждение / остаток |
 | --- | --- | --- |
-| F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Windows native package job на b379811 прошёл; final SHA требует повтора |
-| F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | Windows native package job на b379811 прошёл; final SHA требует повтора |
-| F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container real ASR на 1edc4f3 прошёл; ссылка ниже |
-| F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Hosted run на 1edc4f3 прошёл; скачанный AppImage и build inputs сверены; native final smoke открыт |
-| F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation и concurrent commit unit test прошёл; Windows package job на b379811 прошёл |
-| F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | Windows package job на b379811 прошёл; final SHA требует повтора |
-| F7: материалы сторонних компонентов | Versioned build-input archives сохраняют pinned downloads, Whisper, Windows patch, FFmpeg/yt-dlp source snapshots и FFmpeg build recipes; mappings связаны с binary SHA | Полные corresponding source/build materials и сопоставление фактическому payload НЕ завершены |
+| F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Native package regression в CI 5e1c83b прошёл; final SHA требует повтора |
+| F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | Native package regression в CI 5e1c83b прошёл; final SHA требует повтора |
+| F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container Real Whisper на 5e1c83b прошёл; ссылка ниже |
+| F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Hosted 5e1c83b прошёл; 6322ad9 artifact независимо сверён; native final smoke открыт |
+| F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation/concurrent commit tests и CI 5e1c83b прошли |
+| F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | CI 5e1c83b прошёл; final SHA требует повтора |
+| F7: материалы сторонних компонентов | Verified build inputs, exact Ubuntu sources, Qt/ICU, standalone sources/notices, runtime sources/recipes; добавляется partial FFmpeg dependency set | Полные corresponding source/build materials и сопоставление фактическому payload НЕ завершены |
 | F8: документация и VERSION | 0.4.0 candidate, Python/test/packaging/support/cancellation docs и release notes | Локальные help/version; окончательные manifests ожидаются |
 
 ## Локальные проверки
@@ -311,6 +311,42 @@ missing notice и unsafe notice path отклоняются тестами. Вс
 tests проходят. Новая hosted сборка после этого изменения ещё обязательна.
 Полнота F7 остаётся false, включая оставшиеся runtime/toolchain details,
 native FFmpeg/standalone dependencies и Qt SDK build configuration.
+
+## Hosted проверки 5e1c83b
+
+Коммит `5e1c83bb275fea8fe451f43997d257815e4692a1` прошёл
+[CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/38044496095),
+[Linux portable с real ASR и offline Ubuntu/Debian](https://github.com/khdobromir/lecture-transcriber/actions/runs/38044497989)
+и [Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38044499646).
+Его source lock включает runtime sources/notices. Скачивание artifact начато;
+независимая проверка retained bytes и checksum ещё не завершена.
+
+## Исходники и notices части зависимостей FFmpeg после 5e1c83b
+
+`ffmpeg_dependencies` закрепляет 24 source archives включённых библиотек и
+зависимостей для Linux/Windows. Проверяются hash исходного FFmpeg input,
+hash исходного BtbN recipe snapshot, SCRIPT_REPO/SCRIPT_COMMIT и требуемые
+configure flags bundled FFmpeg. В частности, ветка FFVER=801 выбирает
+nv-codec-headers recipe slot 2 (SDK 13.0); OpenCL headers и ICD loader имеют
+отдельные source records. Chromaprint recipe включает FFTW: original GPL
+notices сохранены; upstream название варианта `lgpl` не описывает все terms.
+
+Actual collector обработал verified Linux FFmpeg из pinned input archive;
+configuration прочитана настоящим `-buildconf`. Windows input archive и
+сохранённая статически прочитанная configuration также проверены локально;
+исполнение нового helper на Windows остаётся hosted проверкой.
+Для каждой платформы сохранено 59 notices для 24 components. Все 24 source
+archives упакованы и перечитаны с проверкой SHA-256. Прошли шесть packaging
+CTest suites, включая восемь shared source/identity и 12 Linux packaging tests.
+Новые проверки отклоняют stale/unknown mappings, неправильный recipe commit,
+unsafe recipe path/slot, corrupt input/recipes, missing notices и выключенные
+configure flags. До реализации два новых теста падали; после неё проходят.
+
+Набор остаётся частичным: остальные native libraries, nested/generated inputs,
+toolchains и Qt SDK build configuration ещё требуют материалов. Возможности
+FFmpeg и binary pins не менялись. `corresponding_sources_complete=false`.
+После этого изменения необходимы новые hosted CI/portable artifacts; результаты
+5e1c83b не считаются проверкой нового head. Ручные платформенные gates открыты.
 
 ## Самопроверка изменений кандидата
 

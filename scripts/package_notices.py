@@ -1,4 +1,4 @@
-"""Copy Qt notices from checksum-verified sources without extracting source code."""
+"""Copy original notices from checksum-verified archives without running source code."""
 import argparse
 import json
 from pathlib import Path, PurePosixPath

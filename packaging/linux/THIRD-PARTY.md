@@ -29,6 +29,13 @@ and exact Alpine package patches. Updating the runtime without an updated
 source mapping stops packaging. This remains a partial corresponding-source
 deliverable; toolchain/runtime details and other bundled components still need
 their complete build materials.
+`licenses/FFmpeg-dependency-source-notices` retains original notices from a
+partial set of 24 dependency sources. `ffmpeg-source-provenance.json` binds them
+to the FFmpeg input archive hash, exact build recipes and the bundled tool's
+configure flags. The verified sources are in the adjacent build-inputs archive.
+The upstream `lgpl` variant name does not describe every dependency's terms:
+its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
+Remaining libraries, nested inputs and toolchain materials still require mapping.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.
 
@@ -37,7 +44,7 @@ texts and distribution metadata together with its binary hash and archive invent
 | Qt 6.8.3 shared libraries and QML/plugins | https://download.qt.io/archive/qt/6.8/6.8.3/ | LGPLv3; preserve replacement/relinking rights |
 | ICU 73.2 from the Qt SDK | https://github.com/unicode-org/icu/releases/tag/release-73-2 | Original ICU LICENSE and included third-party notices |
 | whisper.cpp, pinned commit | https://github.com/ggml-org/whisper.cpp/tree/927cfce34f31707e17f2bff35c349632fb9e2c3a | MIT |
-| FFmpeg 8.1 LGPL build and linked dependencies | https://github.com/BtbN/FFmpeg-Builds/tree/master | LGPL; actual bundled dependency notices apply |
+| FFmpeg 8.1, BtbN lgpl variant, and linked dependencies | https://github.com/BtbN/FFmpeg-Builds/tree/master | FFmpeg core LGPL; bundled dependency terms also apply |
 | yt-dlp Linux standalone, including Python and libraries | https://github.com/yt-dlp/yt-dlp/tree/2026.08.19 | Includes GPLv3+ dependencies; bundled notices apply |
 | AppImage runtime | https://github.com/AppImage/type2-runtime | MIT, embedded runtime dependencies have their own notices |
 | Public root certificates | Ubuntu ca-certificates package / Mozilla CA store | Bundled package copyright applies |
