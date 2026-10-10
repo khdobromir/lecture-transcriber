@@ -83,8 +83,8 @@ archive_inputs: 5 entries, 20 025 391 bytes. Binary/source mismatch regression
 | F1/F2 native regressions | Открыт: Windows CI DLL probes, missing-tools, Unicode, process/cancel |
 | Real Whisper fresh container | Успех на 1edc4f3 (ссылка ниже); повторить на окончательном SHA |
 | Один AppImage SHA во всех средах | Открыт: builder + clean Ubuntu/Debian + native smoke + published download |
-| Windows 11 без SDK | Открыт: среда сейчас недоступна, подтверждено пользователем |
-| Ubuntu 24.04 desktop X11/Wayland | Открыт: среда сейчас недоступна, подтверждено пользователем |
+| Windows 11 без SDK | Открыт: среда доступна, пользователь выполняет ручную проверку ZIP |
+| Ubuntu 24.04 desktop X11/Wayland | Обязательность отменена пользователем; отсутствие ручной проверки не блокирует релиз |
 | Omarchy/Hyprland | Открыт: native Wayland, 160%, keyboard, minimum window, dialogs/clipboard/portal/open exports |
 | FUSE/no-FUSE | Открыт для final artifact: обычный mount и extraction launch |
 | Recognition models | Открыт для пакетов Linux/Windows: small, medium+VAD, turbo, один/несколько chunks, sample bounds |
@@ -734,6 +734,61 @@ patches/build scripts/configuration и версии инструментов; р
 settings ещё требуют проверки. Final real dispatch и обязательная ручная
 Windows 11/Ubuntu desktop приёмка остаются открытыми; этих desktop сред сейчас нет.
 
+## Shaderc build dependencies и Windows 11 handoff
+
+На clean `6030674fbfe8eb2d83b722cf62b91e801a9d03f6`
+[CI 38080844083](https://github.com/khdobromir/lecture-transcriber/actions/runs/38080844083)
+завершился успешно, включая Windows GUI/ZIP job. Automatic run не включал
+real-smoke dispatch. Пользователю предоставлен
+[Windows artifact 11680527150](https://github.com/khdobromir/lecture-transcriber/actions/runs/38080844083/artifacts/11680527150)
+для предварительной ручной проверки. Результат Windows 11 ещё не получен;
+окончательный package требует допуска с его точным SHA-256.
+Инструкция: [windows-11-manual-validation.md](windows-11-manual-validation.md).
+
+Следующее изменение сохраняет три compile dependencies из `DEPS` pinned shaderc
+`a8abeb0b8a9d4b11e3d59ca9f4550b8213e733ab`:
+
+| Source | Revision | Archive SHA-256 |
+| --- | --- | --- |
+| glslang | `e1b562a8bed273a02f30b59b66a5d499793cede5` | `907174a24713c6202c146f164bf81783f1fbc79c8cb821a30f18f159eb980312` |
+| SPIRV-Headers | `04fd3caa1e8267e4d95c806cad901181728e1006` | `392f4801409aad9c4f1b77745f179952fd6264e4c8bd0fc1bc45dfa6807bf6d0` |
+| SPIRV-Tools | `ef96ed763b43b59b33b31b362f09a02b729fa1c9` | `82c62146083fd558735a3171cf97cfc47903ca7d368482e87f94bd44883c0f00` |
+
+Upstream recipe вызывает `utils/git-sync-deps`; parent CMake добавляет эти
+source directories и связывает `shaderc_util` с glslang/SPIRV/SPIRV-Tools-opt.
+`SHADERC_SKIP_TESTS=ON` отключает test-only abseil, effcee, re2 и googletest;
+они не добавлены как compile dependencies этой сборки.
+Collector читает только literal `vars`, relative-path flag и разрешённые
+string/Var expressions в `DEPS`. Он отвергает неизвестный код, повторные
+присваивания и несовпадающие path/repository/revision. Upstream Python и
+sync scripts не исполняются. Parent source hash, recipe и binary mapping
+проверяются отдельно; provenance сохраняет исходный DEPS SHA-256.
+
+Полный collector проверил 89 source pins: 87 Linux sources / 435 notices и
+85 Windows sources / 408 notices. Все notice bytes проверены readback.
+Retained test archive содержит три source archives и три current build
+materials, каждый файл проверен после архивирования. Source tests: 16/16;
+Linux packaging tests: 15/15; fresh packaging CTest: 6/6. Новая regression
+падает при обходе revision guard и проходит с ним; вредоносные Python
+expressions/statements отвергаются без создания test marker.
+
+`corresponding_sources_complete=false`: F7 и остальные неотменённые условия
+приёмки остаются открытыми. Ubuntu desktop waiver записан ниже; он не отменяет
+Windows 11, Omarchy или автоматические clean-container проверки.
+
+## Изменение ручной матрицы по решению пользователя
+
+10 октября пользователь сообщил о доступной Windows 11 и выбрал самостоятельную
+проверку ZIP по предоставленным файлам и инструкции. Результат пока не получен;
+доступность среды не означает успешную приёмку. Точный package SHA-256 и OS build
+должны быть записаны вместе с результатами сценариев.
+
+Тем же сообщением пользователь отменил обязательность Ubuntu desktop для релиза.
+Ручная Ubuntu desktop приёмка больше не является блокирующим gate. Существующие
+автоматические проверки одного AppImage в чистых Ubuntu/Debian остаются в CI.
+Windows 11, Omarchy/Hyprland и остальные неотменённые требования сохраняются.
+Исторические записи выше описывают прежнее состояние и не переписываются.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -741,12 +796,12 @@ Windows 11/Ubuntu desktop приёмка остаются открытыми; э
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation и portable identity дополнены 86 FFmpeg source inputs, проверенными Git submodule proofs и выбором generated C/H sources без checkpoint files |
+| Summary | Windows isolation и portable identity дополнены 89 FFmpeg source inputs, Git submodule proofs, static DEPS mapping и generated C/H sources без checkpoint files |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
-| Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | CI 10/10 и Linux portable прошли на d8bc131; Graphengine/Highway retention требует своего exact-SHA CI |
+| Major issues | P1: Windows 11 приёмка ещё не выполнена; полные corresponding sources и остальные неотменённые manual gates открыты |
+| Minor issues | CI прошёл на 6030674; shaderc dependency retention требует своего exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
-| Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
+| Questions for author | Windows 11 доступна, проверяет пользователь; обязательная Ubuntu desktop приёмка отменена пользователем |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |
 
 WTF audit: tracked build/cache/media/model/secret artifacts не обнаружены;

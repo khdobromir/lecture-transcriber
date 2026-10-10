@@ -22,6 +22,45 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_ffmpeg_deps_sources_are_bound_without_executing_upstream_python(self):
+        from package_ffmpeg_sources import verify_deps_input
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); revision = "c" * 40
+            original = ("use_relative_paths = True\nvars = {'repo': 'https://example.invalid', 'revision': '"
+                        + revision + "'}\ndeps = {'third_party/library': Var('repo') + '/library.git@' + Var('revision')}\n").encode()
+            def parent_archive(body):
+                path = root / "parent.tar"
+                with tarfile.open(path, "w") as archive:
+                    member = tarfile.TarInfo("parent/DEPS"); member.size = len(body)
+                    archive.addfile(member, io.BytesIO(body))
+                return dict(name="parent", filename=path.name, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            parent = parent_archive(original)
+            record = dict(name="library", revision=revision, repository="https://example.invalid/library.git",
+                          deps_input=dict(parent="parent", path="third_party/library"))
+            result = verify_deps_input(record, parent, root)
+            self.assertEqual(result, dict(source="library", parent="parent", parent_sha256=parent["sha256"],
+                             path="third_party/library", revision=revision, deps_sha256=hashlib.sha256(original).hexdigest()))
+            for changes in [dict(revision="d" * 40), dict(repository="https://example.invalid/other.git"),
+                            dict(deps_input=dict(parent="parent", path="third_party/other"))]:
+                previous = record.copy(); record.update(changes)
+                with self.assertRaises(ValueError): verify_deps_input(record, parent, root)
+                record.clear(); record.update(previous)
+            marker = root / "upstream-code-executed"
+            malicious = ("__import__('pathlib').Path(" + repr(str(marker)) + ").write_text('executed')").encode()
+            for body in [original + malicious + b"\n", original.replace(b"Var('revision')", malicious),
+                         original.replace(b"use_relative_paths = True", b"use_relative_paths = False"),
+                         original + b"vars = {}\n", original.replace(b"Var('revision')", b"Var('unknown')"),
+                         original.replace(b"Var('revision')", b"str(123)"),
+                         original.replace(b"deps =", b"deps = None\nunused ="),
+                         original + b"vars['revision'] = 'changed'\n"]:
+                parent = parent_archive(body)
+                with self.assertRaises(ValueError): verify_deps_input(record, parent, root)
+                self.assertFalse(marker.exists())
+            parent = parent_archive(original)
+            (root / parent["filename"]).write_bytes(b"Corrupt source")
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                verify_deps_input(record, parent, root)
+
     def test_ffmpeg_submodule_sources_require_verified_parent_git_objects_and_declaration(self):
         from package_ffmpeg_sources import collect_ffmpeg_notices
         with tempfile.TemporaryDirectory() as temporary:

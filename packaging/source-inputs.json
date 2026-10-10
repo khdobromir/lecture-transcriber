@@ -2626,6 +2626,81 @@
             "68bebc76ff842dd3346dcb321526905e69002f27": "MTAwNjQ0IENNYWtlTGlzdHMudHh0AMR61jJE62F4adsx+78SEaTTGI2NNDAwMDAgSEVWQ1NvZnR3YXJlAI7rYd8+CQRqNQ9fAIyNqRpWmfi4MTYwMDAwIGJyb3RsaQACj7WiNmHxIwF8Bg2qVGtVz0veKTEwMDY0NCBkaXJlbnQuY2MAOQYITgMnTkls4CgfABZJ/nj2hRUxMDA2NDQgZGlyZW50LmgAN6CPQlvpJgvOjzxGOm8iNim9negxNjAwMDAgZ29vZ2xldGVzdABpEMnZFlgB2IJ9Yoy3LrfqndU4xTE2MDAwMCBoaWdod2F5AEV8iRd1pzl72wN2uxAx5uAnrxxIMTYwMDAwIGxjbXMAUXY0djV4XlPuXO6SMo92/adm7MYxMDA2NDQgbGNtczIuY21ha2UA3sa+k2eoaYFBop8d/xaKhIo+vlYxNjAwMDAgbGlianBlZy10dXJibwCOy6Nkfttt2UBGP+3zjKM6jipz0TE2MDAwMCBsaWJwbmcAhyVV9LqRAlJ4OvFQf55/4WU74lIxNjAwMDAgc2pwZWcAlODfbQ+LRCKN5b4P8177n5RqE8kxMDA2NDQgc2pwZWcuY21ha2UA8aaSUrpHJhH/711CxABoBqXT6/wxNjAwMDAgc2tjbXMAltkXHJS5N6G18Ck95zCawWMRtyIxMDA2NDQgc2tjbXMuY21ha2UAHnDCqgdjLYcel+7mcYktOw7pWvYxMDA2NDQgdGVzdGluZy5jbWFrZQDioZQT9MAp5nCxnkoHFd0U5n6LyjE2MDAwMCB6bGliAFG38qva3nHNm7Dno3PvJhDsb52v"
           }
         }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-shaderc-glslang-source",
+        "revision": "e1b562a8bed273a02f30b59b66a5d499793cede5",
+        "repository": "https://github.com/KhronosGroup/glslang.git",
+        "url": "https://codeload.github.com/KhronosGroup/glslang/tar.gz/e1b562a8bed273a02f30b59b66a5d499793cede5",
+        "filename": "ffmpeg-shaderc-glslang-e1b562a8bed2.tar.gz",
+        "sha256": "907174a24713c6202c146f164bf81783f1fbc79c8cb821a30f18f159eb980312",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "deps_input": {
+          "parent": "ffmpeg-shaderc-source",
+          "path": "third_party/glslang"
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-shaderc-spirv-headers-source",
+        "revision": "04fd3caa1e8267e4d95c806cad901181728e1006",
+        "repository": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+        "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/04fd3caa1e8267e4d95c806cad901181728e1006",
+        "filename": "ffmpeg-shaderc-spirv-headers-04fd3caa1e82.tar.gz",
+        "sha256": "392f4801409aad9c4f1b77745f179952fd6264e4c8bd0fc1bc45dfa6807bf6d0",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "deps_input": {
+          "parent": "ffmpeg-shaderc-source",
+          "path": "third_party/spirv-headers"
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-shaderc-spirv-tools-source",
+        "revision": "ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+        "repository": "https://github.com/KhronosGroup/SPIRV-Tools.git",
+        "url": "https://codeload.github.com/KhronosGroup/SPIRV-Tools/tar.gz/ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+        "filename": "ffmpeg-shaderc-spirv-tools-ef96ed763b43.tar.gz",
+        "sha256": "82c62146083fd558735a3171cf97cfc47903ca7d368482e87f94bd44883c0f00",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "deps_input": {
+          "parent": "ffmpeg-shaderc-source",
+          "path": "third_party/spirv-tools"
+        }
       }
     ]
   }

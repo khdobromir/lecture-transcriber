@@ -44,6 +44,19 @@ def ffmpeg_source_records(lock, binaries):
                     or not re.fullmatch(r"[a-f0-9]{64}", record.get("upstream_sha256", ""))):
                 raise ValueError("Canonical source selection requires a pinned upstream archive")
             selected_canonical_paths(record.get("canonical_tar_paths"))
+        if sum(key in record for key in ["generated_input", "git_submodule", "deps_input"]) > 1:
+            raise ValueError("Ambiguous nested FFmpeg source mapping")
+        if "deps_input" in record:
+            reference = record["deps_input"]
+            parents = [parent for parent in group["downloads"] if isinstance(reference, dict)
+                       and parent["name"] == reference.get("parent")
+                       and not any(key in parent for key in ["generated_input", "git_submodule", "deps_input"])]
+            if (not isinstance(reference, dict) or set(reference) != {"parent", "path"}
+                    or len(parents) != 1 or is_svn
+                    or any(record.get(key) != parents[0].get(key) for key in
+                           ["recipe", "recipe_slot", "recipe_revision", "for_binary_sha256", "configure_flags"])):
+                raise ValueError("Incomplete FFmpeg DEPS source mapping")
+            selected_git_paths({"git_archive_paths": [reference["path"]]})
         if "generated_input" in record:
             generated = record["generated_input"]
             parents = [parent for parent in group["downloads"] if isinstance(generated, dict)

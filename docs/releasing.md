@@ -55,11 +55,14 @@ real mode обязательно выполняет локальный ASR на 
 | Среда | Обязательная проверка |
 | --- | --- |
 | Windows 11 без SDK | Unicode unpack, model download/import, local ASR, cancel/close/retry/history, TXT/SRT/VTT |
-| Ubuntu 24.04 desktop | Заявленные X11/Wayland, FUSE/no-FUSE, dialogs, clipboard, open exports |
 | Omarchy/Hyprland | Native Wayland, масштаб 160%, Tab/Shift+Tab, минимальное окно, portal/clipboard |
 | Linux и Windows | Small, medium+VAD по умолчанию, turbo; один/несколько chunks, порядок/sample bounds |
 | VK/authentication | Public URL, отказ сети, cookies file/browser, cache reuse/refresh |
 | Длинная запись 10–15 минут | RAM, responsiveness, отмена, границы chunks и ручная оценка срезов |
+
+Решением пользователя от 10 октября 2026 ручная Ubuntu desktop приёмка больше
+не обязательна для выпуска. Clean Ubuntu/Debian container checks сохраняются.
+Windows 11 проверяется по [ручной инструкции](windows-11-manual-validation.md).
 
 Каждый результат содержит OS/build, source/package/input/model SHA и evidence.
 Приватные URL, cookies, записи и расшифровки остаются локальными. Публичные

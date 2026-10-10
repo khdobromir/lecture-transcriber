@@ -31,7 +31,8 @@ Linux: разрешите исполнение AppImage и запустите е
 `--appimage-extract-and-run`. Для CLI из исходников используйте README/install.sh.
 
 Целевая матрица: Windows 11 x64; Linux x86_64, glibc 2.39+, Ubuntu 24.04,
-Debian 13 и Arch/Omarchy. Native Windows 11 и Ubuntu desktop приёмка ещё открыты.
+Debian 13 и Arch/Omarchy. Native Windows 11 приёмка ещё открыта; ручная Ubuntu
+desktop приёмка по решению пользователя не является обязательным условием выпуска.
 CPU-only; GPU, macOS/ARM, musl, diarization, resume ASR и автоматическое обновление
 не входят в выпуск. Дробление остаётся опциональным (`chunks=1` по умолчанию).
 Технический smoke не измеряет WER или качество длинных лекций.

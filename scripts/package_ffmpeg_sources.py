@@ -1,5 +1,6 @@
 """Bind partial FFmpeg dependency sources/notices to its verified input and recipes."""
 import argparse
+import ast
 import base64
 import configparser
 import hashlib
@@ -101,6 +102,64 @@ def verify_submodule(record, parent, cache):
                 declaration_sha256=hashlib.sha256(declarations).hexdigest())
 
 
+def verify_deps_input(record, parent, cache):
+    reference = record["deps_input"]
+    path = verified_input(parent, cache)
+    with tarfile.open(path) as archive:
+        matches = [m for m in archive.getmembers() if m.isfile()
+                   and PurePosixPath(m.name).parts[1:] == ("DEPS",)]
+        if len(matches) != 1 or matches[0].size > 1024 * 1024:
+            raise ValueError("Missing/ambiguous FFmpeg DEPS declaration")
+        safe_path(matches[0].name)
+        body = archive.extractfile(matches[0]).read()
+    # Read only literal variables and string concatenation/Var references. No
+    # eval, exec, imports or upstream dependency-sync scripts are executed.
+    try:
+        tree = ast.parse(body.decode("utf-8"))
+    except SyntaxError as error:
+        raise ValueError("Invalid FFmpeg DEPS declaration") from error
+    if any(not isinstance(node, ast.Assign) or len(node.targets) != 1
+           or not isinstance(node.targets[0], ast.Name)
+           or node.targets[0].id not in {"vars", "deps", "use_relative_paths"} for node in tree.body):
+        raise ValueError("Unsupported FFmpeg DEPS statement")
+    assignments = {}
+    for name in ["vars", "deps", "use_relative_paths"]:
+        values = [node.value for node in tree.body if isinstance(node, ast.Assign)
+                  and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name)
+                  and node.targets[0].id == name]
+        if len(values) != 1:
+            raise ValueError("Missing/ambiguous FFmpeg DEPS mapping")
+        assignments[name] = values[0]
+    if ast.literal_eval(assignments["use_relative_paths"]) is not True:
+        raise ValueError("FFmpeg DEPS paths must be relative to the source root")
+    variables = ast.literal_eval(assignments["vars"])
+    if not isinstance(variables, dict) or any(not isinstance(k, str) or not isinstance(v, str)
+                                              for k, v in variables.items()):
+        raise ValueError("Invalid FFmpeg DEPS variables")
+
+    def value(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+            return value(node.left) + value(node.right)
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "Var"
+                and not node.keywords and len(node.args) == 1 and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str) and node.args[0].value in variables):
+            return variables[node.args[0].value]
+        raise ValueError("Unsupported FFmpeg DEPS expression")
+
+    deps = assignments["deps"]
+    if not isinstance(deps, ast.Dict) or any(not isinstance(key, ast.Constant) or not isinstance(key.value, str)
+                                           for key in deps.keys):
+        raise ValueError("Invalid FFmpeg DEPS paths")
+    selected = [node for key, node in zip(deps.keys, deps.values) if key.value == reference["path"]]
+    if len(selected) != 1 or value(selected[0]) != record["repository"] + "@" + record["revision"]:
+        raise ValueError("FFmpeg dependency does not match parent DEPS")
+    verified_input(parent, cache)
+    return dict(source=record["name"], parent=parent["name"], parent_sha256=parent["sha256"],
+                path=reference["path"], revision=record["revision"], deps_sha256=hashlib.sha256(body).hexdigest())
+
+
 def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
     sources = ffmpeg_source_records(lock, [binary])
     verified_input(binary, cache)
@@ -110,6 +169,11 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
         raise ValueError("Missing/ambiguous FFmpeg build recipes")
     recipe_archive = verified_input(recipes[0], cache)
     flags = set(shlex.split(configuration))
+    deps_inputs = []
+    for record in sources:
+        if "deps_input" in record:
+            parent = next(source for source in sources if source["name"] == record["deps_input"]["parent"])
+            deps_inputs.append(verify_deps_input(record, parent, cache))
     submodules = []
     for record in sources:
         if "git_submodule" in record:
@@ -160,6 +224,8 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
             recipe_source = record
             if "git_submodule" in record:
                 recipe_source = next(source for source in sources if source["name"] == record["git_submodule"]["parent"])
+            if "deps_input" in record:
+                recipe_source = next(source for source in sources if source["name"] == record["deps_input"]["parent"])
             recipe_revision = recipe_source.get("recipe_revision", recipe_source["revision"])
             revision_variable = "SCRIPT_REV" if record.get("svn_snapshot") is True else "SCRIPT_COMMIT"
             if record.get("svn_snapshot") is True:
@@ -174,6 +240,7 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
     collect_qt_notices(sources, cache, licenses / "FFmpeg-dependency-source-notices")
     evidence = dict(schema=1, ffmpeg_input_sha256=binary["sha256"], recipe_input=recipes[0], sources=sources,
                     configuration=configuration, generated_inputs=generated_inputs, git_submodules=submodules,
+                    deps_inputs=deps_inputs,
                     corresponding_sources_complete=False)
     (licenses / "ffmpeg-source-provenance.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     return evidence

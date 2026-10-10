@@ -30,7 +30,7 @@ source mapping stops packaging. This remains a partial corresponding-source
 deliverable; toolchain/runtime details and other bundled components still need
 their complete build materials.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a
-partial set of 84 dependency sources. `ffmpeg-source-provenance.json` binds them
+partial set of 87 dependency sources. `ffmpeg-source-provenance.json` binds them
 to the FFmpeg input archive hash, exact build recipes and the bundled tool's
 configure flags. The verified sources are in the adjacent build-inputs archive.
 Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
@@ -39,6 +39,8 @@ Opus license texts remain in the parent Opus source notices.
 The retained Graphengine and Highway submodules are tied to their parent zimg
 and JPEG XL commits through verified Git commit/tree objects and `.gitmodules`.
 Their original license texts are included in the same notices directory.
+The shaderc glslang, SPIRV-Headers and SPIRV-Tools inputs are bound to the
+parent's pinned `DEPS` declarations, parsed without executing upstream Python.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
 Remaining libraries, nested inputs and SDK build settings/tool versions still
