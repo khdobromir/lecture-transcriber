@@ -4,9 +4,12 @@ dynamically linked libraries with their own licenses. Notices are in `licenses/`
 third-party license texts and distribution metadata, read without executing its
 embedded Python code. `notices.json` records the binary hash and archive inventory.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a partial
-set of 79 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
+set of 80 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
 the input archive hash, exact upstream build recipes and configure flags from the
 bundled tool. These sources are retained in the adjacent build-inputs archive.
+Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
+the retained source selection excludes upstream model checkpoints. Original
+Opus license texts remain in the parent Opus source notices.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
 Remaining libraries, nested inputs and toolchain materials still require mapping.

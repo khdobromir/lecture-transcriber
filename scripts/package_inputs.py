@@ -9,6 +9,7 @@ import re
 from package_source import digest
 from package_git_sources import selected_paths as selected_git_paths
 from package_svn_sources import validate_mapping as validate_svn_mapping
+from package_canonical_sources import selected_paths as selected_canonical_paths
 
 
 def ffmpeg_source_records(lock, binaries):
@@ -38,6 +39,26 @@ def ffmpeg_source_records(lock, binaries):
             if record.get("git_snapshot") is not True:
                 raise ValueError("Git source selection requires a Git snapshot")
             selected_git_paths(record)
+        if "canonical_tar_paths" in record or "upstream_sha256" in record:
+            if (record.get("canonical_tar") is not True
+                    or not re.fullmatch(r"[a-f0-9]{64}", record.get("upstream_sha256", ""))):
+                raise ValueError("Canonical source selection requires a pinned upstream archive")
+            selected_canonical_paths(record.get("canonical_tar_paths"))
+        if "generated_input" in record:
+            generated = record["generated_input"]
+            parents = [parent for parent in group["downloads"] if isinstance(generated, dict)
+                       and parent["name"] == generated.get("parent") and "generated_input" not in parent]
+            if (not isinstance(generated, dict) or set(generated) != {"kind", "parent"}
+                    or generated.get("kind") != "opus-dnn" or len(parents) != 1
+                    or record.get("canonical_tar") is not True or record.get("strip_components") != 0
+                    or not re.fullmatch(r"[a-f0-9]{64}", record.get("upstream_sha256", ""))
+                    or not record.get("canonical_tar_paths")
+                    or any(not path.startswith("dnn/") or not path.endswith((".c", ".h"))
+                           for path in record["canonical_tar_paths"])
+                    or any(record.get(key) != parents[0].get(key) for key in
+                           ["revision", "repository", "recipe", "recipe_slot", "recipe_revision",
+                            "for_binary_sha256", "configure_flags"])):
+                raise ValueError("Incomplete generated FFmpeg source mapping")
         if is_svn:
             validate_svn_mapping(record)
         if available.intersection(record["for_binary_sha256"]):

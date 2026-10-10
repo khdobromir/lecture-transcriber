@@ -8,7 +8,17 @@ import tempfile
 from package_source import digest
 
 
-def canonicalize_tar(source, destination):
+def selected_paths(paths):
+    if paths is not None and (not isinstance(paths, list) or not paths
+            or any(not isinstance(path, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", path)
+                   or any(part in {".", ".."} or part.startswith("-") for part in path.split("/")) for path in paths)
+            or len(set(paths)) != len(paths)):
+        raise ValueError("Invalid canonical source selection")
+    return paths
+
+
+def canonicalize_tar(source, destination, paths=None):
+    paths = selected_paths(paths)
     if source.is_symlink():
         raise ValueError("Source archive must not be a symlink")
     with tarfile.open(source) as archive:
@@ -26,6 +36,10 @@ def canonicalize_tar(source, destination):
             if set(member.pax_headers) - {"mtime", "atime", "ctime", "path", "uid", "gid", "uname", "gname"}:
                 raise ValueError("Unsupported canonical source metadata")
             entries[name] = member
+        if paths is not None:
+            if any(path not in entries or not entries[path].isfile() for path in paths):
+                raise ValueError("Missing canonical source selection")
+            entries = {path: entries[path] for path in paths}
         with destination.open("xb") as output, tarfile.open(fileobj=output, mode="w", format=tarfile.PAX_FORMAT) as normalized:
             for name, member in sorted(entries.items()):
                 entry = tarfile.TarInfo(name)
@@ -41,12 +55,15 @@ def canonicalize_tar(source, destination):
                     normalized.addfile(entry)
 
 
-def canonicalize_verified_tar(source, destination, expected):
+def canonicalize_verified_tar(source, destination, expected, paths=None, upstream_sha256=None):
     if not re.fullmatch(r"[a-f0-9]{64}", expected):
         raise ValueError("Invalid canonical source checksum")
+    if upstream_sha256 is not None and (not re.fullmatch(r"[a-f0-9]{64}", upstream_sha256)
+                                       or source.is_symlink() or digest(source) != upstream_sha256):
+        raise ValueError("Upstream source checksum mismatch")
     with tempfile.TemporaryDirectory(dir=destination.parent, prefix="canonical-source-") as temporary:
         normalized = Path(temporary) / "input.tar"
-        canonicalize_tar(source, normalized)
+        canonicalize_tar(source, normalized, paths)
         if digest(normalized) != expected:
             raise ValueError("Canonical source checksum mismatch: " + destination.name)
         try:
@@ -62,8 +79,10 @@ def main():
     parser.add_argument("download", type=Path)
     parser.add_argument("destination", type=Path)
     parser.add_argument("sha256")
+    parser.add_argument("--path", action="append", dest="paths")
+    parser.add_argument("--upstream-sha256")
     args = parser.parse_args()
-    canonicalize_verified_tar(args.download, args.destination, args.sha256)
+    canonicalize_verified_tar(args.download, args.destination, args.sha256, args.paths, args.upstream_sha256)
 
 
 if __name__ == "__main__":

@@ -647,6 +647,43 @@ empty/duplicate/неправильно типизированные lists и з�
 snapshot. Новый exact-SHA CI для LAME/AMF необходим. Полнота F7 и manual gates
 не объявляются закрытыми.
 
+## Проверки 06fa74b и generated sources Opus
+
+На clean `06fa74ba1ab56b57ac19f4fac02941088b5c791e` завершены:
+
+- [CI 38065797408](https://github.com/khdobromir/lecture-transcriber/actions/runs/38065797408): 10/10 jobs, включая Windows ZIP и real Whisper/GUI steps.
+- [Linux portable 38065801791](https://github.com/khdobromir/lecture-transcriber/actions/runs/38065801791): один AppImage с real smoke и offline ASR того же файла в чистых Ubuntu/Debian.
+- [Real Whisper 38065804861](https://github.com/khdobromir/lecture-transcriber/actions/runs/38065804861): success.
+
+Следующее изменение закрывает отдельный generated input Opus. Pinned recipe
+`scripts.d/50-libopus.sh` вызывает `autogen.sh`, который требует archive
+`opus_data-a5177ec6fb7d15058e99e57029746100121f68e4890b1467d4094aa336b6013e.tar.gz`
+из `https://media.xiph.org/opus/models/`. Проверен upstream SHA-256
+`a5177ec6fb7d15058e99e57029746100121f68e4890b1467d4094aa336b6013e`,
+размер 134674421 bytes. Retained archive содержит все 21 original generated
+C/H files с исходными bytes/modes, исключая 9 `.pth` checkpoints:
+86794240 bytes, SHA-256
+`422f148f64bcb60932e03d3273a219f68a6eec767ee9016ed402de8b43e6a475`.
+Original Opus COPYING/LICENSE сохраняются в parent source notices; 11 generated
+headers сохраняют upstream generation references.
+
+Collector проверяет parent commit, recipe, input hash, URL и static download
+reference; upstream scripts не исполняются. Независимый CLI получил тот же
+selected TAR hash. Все 84 dependency source pins проверены. Полный collector
+на original FFmpeg inputs/configurations дал 82 Linux sources/416 notices и
+80 Windows sources/389 notices; все прежние notice hashes сохранились.
+Retained build-inputs archive readback проверил source TAR и три helper files.
+Local source tests: 14/14; Linux packaging: 15/15; packaging CTest: 6/6.
+Regression покрывает stale
+parent/reference, неправильный upstream hash, unsafe/missing selections,
+исключение checkpoint files и очистку failed partials.
+
+Результаты 06fa74b относятся к предыдущему source tree. Новые packaging changes
+требуют своего CI; final real dispatch остаётся условием source freeze. F7 всё
+ещё требует nested sources/crates и полных SDK/toolchain build materials.
+`corresponding_sources_complete=false`; ручная Windows 11/Ubuntu desktop
+приёмка остаётся открытой, эти среды сейчас недоступны.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -654,10 +691,10 @@ snapshot. Новый exact-SHA CI для LAME/AMF необходим. Полно
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation, portable identity и canonical Gitiles downloads дополнены 83 FFmpeg source inputs, direct Git/SVN snapshots и bounded transport retries |
+| Summary | Windows isolation и portable identity дополнены 84 FFmpeg source inputs, Git/SVN snapshots и проверяемым выбором generated C/H sources без checkpoint files |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | Все три workflow прошли на e6e8095; LAME/AMF retention требует нового exact-SHA CI |
+| Minor issues | Все три workflow прошли на 06fa74b; Opus generated source retention требует своего exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |

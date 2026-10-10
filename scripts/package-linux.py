@@ -88,7 +88,8 @@ def fetch(record, cache):
                     time.sleep(attempt + 1)
             stream.close()
             if record.get("canonical_tar") is True:
-                canonicalize_verified_tar(partial, target, record["sha256"])
+                canonicalize_verified_tar(partial, target, record["sha256"], record.get("canonical_tar_paths"),
+                                          record.get("upstream_sha256"))
             else:
                 if digest(partial) != record["sha256"]:
                     raise ValueError("Downloaded checksum mismatch: " + target.name)

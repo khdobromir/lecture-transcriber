@@ -52,7 +52,14 @@ function Get-Verified($Dependency) {
     }
     Invoke-WebRequest -Uri $Dependency.url -UserAgent 'Transcribe-package/1' -OutFile ($Target + '.part')
     if (($Dependency.PSObject.Properties.Name -contains 'canonical_tar') -and $Dependency.canonical_tar -eq $true) {
-        Invoke-Checked python @("$Project\scripts\package_canonical_sources.py", ($Target + '.part'), $Target, $Dependency.sha256)
+        $CanonicalArguments = @("$Project\scripts\package_canonical_sources.py", ($Target + '.part'), $Target, $Dependency.sha256)
+        if ($Dependency.PSObject.Properties.Name -contains 'canonical_tar_paths') {
+            foreach ($SourcePath in $Dependency.canonical_tar_paths) { $CanonicalArguments += @('--path', [string]$SourcePath) }
+        }
+        if ($Dependency.PSObject.Properties.Name -contains 'upstream_sha256') {
+            $CanonicalArguments += @('--upstream-sha256', [string]$Dependency.upstream_sha256)
+        }
+        Invoke-Checked python $CanonicalArguments
         Remove-Item -LiteralPath ($Target + '.part')
         return $Target
     }

@@ -2505,6 +2505,67 @@
           "LICENSE.txt",
           "amf/public/include"
         ]
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "revision": "503d81b138d76621aae4b12786e90de48aa8db3a",
+        "repository": "https://github.com/xiph/opus.git",
+        "recipe": "scripts.d/50-libopus.sh",
+        "recipe_slot": "",
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libopus"
+        ],
+        "name": "ffmpeg-libopus-generated-source",
+        "url": "https://media.xiph.org/opus/models/opus_data-a5177ec6fb7d15058e99e57029746100121f68e4890b1467d4094aa336b6013e.tar.gz",
+        "filename": "ffmpeg-libopus-generated-a5177ec6fb7d.tar",
+        "sha256": "422f148f64bcb60932e03d3273a219f68a6eec767ee9016ed402de8b43e6a475",
+        "canonical_tar": true,
+        "canonical_tar_paths": [
+          "dnn/bbwenet_data.c",
+          "dnn/bbwenet_data.h",
+          "dnn/dred_rdovae_constants.h",
+          "dnn/dred_rdovae_dec_data.c",
+          "dnn/dred_rdovae_dec_data.h",
+          "dnn/dred_rdovae_enc_data.c",
+          "dnn/dred_rdovae_enc_data.h",
+          "dnn/dred_rdovae_stats_data.c",
+          "dnn/dred_rdovae_stats_data.h",
+          "dnn/fargan_data.c",
+          "dnn/fargan_data.h",
+          "dnn/lace_data.c",
+          "dnn/lace_data.h",
+          "dnn/lossgen_data.c",
+          "dnn/lossgen_data.h",
+          "dnn/nolace_data.c",
+          "dnn/nolace_data.h",
+          "dnn/pitchdnn_data.c",
+          "dnn/pitchdnn_data.h",
+          "dnn/plc_data.c",
+          "dnn/plc_data.h"
+        ],
+        "strip_components": 0,
+        "upstream_sha256": "a5177ec6fb7d15058e99e57029746100121f68e4890b1467d4094aa336b6013e",
+        "generated_input": {
+          "kind": "opus-dnn",
+          "parent": "ffmpeg-libopus-source"
+        },
+        "required_notices": [
+          "dnn/bbwenet_data.h",
+          "dnn/dred_rdovae_constants.h",
+          "dnn/dred_rdovae_dec_data.h",
+          "dnn/dred_rdovae_enc_data.h",
+          "dnn/dred_rdovae_stats_data.h",
+          "dnn/fargan_data.h",
+          "dnn/lace_data.h",
+          "dnn/lossgen_data.h",
+          "dnn/nolace_data.h",
+          "dnn/pitchdnn_data.h",
+          "dnn/plc_data.h"
+        ]
       }
     ]
   }

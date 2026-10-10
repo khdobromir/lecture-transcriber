@@ -86,6 +86,32 @@ class LinuxPackageTests(unittest.TestCase):
                     builder.fetch(record, cache)
             self.assertEqual(list(cache.iterdir()), [])
 
+    def test_download_selects_generated_code_and_verifies_raw_upstream_pin(self):
+        from package_canonical_sources import canonicalize_tar
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / "cache"; cache.mkdir()
+            source = root / "upstream.tar.gz"
+            with tarfile.open(source, "w:gz") as archive:
+                for name, content in [("dnn/generated.c", b"Original source"), ("dnn/model.pth", b"Excluded checkpoint")]:
+                    member = tarfile.TarInfo(name); member.size = len(content)
+                    archive.addfile(member, io.BytesIO(content))
+            selected = ["dnn/generated.c"]; canonical = root / "canonical.tar"
+            canonicalize_tar(source, canonical, selected)
+            record = dict(filename="generated.tar", url="https://example.invalid/source.tar.gz", canonical_tar=True,
+                          canonical_tar_paths=selected, sha256=builder.digest(canonical), upstream_sha256=builder.digest(source))
+            def response():
+                stream = io.BytesIO(source.read_bytes()); stream.geturl = lambda: record["url"]
+                return stream
+            with patch.object(builder.urllib.request, "urlopen", return_value=response()):
+                result = builder.fetch(record, cache)
+            self.assertEqual(result.read_bytes(), canonical.read_bytes())
+            with tarfile.open(result) as archive: self.assertEqual(archive.getnames(), selected)
+            result.unlink(); record["upstream_sha256"] = "a" * 64
+            with patch.object(builder.urllib.request, "urlopen", return_value=response()):
+                with self.assertRaisesRegex(ValueError, "Upstream source checksum"):
+                    builder.fetch(record, cache)
+            self.assertEqual(list(cache.iterdir()), [])
+
     def test_runtime_sources_bind_original_notices_and_recipes_to_exact_binary(self):
         from package_runtime_sources import runtime_source_records, collect_runtime_notices
         with tempfile.TemporaryDirectory() as temporary:

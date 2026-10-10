@@ -30,9 +30,12 @@ source mapping stops packaging. This remains a partial corresponding-source
 deliverable; toolchain/runtime details and other bundled components still need
 their complete build materials.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a
-partial set of 81 dependency sources. `ffmpeg-source-provenance.json` binds them
+partial set of 82 dependency sources. `ffmpeg-source-provenance.json` binds them
 to the FFmpeg input archive hash, exact build recipes and the bundled tool's
 configure flags. The verified sources are in the adjacent build-inputs archive.
+Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
+the retained source selection excludes upstream model checkpoints. Original
+Opus license texts remain in the parent Opus source notices.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
 Remaining libraries, nested inputs and toolchain materials still require mapping.

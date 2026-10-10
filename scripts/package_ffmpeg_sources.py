@@ -1,5 +1,6 @@
 """Bind partial FFmpeg dependency sources/notices to its verified input and recipes."""
 import argparse
+import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -30,6 +31,32 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
         raise ValueError("Missing/ambiguous FFmpeg build recipes")
     recipe_archive = verified_input(recipes[0], cache)
     flags = set(shlex.split(configuration))
+    generated_inputs = []
+    for record in sources:
+        if "generated_input" not in record:
+            continue
+        parent = next(source for source in sources if source["name"] == record["generated_input"]["parent"])
+        path = verified_input(parent, cache)
+        with tarfile.open(path) as archive:
+            scripts = {}
+            for relative in ["autogen.sh", "dnn/download_model.sh"]:
+                matches = [m for m in archive.getmembers() if m.isfile()
+                           and PurePosixPath(m.name).parts[1:] == PurePosixPath(relative).parts]
+                if len(matches) != 1 or matches[0].size > 1024 * 1024:
+                    raise ValueError("Missing/ambiguous Opus build input reference")
+                safe_path(matches[0].name)
+                scripts[relative] = archive.extractfile(matches[0]).read()
+        checksum = record["upstream_sha256"]
+        url = "https://media.xiph.org/opus/models/opus_data-" + checksum + ".tar.gz"
+        if (record["url"] != url
+                or re.findall(rb'^dnn/download_model.sh "([a-f0-9]{64})"$', scripts["autogen.sh"], re.MULTILINE) != [checksum.encode()]
+                or b'model=opus_data-$1.tar.gz\n' not in scripts["dnn/download_model.sh"]
+                or b'https://media.xiph.org/opus/models/$model' not in scripts["dnn/download_model.sh"]):
+            raise ValueError("Opus generated input does not match pinned source")
+        verified_input(parent, cache)
+        generated_inputs.append(dict(source=record["name"], parent=parent["name"], parent_sha256=parent["sha256"],
+                                     upstream_sha256=checksum, retained_sha256=record["sha256"],
+                                     reference_sha256={name: hashlib.sha256(body).hexdigest() for name, body in scripts.items()}))
     with tarfile.open(recipe_archive) as archive:
         members = archive.getmembers()
         if len({m.name for m in members}) != len(members):
@@ -59,7 +86,7 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
     verified_input(recipes[0], cache)
     collect_qt_notices(sources, cache, licenses / "FFmpeg-dependency-source-notices")
     evidence = dict(schema=1, ffmpeg_input_sha256=binary["sha256"], recipe_input=recipes[0], sources=sources,
-                    configuration=configuration, corresponding_sources_complete=False)
+                    configuration=configuration, generated_inputs=generated_inputs, corresponding_sources_complete=False)
     (licenses / "ffmpeg-source-provenance.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     return evidence
 

@@ -20,6 +20,88 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_generated_source_selection_retains_code_without_model_checkpoints(self):
+        from package_canonical_sources import canonicalize_tar, canonicalize_verified_tar
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); source = root / "upstream.tar.gz"
+            files = {"dnn/generated.c": b"Original generated source", "dnn/generated.h": b"Original header",
+                     "dnn/models/checkpoint.pth": b"Excluded model checkpoint"}
+            with tarfile.open(source, "w:gz") as archive:
+                for name, content in files.items():
+                    member = tarfile.TarInfo(name); member.size = len(content)
+                    archive.addfile(member, io.BytesIO(content))
+            selected = ["dnn/generated.c", "dnn/generated.h"]
+            expected = root / "expected.tar"
+            canonicalize_tar(source, expected, selected)
+            checksum = hashlib.sha256(expected.read_bytes()).hexdigest()
+            target = root / "retained.tar"
+            canonicalize_verified_tar(source, target, checksum, selected)
+            with self.assertRaisesRegex(ValueError, "Upstream source checksum"):
+                canonicalize_verified_tar(source, root / "wrong-upstream.tar", checksum, selected, "b" * 64)
+            self.assertFalse((root / "wrong-upstream.tar").exists())
+            with tarfile.open(target) as archive:
+                self.assertEqual(archive.getnames(), selected)
+                for name in selected: self.assertEqual(archive.extractfile(name).read(), files[name])
+            for paths in [[], ["../escape"], ["dnn/*.c"], ["--option"], ["dnn/generated.c"] * 2,
+                          ["missing.c"], ["dnn"], "dnn/generated.c"]:
+                with self.assertRaises(ValueError):
+                    canonicalize_verified_tar(source, root / "rejected.tar", checksum, paths)
+                self.assertFalse((root / "rejected.tar").exists())
+            cli = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / "scripts/package_canonical_sources.py"),
+                                  str(source), str(root / "cli.tar"), checksum,
+                                  "--path", selected[0], "--path", selected[1]], capture_output=True, text=True)
+            self.assertEqual(cli.returncode, 0, cli.stderr)
+            self.assertEqual((root / "cli.tar").read_bytes(), target.read_bytes())
+
+    def test_opus_generated_input_requires_pinned_parent_and_upstream_reference(self):
+        from package_ffmpeg_sources import collect_ffmpeg_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); binary = root / "ffmpeg.zip"; binary.write_bytes(b"Pinned binary")
+            checksum = hashlib.sha256(binary.read_bytes()).hexdigest(); data_sha = "d" * 64
+            def archive(filename, files):
+                path = root / filename
+                with tarfile.open(path, "w") as output:
+                    for name, content in files.items():
+                        member = tarfile.TarInfo(name); member.size = len(content)
+                        output.addfile(member, io.BytesIO(content))
+                return dict(filename=filename, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            recipe = archive("recipes.tar", {"build/scripts.d/opus.sh":
+                ('SCRIPT_REPO="https://github.com/xiph/opus.git"\nSCRIPT_COMMIT="' + "a" * 40 + '"\n').encode()})
+            recipe.update(name="ffmpeg-build-recipes", for_binary_sha256=[checksum])
+            source_files = {"opus/LICENSE": b"Original license", "opus/autogen.sh":
+                ('dnn/download_model.sh "' + data_sha + '"\n').encode(), "opus/dnn/download_model.sh":
+                b'model=opus_data-$1.tar.gz\ncurl https://media.xiph.org/opus/models/$model\n'}
+            parent = archive("opus.tar", source_files)
+            parent.update(name="opus", kind="ffmpeg-dependency-source", revision="a" * 40,
+                          repository="https://github.com/xiph/opus.git", recipe="scripts.d/opus.sh", recipe_slot="",
+                          configure_flags=["--enable-libopus"], required_notices=["LICENSE"], for_binary_sha256=[checksum])
+            child = parent | archive("generated.tar", {"dnn/generated.h": b"Original generated header"})
+            child.update(name="opus-generated", canonical_tar=True, canonical_tar_paths=["dnn/generated.h"],
+                         upstream_sha256=data_sha, strip_components=0, required_notices=["dnn/generated.h"],
+                         generated_input=dict(kind="opus-dnn", parent="opus"),
+                         url="https://media.xiph.org/opus/models/opus_data-" + data_sha + ".tar.gz")
+            lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=[checksum]), recipe],
+                        ffmpeg_dependencies=dict(for_binary_sha256=[checksum], downloads=[parent, child]))
+            pinned = dict(filename=binary.name, sha256=checksum)
+            result = collect_ffmpeg_notices(lock, pinned, root, root / "licenses", "--enable-libopus")
+            self.assertEqual(result["generated_inputs"][0]["parent_sha256"], parent["sha256"])
+            self.assertEqual((root / "licenses/FFmpeg-dependency-source-notices/opus-generated/dnn/generated.h").read_bytes(),
+                             b"Original generated header")
+            for changes in [dict(revision="b" * 40), dict(generated_input=dict(kind="opus-dnn", parent="missing")),
+                            dict(generated_input=dict(kind="unknown", parent="opus")), dict(canonical_tar=False),
+                            dict(canonical_tar_paths=["dnn/models/checkpoint.pth"]), dict(upstream_sha256="e" * 64),
+                            dict(url="https://example.invalid/changed.tar.gz")]:
+                previous = child.copy(); child.update(changes)
+                with self.assertRaises(ValueError):
+                    collect_ffmpeg_notices(lock, pinned, root, root / "rejected", "--enable-libopus")
+                self.assertFalse((root / "rejected").exists())
+                child.clear(); child.update(previous)
+            source_files["opus/autogen.sh"] = b'dnn/download_model.sh "' + b"f" * 64 + b'"\n'
+            parent.update(archive("opus.tar", source_files))
+            with self.assertRaisesRegex(ValueError, "does not match pinned source"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "stale", "--enable-libopus")
+            self.assertFalse((root / "stale").exists())
+
     def test_svn_sources_pin_raw_bytes_modes_properties_and_cache(self):
         from package_svn_sources import fetch_svn_source, create_svn_archive
         with tempfile.TemporaryDirectory() as temporary:
