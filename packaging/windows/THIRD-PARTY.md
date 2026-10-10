@@ -1,12 +1,31 @@
 The application is MIT licensed. The ZIP includes separately executed tools and
 dynamically linked libraries with their own licenses. Notices are in `licenses/`.
+`licenses/yt-dlp-embedded-notices` retains the standalone executable's original
+third-party license texts and distribution metadata, read without executing its
+embedded Python code. `notices.json` records the binary hash and archive inventory.
+`licenses/FFmpeg-dependency-source-notices` retains original notices from a partial
+set of 85 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
+the input archive hash, exact upstream build recipes and configure flags from the
+bundled tool. These sources are retained in the adjacent build-inputs archive.
+Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
+the retained source selection excludes upstream model checkpoints. Original
+Opus license texts remain in the parent Opus source notices.
+The retained Graphengine and Highway submodules are tied to their parent zimg
+and JPEG XL commits through verified Git commit/tree objects and `.gitmodules`.
+Their original license texts are included in the same notices directory.
+The shaderc glslang, SPIRV-Headers and SPIRV-Tools inputs are bound to the
+parent's pinned `DEPS` declarations, parsed without executing upstream Python.
+The upstream `lgpl` variant name does not describe every dependency's terms:
+its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
+Remaining libraries, nested inputs and SDK build settings/tool versions still
+require mapping.
 
 | Component | Pinned input | License / source |
 | --- | --- | --- |
 | Qt | 6.8.3, shared MSVC x64 SDK | LGPLv3; https://download.qt.io/archive/qt/6.8/6.8.3/ |
 | whisper.cpp | 927cfce34f31707e17f2bff35c349632fb9e2c3a | MIT; https://github.com/ggml-org/whisper.cpp/tree/927cfce34f31707e17f2bff35c349632fb9e2c3a |
 | nlohmann/json | 3.12.0, vendored header | MIT; https://github.com/nlohmann/json/tree/v3.12.0 |
-| FFmpeg | BtbN autobuild-2026-10-01-13-06, shared LGPL 8.1 | LGPL; https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-10-01-13-06 |
+| FFmpeg | BtbN autobuild-2026-10-01-13-06, shared lgpl variant 8.1 | FFmpeg core LGPL; dependency terms also apply; https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-10-01-13-06 |
 | yt-dlp.exe | 2026.08.19 | The bundled executable includes GPLv3+ dependencies; https://github.com/yt-dlp/yt-dlp/tree/2026.08.19 |
 | MSVC runtime | From the build's Visual Studio redistributable SDK | Microsoft redistributable code; https://visualstudio.microsoft.com/license-terms/ |
 

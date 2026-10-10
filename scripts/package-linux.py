@@ -10,7 +10,21 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
+from package_source import validate_identity
+from package_inputs import archive_inputs, source_records
+from package_notices import collect_qt_notices
+from package_linux_notices import collect_system_notices, collect_data_notices, write_provenance
+from package_linux_sources import collect_sources
+from package_sdk_sources import sdk_source_records, collect_sdk_notices
+from package_runtime_sources import runtime_source_records, collect_runtime_notices
+from package_ffmpeg_sources import collect_ffmpeg_notices
+from package_canonical_sources import canonicalize_verified_tar
+from package_git_sources import fetch_git_source
+from package_svn_sources import fetch_svn_source
+from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +37,22 @@ def digest(path):
     return checksum.hexdigest()
 
 
+def publish_file(source, target, expected):
+    """Expose a complete verified copy atomically, without replacing a candidate."""
+    with tempfile.NamedTemporaryFile(prefix=".candidate-", dir=target.parent, delete=False) as output:
+        partial = Path(output.name)
+        try:
+            with source.open("rb") as stream:
+                shutil.copyfileobj(stream, output)
+            output.close()
+            if digest(partial) != expected:
+                raise ValueError("Candidate bytes changed after verification")
+            partial.chmod(source.stat().st_mode & 0o777)
+            os.link(partial, target)
+        finally:
+            partial.unlink(missing_ok=True)
+
+
 def fetch(record, cache):
     target = cache / record["filename"]
     if target.is_symlink():
@@ -31,19 +61,39 @@ def fetch(record, cache):
         if digest(target) != record["sha256"]:
             raise ValueError("Dependency cache checksum mismatch: " + target.name)
         return target
+    if record.get("svn_snapshot") is True:
+        return fetch_svn_source(record, target)
+    if record.get("git_snapshot") is True:
+        return fetch_git_source(record, target)
     # Unique partials also allow two builds to use the same cache safely.
     with tempfile.NamedTemporaryFile(dir=cache, prefix="download-", delete=False) as stream:
         partial = Path(stream.name)
         try:
-            request = urllib.request.Request(record["url"], headers={"User-Agent": "Transcribe-Linux-package/1"})
-            with urllib.request.urlopen(request, timeout=120) as response:
-                if response.geturl().split(":", 1)[0] != "https":
-                    raise ValueError("Dependency redirect must use HTTPS")
-                shutil.copyfileobj(response, stream, 1024 * 1024)
+            request = urllib.request.Request(record["url"], headers={"User-Agent": "Transcribe-package/1"})
+            for attempt in range(3):
+                stream.seek(0)
+                stream.truncate()
+                try:
+                    with urllib.request.urlopen(request, timeout=120) as response:
+                        if response.geturl().split(":", 1)[0] != "https":
+                            raise ValueError("Dependency redirect must use HTTPS")
+                        shutil.copyfileobj(response, stream, 1024 * 1024)
+                    break
+                except urllib.error.HTTPError as error:
+                    status = error.code
+                    error.close()
+                    if status not in {502, 503, 504} or attempt == 2:
+                        raise RuntimeError(f"Download failed for {target.name}: HTTP {status} (attempt {attempt + 1}/3)") from error
+                    print(f"Retry download {target.name}: HTTP {status} (attempt {attempt + 2}/3)", flush=True)
+                    time.sleep(attempt + 1)
             stream.close()
-            if digest(partial) != record["sha256"]:
-                raise ValueError("Downloaded checksum mismatch: " + target.name)
-            partial.replace(target)
+            if record.get("canonical_tar") is True:
+                canonicalize_verified_tar(partial, target, record["sha256"], record.get("canonical_tar_paths"),
+                                          record.get("upstream_sha256"))
+            else:
+                if digest(partial) != record["sha256"]:
+                    raise ValueError("Downloaded checksum mismatch: " + target.name)
+                partial.replace(target)
         finally:
             partial.unlink(missing_ok=True)
     return target
@@ -130,26 +180,6 @@ def complete_libraries(root, environment):
             if not target.exists():
                 shutil.copy2(Path(filename).resolve(), target)
 
-
-def source_identity(project):
-    # Git -c is local to this command and permits a read-only Docker source mount.
-    git = ["git", "-c", "safe.directory=" + str(project), "-C", str(project)]
-    revision = subprocess.check_output(git + ["rev-parse", "HEAD"], text=True).strip()
-    dirty = bool(subprocess.check_output(git + ["status", "--porcelain"]))
-    files = subprocess.check_output(git + ["ls-files", "-z", "--cached", "--others", "--exclude-standard"]).split(b"\0")
-    fingerprint = hashlib.sha256()
-    for name in sorted(set(files) - {b""}):
-        path = project / os.fsdecode(name)
-        fingerprint.update(name + b"\0")
-        if path.is_symlink():
-            fingerprint.update(os.fsencode(os.readlink(path)))
-        elif path.is_file():
-            fingerprint.update(digest(path).encode())
-        else:
-            fingerprint.update(b"deleted")
-    return {"source": revision, "dirty": dirty, "source_fingerprint": fingerprint.hexdigest()}
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--qt-root", type=Path, help="Pinned Qt SDK's gcc_64 directory")
@@ -158,8 +188,10 @@ def main():
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--build-directory", type=Path, help="Reuse a development CMake build; configure/build/tests still run")
     parser.add_argument("--whisper-build-directory", type=Path, help="Reuse a trusted development backend build after checking its source against the pinned archive")
+    parser.add_argument("--release", action="store_true", help="Require clean sources and full verification")
     parser.add_argument("--skip-tests", action="store_true", help="Diagnostic build; explicitly recorded in manifest")
     parser.add_argument("--real-smoke", action="store_true", help="Also download pinned public speech/model and verify installed GUI")
+    parser.add_argument("--result-file", type=Path, help="Write the exact candidate filename, hash and stage after verification")
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         parser.error("Build on Linux x86_64")
@@ -170,7 +202,12 @@ def main():
     if os.geteuid() == 0:
         parser.error("Run packaging as a regular user (the container wrapper sets the caller's UID)")
     lock = json.loads((PROJECT / "packaging/linux/dependencies.json").read_text())
-    for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate"]:
+    source_lock = json.loads((PROJECT / "packaging/source-inputs.json").read_text(encoding="utf-8"))
+    sources = source_records(source_lock, lock["downloads"].values(), lock["qt"])
+    sdk_sources = sdk_source_records(source_lock, lock["qt"])
+    sources += sdk_sources
+    sources += runtime_source_records(source_lock, lock["downloads"]["runtime"])
+    for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate", "dpkg-query", "ldconfig", "apt-cache", "apt-get"]:
         if not shutil.which(name):
             parser.error("Missing build tool " + name + "; use bash scripts/package-linux.sh --container")
     qmake = args.qt_root / "bin/qmake" if args.qt_root else Path(shutil.which("qmake6") or shutil.which("qmake") or "missing")
@@ -197,8 +234,10 @@ def main():
         if result.returncode:
             raise RuntimeError(f"{name} failed ({result.returncode}); see {log}")
 
-    identity = source_identity(PROJECT)
+    identity = validate_identity(PROJECT, release=args.release, skip_tests=args.skip_tests)
     dependencies = {name: fetch(record, cache) for name, record in lock["downloads"].items()}
+    for record in sources:
+        fetch(record, cache)
     build = args.build_directory.resolve() if args.build_directory else stage / "build"
     appdir = stage / "Transcribe.AppDir"
     configure = ["cmake", "-S", PROJECT, "-B", build, "-DCMAKE_BUILD_TYPE=Release", "-DTRANSCRIBE_BUILD_GUI=ON",
@@ -214,6 +253,10 @@ def main():
     run("install", ["cmake", "--install", build, "--prefix", appdir / "usr"])
     tools = appdir / "usr/bin/tools"; tools.mkdir()
     licenses = appdir / "usr/share/transcribe/licenses"; licenses.mkdir(parents=True)
+    collect_qt_notices(source_lock["qt"]["downloads"], cache, licenses / "Qt-source-notices")
+    collect_runtime_notices(source_lock, lock["downloads"]["runtime"], dependencies["runtime"], cache, licenses)
+    collect_standalone_notices(dependencies["yt-dlp"], lock["downloads"]["yt-dlp"]["sha256"],
+                              licenses / "yt-dlp-embedded-notices")
     source = stage / "whisper-source"; extract_sources(dependencies["whisper"], source)
     whisper = source / ("whisper.cpp-" + lock["downloads"]["whisper"]["revision"])
     whisper_build = stage / "whisper-build"
@@ -257,6 +300,8 @@ def main():
     for path in ffmpeg.rglob("*"):
         if path.is_file() and path.name.startswith(("LICENSE", "COPYING")):
             shutil.copy2(path, licenses / ("FFmpeg-" + path.name))
+    collect_ffmpeg_notices(source_lock, lock["downloads"]["ffmpeg"], cache, licenses,
+                          subprocess.check_output([str(tools / "ffmpeg"), "-buildconf"], stderr=subprocess.STDOUT, text=True))
     shutil.copy2(dependencies["yt-dlp"], tools / "yt-dlp")
     for path in tools.iterdir():
         path.chmod(0o755)
@@ -327,19 +372,36 @@ def main():
     shutil.copy2(PROJECT / "packaging/linux/fonts.conf", appdir / "usr/share/transcribe/fonts.conf")
     shutil.copy2("/etc/ssl/certs/ca-certificates.crt", appdir / "usr/share/transcribe/ca-certificates.crt")
     shutil.copy2("/usr/share/doc/ca-certificates/copyright", licenses / "ca-certificates-copyright.txt")
+    library_provenance = appdir / "usr/share/transcribe/linux-library-provenance.json"
+    system_libraries = collect_system_notices(appdir, licenses, Path(qt_libs))
+    system_libraries = collect_sdk_notices(system_libraries, sdk_sources, cache, licenses)
+    system_libraries = collect_data_notices(system_libraries, appdir, licenses,
+        [dict(payload="usr/share/fonts/DejaVuSans.ttf", original=font, package="fonts-dejavu-core"),
+         dict(payload="usr/share/transcribe/ca-certificates.crt", original=Path("/etc/ssl/certs/ca-certificates.crt"),
+              package="ca-certificates", generator=Path("/usr/sbin/update-ca-certificates"))])
+    write_provenance(system_libraries, library_provenance)
+    system_sources = collect_sources(system_libraries, cache)
+    source_provenance = appdir / "usr/share/transcribe/linux-source-provenance.json"
+    write_provenance(system_sources, source_provenance)
     shutil.copy2(PROJECT / "packaging/linux/THIRD-PARTY.md", appdir / "usr/share/transcribe/THIRD-PARTY.md")
     shutil.copy2(PROJECT / "packaging/linux/dependencies.json", appdir / "usr/share/transcribe/dependencies.json")
     maximum = check_glibc(appdir, lock["minimum_glibc"])
-    if source_identity(PROJECT) != identity:
-        raise ValueError("Source changed during packaging; build again from a stable worktree")
+    validate_identity(PROJECT, identity, args.release, args.skip_tests)
+    compiler = re.search(r"^CMAKE_CXX_COMPILER:FILEPATH=(.+)$", (build / "CMakeCache.txt").read_text(), re.MULTILINE)
+    if not compiler:
+        raise ValueError("Cannot determine the configured C++ compiler")
     manifest = dict(identity, schema=1, platform="Linux x86_64", qt=qt_version,
+        release=args.release,
+        toolchain={name: subprocess.check_output(command, text=True).splitlines()[0] for name, command in
+                   [("compiler", [compiler[1], "--version"]), ("cmake", ["cmake", "--version"]), ("python", ["python3", "--version"])]},
         glibc_required=maximum, glibc_baseline=lock["minimum_glibc"], tested=not args.skip_tests,
-        real_smoke=args.real_smoke, dependencies=lock, files=inventory(appdir))
+        real_smoke=args.real_smoke, dependencies=lock, source_inputs=source_lock, files=inventory(appdir))
     (appdir / "package-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     image = stage / "Transcribe-x86_64.AppImage"
     run("appimage", [dependencies["appimagetool"], "--no-appstream", "--runtime-file", dependencies["runtime"],
         appdir, image], environment=dict(deploy_env, ARCH="x86_64", VERSION=identity["source"][:12]))
     image.chmod(0o755)
+    image_hash = digest(image)
     smoke = ["python3", PROJECT / "tests/smoke_linux_package.py", image, "--source", identity["source"],
              "--artifacts", stage / "smoke-evidence"]
     if args.real_smoke:
@@ -348,14 +410,26 @@ def main():
             "--ffmpeg", tools / "ffmpeg"])
         smoke += ["--real-gui", build / "gui/test_gui_real", "--prerequisites", prerequisites]
     run("package-smoke", smoke, environment=env)
+    inputs_archive = stage / "build-inputs.tar.gz"
+    archive_inputs(list(lock["downloads"].values()) + sources + system_sources["downloads"], cache, inputs_archive,
+                   [PROJECT / "packaging/linux/dependencies.json", PROJECT / "packaging/source-inputs.json",
+                    appdir / "package-manifest.json", library_provenance, source_provenance,
+                    PROJECT / "scripts/package_git_sources.py", PROJECT / "scripts/package_canonical_sources.py",
+                    PROJECT / "scripts/package_source.py", PROJECT / "scripts/package_svn_sources.py"])
+    validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.
-    target = destination / ("Transcribe-linux-x86_64-" + identity["source"][:12] + "-" + stage.name + ".AppImage")
-    with target.open("xb") as output, image.open("rb") as source_file:
-        shutil.copyfileobj(source_file, output)
-    target.chmod(0o755)
+    target = destination / ("Transcribe-" + identity["application_version"] + "-linux-x86_64-" + ("release-" if args.release else "diagnostic-") + identity["source"][:12] + "-" + stage.name + ".AppImage")
+    publish_file(image, target, image_hash)
     target.with_suffix(target.suffix + ".sha256").write_text(digest(target) + "  " + target.name + "\n")
     target.with_suffix(target.suffix + ".json").write_text(json.dumps(manifest, indent=2) + "\n")
+    inputs_target = target.with_suffix(target.suffix + ".build-inputs.tar.gz")
+    publish_file(inputs_archive, inputs_target, digest(inputs_archive))
+    inputs_target.with_suffix(inputs_target.suffix + ".sha256").write_text(digest(inputs_target) + "  " + inputs_target.name + "\n")
+    if args.result_file:
+        result = dict(filename=target.name, sha256=digest(target), source=identity["source"],
+                      stage=stage.name, real_smoke=args.real_smoke)
+        args.result_file.write_text(json.dumps(result, indent=2) + "\n")
     print("Verified package: " + str(target), flush=True)
 
 

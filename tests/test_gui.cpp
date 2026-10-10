@@ -271,14 +271,15 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 3000); QCOMPARE(backend.state(), TaskState::failed); QVERIFY(backend.canRetry());
         QVERIFY(QFile::copy(QCoreApplication::applicationFilePath(), binary));
 #ifdef Q_OS_WIN
-        // The copied native Qt helper resolves its runtime beside the original SDK app.
-        const auto oldPath = qgetenv("PATH");
-        qputenv("PATH", QFileInfo(QCoreApplication::applicationFilePath()).absolutePath().toUtf8() + ';' + oldPath);
+        // The helper has the same restricted import policy as the application.
+        // Relocating it requires its app-local runtime, rather than a PATH entry.
+        const QDir runtime(QCoreApplication::applicationDirPath());
+        const auto libraries = runtime.entryList({"*.dll"}, QDir::Files);
+        QVERIFY(!libraries.isEmpty());
+        for (const auto& library : libraries)
+            QVERIFY(QFile::copy(runtime.filePath(library), fixture.temp.path() + '/' + library));
 #endif
         backend.retry(); QTRY_VERIFY_WITH_TIMEOUT(!backend.busy(), 3000); QCOMPARE(backend.state(), TaskState::completed);
-#ifdef Q_OS_WIN
-        qputenv("PATH", oldPath);
-#endif
     }
     void stalePreviewCannotChangeReselectedResult() {
         Fixture fixture; auto ready = std::make_shared<std::atomic<bool>>(false);

@@ -1,0 +1,2707 @@
+{
+  "schema": 1,
+  "corresponding_sources_complete": false,
+  "downloads": [
+    {
+      "name": "ffmpeg-source",
+      "revision": "330caae0c1acccd2222edc52a05940c574561ce5",
+      "filename": "ffmpeg-source-330caae0c1ac.tar.gz",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/330caae0c1acccd2222edc52a05940c574561ce5",
+      "sha256": "67b5876ee973a26f267280b2c1eb851a0ac7a502382d20e41b7a819111886af9",
+      "for_binary_sha256": [
+        "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+        "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+      ]
+    },
+    {
+      "name": "ffmpeg-build-recipes",
+      "revision": "e88e49f624457c455700b058f0a84ca87d499cc2",
+      "filename": "ffmpeg-build-recipes-e88e49f62445.tar.gz",
+      "url": "https://codeload.github.com/BtbN/FFmpeg-Builds/tar.gz/e88e49f624457c455700b058f0a84ca87d499cc2",
+      "sha256": "afb0e526ee89ea9871b49b1a60bb5fdf9847f85816fb47b5bbd6528aa0643eda",
+      "for_binary_sha256": [
+        "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+        "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+      ]
+    },
+    {
+      "name": "yt-dlp-source",
+      "revision": "3a08beaf031ab68f966401ead017ac81fe8486cf",
+      "filename": "yt-dlp-source-3a08beaf031a.tar.gz",
+      "url": "https://codeload.github.com/yt-dlp/yt-dlp/tar.gz/3a08beaf031ab68f966401ead017ac81fe8486cf",
+      "sha256": "7206981142eb461cfa603c360a55e0d08f3ed58cc754000ed821ad3ebac31ea0",
+      "for_binary_sha256": [
+        "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+        "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+      ]
+    }
+  ],
+  "qt": {
+    "version": "6.8.3",
+    "downloads": [
+      {
+        "name": "qtbase",
+        "revision": "6.8.3",
+        "filename": "qtbase-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtbase-everywhere-src-6.8.3.tar.xz",
+        "sha256": "56001b905601bb9023d399f3ba780d7fa940f3e4861e496a7c490331f49e0b80"
+      },
+      {
+        "name": "qtdeclarative",
+        "revision": "6.8.3",
+        "filename": "qtdeclarative-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtdeclarative-everywhere-src-6.8.3.tar.xz",
+        "sha256": "1f03a2b8f5588b4face7da87926e9b2c1372b3a32157c52df07a75067a9db1af"
+      },
+      {
+        "name": "qtwayland",
+        "revision": "6.8.3",
+        "filename": "qtwayland-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtwayland-everywhere-src-6.8.3.tar.xz",
+        "sha256": "20fe385887d21190165a3180c17dcfc8b9a0e1da4ec76865b6334bdc709994b0"
+      },
+      {
+        "name": "qtsvg",
+        "revision": "6.8.3",
+        "filename": "qtsvg-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtsvg-everywhere-src-6.8.3.tar.xz",
+        "sha256": "35eb516460f00f264eb504baa253432384351cf23fb9980a5857190e8deef438"
+      },
+      {
+        "name": "qtimageformats",
+        "revision": "6.8.3",
+        "filename": "qtimageformats-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtimageformats-everywhere-src-6.8.3.tar.xz",
+        "sha256": "049bfb99845e4801672aca07c3c4fc4c140f932a3a33faa899419579e33ef1c8"
+      },
+      {
+        "name": "qtshadertools",
+        "revision": "6.8.3",
+        "filename": "qtshadertools-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qtshadertools-everywhere-src-6.8.3.tar.xz",
+        "sha256": "f6ec88bf42deba84d8f6b5d0914636ceed4749ccb51d1945b2f79b322b7ecf47"
+      },
+      {
+        "name": "qttranslations",
+        "revision": "6.8.3",
+        "filename": "qttranslations-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qttranslations-everywhere-src-6.8.3.tar.xz",
+        "sha256": "c3c61d79c3d8fe316a20b3617c64673ce5b5519b2e45535f49bee313152fa531"
+      },
+      {
+        "name": "qttools",
+        "revision": "6.8.3",
+        "filename": "qttools-everywhere-src-6.8.3.tar.xz",
+        "url": "https://download.qt.io/archive/qt/6.8/6.8.3/submodules/qttools-everywhere-src-6.8.3.tar.xz",
+        "sha256": "02a4e219248b94f1333df843d25763f35251c1074cdc4fb5bda67d340f8c8b3a"
+      }
+    ]
+  },
+  "standalone_dependencies": {
+    "for_binary_sha256": [
+      "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+      "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+    ],
+    "corresponding_sources_complete": false,
+    "source_requirements_revision": "3a08beaf031ab68f966401ead017ac81fe8486cf",
+    "downloads": [
+      {
+        "name": "yt-dlp-brotli-source-1.2.0",
+        "revision": "1.2.0",
+        "filename": "brotli-1.2.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/f7/16/c92ca344d646e71a43b8bb353f0a6490d7f6e06210f8554c8f874e454285/brotli-1.2.0.tar.gz",
+        "sha256": "e310f77e41941c13340a95976fe66a8a95b01e783d430eeaf7a2f87e0a57dd0a",
+        "metadata_url": "https://pypi.org/pypi/brotli/1.2.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-certifi-source-2026.7.22",
+        "revision": "2026.7.22",
+        "filename": "certifi-2026.7.22.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/a3/c2/24167ea9858356b47a87a50d39908bfdb72ceeefe0041586e704e5376b3a/certifi-2026.7.22.tar.gz",
+        "sha256": "741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55",
+        "metadata_url": "https://pypi.org/pypi/certifi/2026.7.22/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-cffi-source-2.1.1",
+        "revision": "2.1.1",
+        "filename": "cffi-2.1.1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz",
+        "sha256": "dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be",
+        "metadata_url": "https://pypi.org/pypi/cffi/2.1.1/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-charset-normalizer-source-3.5.0",
+        "revision": "3.5.0",
+        "filename": "charset_normalizer-3.5.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/cb/31/4971872b3ed8715346231fb6eb4da8fcba65a4143c189db151ee28a2812b/charset_normalizer-3.5.0.tar.gz",
+        "sha256": "49bd5feb59b0bf3cbf6ebcf4352e371c95b9da9bacd4449f8b64d0ad2c10a26e",
+        "metadata_url": "https://pypi.org/pypi/charset-normalizer/3.5.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-curl-cffi-source-0.16.0",
+        "revision": "0.16.0",
+        "filename": "curl_cffi-0.16.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/b4/23/d32e113b16dbfb458bea408871ed98dd12f306a366a04215e84537e0af7e/curl_cffi-0.16.0.tar.gz",
+        "sha256": "b00b423da8028eb6221e3b63bcd63d681150c07cee8b16000d1f7ea292731895",
+        "metadata_url": "https://pypi.org/pypi/curl-cffi/0.16.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-idna-source-3.18",
+        "revision": "3.18",
+        "filename": "idna-3.18.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz",
+        "sha256": "ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848",
+        "metadata_url": "https://pypi.org/pypi/idna/3.18/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-mutagen-source-1.48.1",
+        "revision": "1.48.1",
+        "filename": "mutagen-1.48.1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/df/70/1675da133ea92227da41bf5b24e1c66be597ff736a1533ade41da986852f/mutagen-1.48.1.tar.gz",
+        "sha256": "8f95637ab9f6f305cec6bd1294e197debe207998e3e068596563c74f86b0a173",
+        "metadata_url": "https://pypi.org/pypi/mutagen/1.48.1/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-pycparser-source-3.0",
+        "revision": "3.0",
+        "filename": "pycparser-3.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/1b/7d/92392ff7815c21062bea51aa7b87d45576f649f16458d78b7cf94b9ab2e6/pycparser-3.0.tar.gz",
+        "sha256": "600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29",
+        "metadata_url": "https://pypi.org/pypi/pycparser/3.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-pycryptodomex-source-3.23.0",
+        "revision": "3.23.0",
+        "filename": "pycryptodomex-3.23.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/c9/85/e24bf90972a30b0fcd16c73009add1d7d7cd9140c2498a68252028899e41/pycryptodomex-3.23.0.tar.gz",
+        "sha256": "71909758f010c82bc99b0abf4ea12012c98962fbf0583c2164f8b84533c2e4da",
+        "metadata_url": "https://pypi.org/pypi/pycryptodomex/3.23.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-requests-source-2.34.2",
+        "revision": "2.34.2",
+        "filename": "requests-2.34.2.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/ac/c3/e2a2b89f2d3e2179abd6d00ebd70bff6273f37fb3e0cc209f48b39d00cbf/requests-2.34.2.tar.gz",
+        "sha256": "f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed",
+        "metadata_url": "https://pypi.org/pypi/requests/2.34.2/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-urllib3-source-2.7.0",
+        "revision": "2.7.0",
+        "filename": "urllib3-2.7.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz",
+        "sha256": "231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c",
+        "metadata_url": "https://pypi.org/pypi/urllib3/2.7.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-websockets-source-16.1.1",
+        "revision": "16.1.1",
+        "filename": "websockets-16.1.1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/21/f7/bc3a25c5ec26ce62ce487690becc2f3710bbc7b33338f005ad390db0b986/websockets-16.1.1.tar.gz",
+        "sha256": "db234eda965dcce15df96bb9709f587cd87d4d52aaf0e80e2f34ec04c7670c57",
+        "metadata_url": "https://pypi.org/pypi/websockets/16.1.1/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-websockets-source-17.0.1",
+        "revision": "17.0.1",
+        "filename": "websockets-17.0.1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/f7/96/e01084f83a64bcb3a27994bd0cb0db68ff29d9c6707fae37ec19b18ba990/websockets-17.0.1.tar.gz",
+        "sha256": "5baa9bc0dfbae8c507e51c8cf1b6d4628086f7a87bbd3a9952bd5f035451f1cc",
+        "metadata_url": "https://pypi.org/pypi/websockets/17.0.1/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+        ]
+      },
+      {
+        "name": "yt-dlp-yt-dlp-ejs-source-0.8.0",
+        "revision": "0.8.0",
+        "filename": "yt_dlp_ejs-0.8.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/d3/e6/cceb9530e8f4e5940f6f7822d90e9d94f1b85343329a16baaf47bbbb3de1/yt_dlp_ejs-0.8.0.tar.gz",
+        "sha256": "d5fa1639f63b5c4af8d932495f60689d5370f1a095782c944f7f62a303eb104e",
+        "metadata_url": "https://pypi.org/pypi/yt-dlp-ejs/0.8.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-cryptography-source-50.0.0",
+        "revision": "50.0.0",
+        "filename": "cryptography-50.0.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/de/41/6cbdcf9142d00fe82836fbb51e503e58088575cf7a0fe1dbff6695bf0840/cryptography-50.0.0.tar.gz",
+        "sha256": "eeac2acb5a20ed25e0ad6d1df9891a520b78b404266b6d11778f25d5d691a6c9",
+        "metadata_url": "https://pypi.org/pypi/cryptography/50.0.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+        ]
+      },
+      {
+        "name": "yt-dlp-jeepney-source-0.9.0",
+        "revision": "0.9.0",
+        "filename": "jeepney-0.9.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/7b/6f/357efd7602486741aa73ffc0617fb310a29b588ed0fd69c2399acbb85b0c/jeepney-0.9.0.tar.gz",
+        "sha256": "cf0e9e845622b81e4a28df94c40345400256ec608d0e55bb8a3feaa9163f5732",
+        "metadata_url": "https://pypi.org/pypi/jeepney/0.9.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+        ]
+      },
+      {
+        "name": "yt-dlp-secretstorage-source-3.5.0",
+        "revision": "3.5.0",
+        "filename": "secretstorage-3.5.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/1c/03/e834bcd866f2f8a49a85eaff47340affa3bfa391ee9912a952a1faa68c7b/secretstorage-3.5.0.tar.gz",
+        "sha256": "f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be",
+        "metadata_url": "https://pypi.org/pypi/secretstorage/3.5.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+        ]
+      },
+      {
+        "name": "yt-dlp-cpython-source-3.10.11",
+        "revision": "3.10.11",
+        "filename": "Python-3.10.11.tar.xz",
+        "url": "https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tar.xz",
+        "sha256": "3c3bc3048303721c904a03eb8326b631e921f11cc3be2988456a42f115daf04c",
+        "upstream_digest_url": "https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tar.xz.sigstore",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      },
+      {
+        "name": "yt-dlp-cpython-source-3.14.7",
+        "revision": "3.14.7",
+        "filename": "Python-3.14.7.tar.xz",
+        "url": "https://www.python.org/ftp/python/3.14.7/Python-3.14.7.tar.xz",
+        "sha256": "3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81",
+        "upstream_digest_url": "https://www.python.org/ftp/python/3.14.7/Python-3.14.7.tar.xz.sigstore",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+        ]
+      },
+      {
+        "name": "yt-dlp-typing-extensions-source-4.16.0",
+        "revision": "4.16.0",
+        "filename": "typing_extensions-4.16.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/f6/cc/6253133b5bb138fc3306cebfbda2c520f545d36b5be2c7255cc528bb45d6/typing_extensions-4.16.0.tar.gz",
+        "sha256": "dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5",
+        "metadata_url": "https://pypi.org/pypi/typing-extensions/4.16.0/json",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+        ]
+      }
+    ]
+  },
+  "linux_sdk_dependencies": {
+    "qt": "6.8.3",
+    "downloads": [
+      {
+        "name": "icu4c-source",
+        "revision": "73.2",
+        "filename": "icu4c-73_2-src.tgz",
+        "url": "https://github.com/unicode-org/icu/releases/download/release-73-2/icu4c-73_2-src.tgz",
+        "sha256": "818a80712ed3caacd9b652305e01afc7fa167e6f2e94996da44b90c2ab604ce1",
+        "upstream_sha512": "76dd782db6205833f289d7eb68b60860dddfa3f614f0ba03fe7ec13117077f82109f0dc1becabcdf4c8a9c628b94478ab0a46134bdb06f4302be55f74027ce62",
+        "kind": "qt-sdk-third-party-source",
+        "required_notices": [
+          "LICENSE",
+          "license.html"
+        ],
+        "libraries": {
+          "libicudata.so.73": "4f182a855296cf96d39f75c9028b12765a78fe6afff3d3781d633110525b7a8b",
+          "libicui18n.so.73": "a18e48266e59efff3ec872d9dc5cc99b776e180b8ede57269d354e6bc6595778",
+          "libicuuc.so.73": "b76380b2c15c8ff8b3c94576ac98b40d34fc0a091db4a89324d72e271c7699f0"
+        }
+      }
+    ]
+  },
+  "linux_appimage_runtime": {
+    "for_binary_sha256": "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074",
+    "corresponding_sources_complete": false,
+    "build_evidence": {
+      "run_url": "https://github.com/AppImage/type2-runtime/actions/runs/36463736478",
+      "job": 109068477114,
+      "log_sha256": "0184607c3aa5b5ed870e0e2c1a4a5dfca3462174e9ac28aeee193e10242911a8",
+      "debug_url": "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64.debug",
+      "debug_sha256": "3313d9de576c0772e1054877fd2f9566cd38d16c5e55ee3015005331c3754074",
+      "debuglink_crc32": "09c79829",
+      "static_versions": {
+        "zstd": "1.5.6",
+        "zlib": "1.3.2",
+        "mimalloc_mi_version": 217,
+        "musl_dwarf_source": "1.2.5"
+      },
+      "alpine_packages": [
+        {
+          "name": "musl-dev",
+          "version": "1.2.5-r11",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/musl-dev-1.2.5-r11.apk",
+          "filename": "musl-dev-1.2.5-r11.apk",
+          "sha256": "d3b5ab01046a92b9a168b790f516606e320f015cbd4deeb584c5e115a02124ba",
+          "origin": "musl",
+          "commit": "21cafa1183cf7501d3f1744994d221c038436e45",
+          "recipe_input": "runtime-aports-21cafa1183cf.tar.gz",
+          "recipe_directory": "main/musl"
+        },
+        {
+          "name": "mimalloc2-dev",
+          "version": "2.1.7-r0",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/mimalloc2-dev-2.1.7-r0.apk",
+          "filename": "mimalloc2-dev-2.1.7-r0.apk",
+          "sha256": "9b140b549613492ad23a8c0749c17e38d9ad737d7b22b7927e035b03f8c4ac3f",
+          "origin": "mimalloc2",
+          "commit": "5a1a5dc3216a69e3cd66a57ee07cb5ef01b8be39",
+          "recipe_input": "runtime-aports-2b38f55109ad.tar.gz",
+          "recipe_directory": "community/mimalloc2"
+        },
+        {
+          "name": "zstd-static",
+          "version": "1.5.6-r2",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/zstd-static-1.5.6-r2.apk",
+          "filename": "zstd-static-1.5.6-r2.apk",
+          "sha256": "c82da00816b8dfec70f91d0f1d979aa9558bf5c4e1a15ab354f05c6dba5e7ca1",
+          "origin": "zstd",
+          "commit": "5c2ddf18f193dafdd25ae7391d96c7e30766eecd",
+          "recipe_input": "runtime-aports-2b38f55109ad.tar.gz",
+          "recipe_directory": "main/zstd"
+        },
+        {
+          "name": "zlib-static",
+          "version": "1.3.2-r0",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/zlib-static-1.3.2-r0.apk",
+          "filename": "zlib-static-1.3.2-r0.apk",
+          "sha256": "25ddc9ad82e822afda4cb90cf1081e7530f38ec2c8d53dcc2898f08dae82cb88",
+          "origin": "zlib",
+          "commit": "2b38f55109add14f4f99a974c2fdf421b6b9e9e9",
+          "recipe_input": "runtime-aports-2b38f55109ad.tar.gz",
+          "recipe_directory": "main/zlib"
+        }
+      ]
+    },
+    "downloads": [
+      {
+        "name": "appimage-type2-runtime-source",
+        "revision": "8f39b89e2ac31e1640b3d3f7e9a5108e6ce805fa",
+        "filename": "type2-runtime-source-8f39b89e2ac3.tar.gz",
+        "url": "https://codeload.github.com/AppImage/type2-runtime/tar.gz/8f39b89e2ac31e1640b3d3f7e9a5108e6ce805fa",
+        "sha256": "c449eb42c2190820872631f5e22f8e15b1e985a36dc4a9e2de3585bb7536c785",
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ],
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ]
+      },
+      {
+        "name": "appimage-runtime-musl-source",
+        "revision": "1.2.5",
+        "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+        "filename": "musl-1.2.5.tar.gz",
+        "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+        "upstream_sha512": "7bb7f7833923cd69c7a1a9b8a5f1784bfd5289663eb6061dcd43d583e45987df8a68a1be05d75cc1c88a3f5b610653d1a70f4a9cff4d8f7fd41ae73ee058c17c",
+        "kind": "runtime-source",
+        "required_notices": [
+          "COPYRIGHT"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-mimalloc-source",
+        "revision": "2.1.7",
+        "url": "https://github.com/microsoft/mimalloc/archive/v2.1.7/mimalloc-2.1.7.tar.gz",
+        "filename": "mimalloc-2.1.7.tar.gz",
+        "sha256": "0eed39319f139afde8515010ff59baf24de9e47ea316a315398e8027d198202d",
+        "upstream_sha512": "4e30976758015c76a146acc1bfc8501e2e5c61b81db77d253de0d58a8edef987669243f232210667b32ef8da3a33286642acb56ba526fd24c4ba925b44403730",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-zstd-source",
+        "revision": "1.5.6",
+        "url": "https://github.com/facebook/zstd/archive/v1.5.6.tar.gz",
+        "filename": "zstd-1.5.6.tar.gz",
+        "sha256": "30f35f71c1203369dc979ecde0400ffea93c27391bfd2ac5a9715d2173d92ff7",
+        "upstream_sha512": "ca12dffd86618ca008e1ecc79056c1129cb4e61668bf13a3cd5b2fa5c93bc9c92c80f64c1870c68b9c20009d9b3a834eac70db72242d5106125a1c53cccf8de8",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE",
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-zlib-source",
+        "revision": "1.3.2",
+        "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz",
+        "filename": "zlib-1.3.2.tar.gz",
+        "sha256": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+        "upstream_sha512": "70963771ea5d763614278a69b474f09b7d237ef8f53b675a10fe31d9923aeef601504b35d7ebd1b1e7f347e9ebb048e6b3b47fffdf137e7bdc7e8d5eb4ec4692",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE",
+          "README",
+          "zlib.h"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-libfuse-source",
+        "revision": "3.15.0",
+        "url": "https://github.com/libfuse/libfuse/releases/download/fuse-3.15.0/fuse-3.15.0.tar.xz",
+        "filename": "fuse-3.15.0.tar.xz",
+        "sha256": "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+        "upstream_sha256": "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-squashfuse-source",
+        "revision": "0.5.2",
+        "url": "https://github.com/vasi/squashfuse/archive/0.5.2.tar.gz",
+        "filename": "squashfuse-0.5.2.tar.gz",
+        "sha256": "db0238c5981dabbd80ee09ae15387f390091668ca060a7bc38047912491443d3",
+        "upstream_sha256": "db0238c5981dabbd80ee09ae15387f390091668ca060a7bc38047912491443d3",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-alpine-recipes-21cafa1183cf",
+        "revision": "21cafa1183cf7501d3f1744994d221c038436e45",
+        "url": "https://codeload.github.com/alpinelinux/aports/tar.gz/21cafa1183cf7501d3f1744994d221c038436e45",
+        "filename": "runtime-aports-21cafa1183cf.tar.gz",
+        "sha256": "611ec6addf20348e89ffcbe583a52420fce72efcca972c61696c91c6d565e53d",
+        "kind": "runtime-build-recipes",
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-alpine-recipes-2b38f55109ad",
+        "revision": "2b38f55109add14f4f99a974c2fdf421b6b9e9e9",
+        "url": "https://codeload.github.com/alpinelinux/aports/tar.gz/2b38f55109add14f4f99a974c2fdf421b6b9e9e9",
+        "filename": "runtime-aports-2b38f55109ad.tar.gz",
+        "sha256": "2f5471fedccb753af28e9287a11f1b0f034f8590df27fea16de0af9d4a23ca68",
+        "kind": "runtime-build-recipes",
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      }
+    ]
+  },
+  "ffmpeg_dependencies": {
+    "for_binary_sha256": [
+      "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+      "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+    ],
+    "corresponding_sources_complete": false,
+    "scope": "Partial dependency sources; remaining libraries, submodules, generated inputs and toolchains still require mapping.",
+    "downloads": [
+      {
+        "name": "ffmpeg-zlib-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "767c4c947852e143f582c85f14cf573411df1b35",
+        "url": "https://codeload.github.com/madler/zlib/tar.gz/767c4c947852e143f582c85f14cf573411df1b35",
+        "filename": "ffmpeg-zlib-767c4c947852.tar.gz",
+        "sha256": "cafa75b907cd067b471fba32a2772c010a859086241ef70d3d57eda6aeea3a64",
+        "recipe": "scripts.d/20-zlib.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/madler/zlib.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-zlib"
+        ]
+      },
+      {
+        "name": "ffmpeg-fribidi-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "4c914a92e94a9fe4f30ae83a1130099841566448",
+        "url": "https://codeload.github.com/fribidi/fribidi/tar.gz/4c914a92e94a9fe4f30ae83a1130099841566448",
+        "filename": "ffmpeg-fribidi-4c914a92e94a.tar.gz",
+        "sha256": "2501e74cd7a630f3711da529e8c983582648bb8da0eceb52e000ce6a68bde463",
+        "recipe": "scripts.d/25-fribidi.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/fribidi/fribidi.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libfribidi"
+        ]
+      },
+      {
+        "name": "ffmpeg-gmp-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "763b40df71c0f4d5f5d7b33dc55038c8c9377ecf",
+        "url": "https://codeload.github.com/BtbN/gmplib/tar.gz/763b40df71c0f4d5f5d7b33dc55038c8c9377ecf",
+        "filename": "ffmpeg-gmp-763b40df71c0.tar.gz",
+        "sha256": "08c6f0a2555213617f19d8807f6f22582060c9ae1e6cdf72087a6c6fdf6174ff",
+        "recipe": "scripts.d/25-gmp.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/BtbN/gmplib.git",
+        "required_notices": [
+          "COPYING.LESSERv3",
+          "COPYINGv2",
+          "COPYINGv3"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-gmp"
+        ]
+      },
+      {
+        "name": "ffmpeg-libogg-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "06a5e0262cdc28aa4ae6797627a783b5010440f0",
+        "url": "https://codeload.github.com/xiph/ogg/tar.gz/06a5e0262cdc28aa4ae6797627a783b5010440f0",
+        "filename": "ffmpeg-libogg-06a5e0262cdc.tar.gz",
+        "sha256": "fd7ab06f9fe9ace6b75d4223cf9034c9648cbe9f16120a344ec82f27c605ca11",
+        "recipe": "scripts.d/25-libogg.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xiph/ogg.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libvorbis"
+        ]
+      },
+      {
+        "name": "ffmpeg-libpng-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "964b4135949703b705fc760fc3fb546b86e5ab47",
+        "url": "https://codeload.github.com/glennrp/libpng/tar.gz/964b4135949703b705fc760fc3fb546b86e5ab47",
+        "filename": "ffmpeg-libpng-964b41359497.tar.gz",
+        "sha256": "a5019bd363786a7070e7a763d09086ce482a0248c27b0b88851c37bac90f422f",
+        "recipe": "scripts.d/25-libpng.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/glennrp/libpng.git",
+        "required_notices": [
+          "LICENSE.md"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libaribb24"
+        ]
+      },
+      {
+        "name": "ffmpeg-libxml2-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "91586dc6742ab335682235120363f6e126eea5e2",
+        "url": "https://codeload.github.com/GNOME/libxml2/tar.gz/91586dc6742ab335682235120363f6e126eea5e2",
+        "filename": "ffmpeg-libxml2-91586dc6742a.tar.gz",
+        "sha256": "f32d2f4eeff4c45f18ac3b76a0d24066a4bd2e7a46e5a5dd34344149293d824b",
+        "recipe": "scripts.d/25-libxml2.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/GNOME/libxml2.git",
+        "required_notices": [
+          "Copyright"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libxml2"
+        ]
+      },
+      {
+        "name": "ffmpeg-fftw3-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "93ed4c786934aec9946f8dda4b4e3eb08f8be41c",
+        "url": "https://codeload.github.com/FFTW/fftw3/tar.gz/93ed4c786934aec9946f8dda4b4e3eb08f8be41c",
+        "filename": "ffmpeg-fftw3-93ed4c786934.tar.gz",
+        "sha256": "b4789c0f864f1237629c752075e6bf98c05d723873f59f9f50f604c1c0978369",
+        "recipe": "scripts.d/25-fftw3.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/FFTW/fftw3.git",
+        "required_notices": [
+          "COPYING",
+          "COPYRIGHT"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-chromaprint"
+        ]
+      },
+      {
+        "name": "ffmpeg-brotli-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "a3abcbee0d945e51dddeec81e647ffe0cde182c2",
+        "url": "https://codeload.github.com/google/brotli/tar.gz/a3abcbee0d945e51dddeec81e647ffe0cde182c2",
+        "filename": "ffmpeg-brotli-a3abcbee0d94.tar.gz",
+        "sha256": "b94fca1fb343acdfaa4c9eba9c439f76d50152984b11a9bfd3b4c8b9d4335a40",
+        "recipe": "scripts.d/45-brotli.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/google/brotli.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libfreetype"
+        ]
+      },
+      {
+        "name": "ffmpeg-harfbuzz-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b3bab62307017934dd7f532c52a696fefb12b3ad",
+        "url": "https://codeload.github.com/harfbuzz/harfbuzz/tar.gz/b3bab62307017934dd7f532c52a696fefb12b3ad",
+        "filename": "ffmpeg-harfbuzz-b3bab6230701.tar.gz",
+        "sha256": "7c24de123b8f3201a164816d27703662cebd1b416845e71165006cd70fb14a0f",
+        "recipe": "scripts.d/45-fonts/45-harfbuzz.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/harfbuzz/harfbuzz.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libharfbuzz"
+        ]
+      },
+      {
+        "name": "ffmpeg-libvorbis-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "1b75110b5a2754ba1931d82dd83cb822b266a21d",
+        "url": "https://codeload.github.com/xiph/vorbis/tar.gz/1b75110b5a2754ba1931d82dd83cb822b266a21d",
+        "filename": "ffmpeg-libvorbis-1b75110b5a27.tar.gz",
+        "sha256": "bd0f08c8a63debdce27dd71de7d953f9c92e410d1cfe263220bcb49fff2ab749",
+        "recipe": "scripts.d/45-libvorbis.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xiph/vorbis.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libvorbis"
+        ]
+      },
+      {
+        "name": "ffmpeg-vmaf-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "86da14d0306a138fd3f01319860b905169746516",
+        "url": "https://codeload.github.com/Netflix/vmaf/tar.gz/86da14d0306a138fd3f01319860b905169746516",
+        "filename": "ffmpeg-vmaf-86da14d0306a.tar.gz",
+        "sha256": "bd8f96d1fbc0aceaf0aa9d0a2f3d3f01f8f7ab8df95023f914d21d70dddb7dcb",
+        "recipe": "scripts.d/45-vmaf.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/Netflix/vmaf.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libvmaf"
+        ]
+      },
+      {
+        "name": "ffmpeg-libopus-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "503d81b138d76621aae4b12786e90de48aa8db3a",
+        "url": "https://codeload.github.com/xiph/opus/tar.gz/503d81b138d76621aae4b12786e90de48aa8db3a",
+        "filename": "ffmpeg-libopus-503d81b138d7.tar.gz",
+        "sha256": "e34101b726c033be40e3f5a2695d086362d59069554ffd46800c38a13eade1f7",
+        "recipe": "scripts.d/50-libopus.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xiph/opus.git",
+        "required_notices": [
+          "COPYING",
+          "LICENSE_PLEASE_READ.txt"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libopus"
+        ]
+      },
+      {
+        "name": "ffmpeg-snappy-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "9c28114a38866f6deeaa826db918293bc28ae410",
+        "url": "https://codeload.github.com/google/snappy/tar.gz/9c28114a38866f6deeaa826db918293bc28ae410",
+        "filename": "ffmpeg-snappy-9c28114a3886.tar.gz",
+        "sha256": "4371172392f382befcad0faccbf302ea9601b7a787db49f1c0744431feff3224",
+        "recipe": "scripts.d/50-snappy.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/google/snappy.git",
+        "required_notices": [
+          "COPYING",
+          "COPYING.notestdata"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libsnappy"
+        ]
+      },
+      {
+        "name": "ffmpeg-chromaprint-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "aed8eba2202dd9d7b3b0a56c77904cc805490d72",
+        "url": "https://codeload.github.com/acoustid/chromaprint/tar.gz/aed8eba2202dd9d7b3b0a56c77904cc805490d72",
+        "filename": "ffmpeg-chromaprint-aed8eba2202d.tar.gz",
+        "sha256": "eba1536d49daa17ae3c56904ea004342c42135dfdaabd7e9c5decbdb473d95ca",
+        "recipe": "scripts.d/50-chromaprint.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/acoustid/chromaprint.git",
+        "required_notices": [
+          "LICENSE.md"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-chromaprint"
+        ]
+      },
+      {
+        "name": "ffmpeg-zimg-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "67e0603271c080e22c8429856dd4a8a56587e61e",
+        "url": "https://codeload.github.com/sekrit-twc/zimg/tar.gz/67e0603271c080e22c8429856dd4a8a56587e61e",
+        "filename": "ffmpeg-zimg-67e0603271c0.tar.gz",
+        "sha256": "539495d51fcd8c7ef9b89a611454e0c1173d18e8d4e743efdef67c4aa7e40d4f",
+        "recipe": "scripts.d/50-zimg.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/sekrit-twc/zimg.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libzimg"
+        ]
+      },
+      {
+        "name": "ffmpeg-twolame-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6fced852d4d5cfad58cf9dbe3ea619b08e87d398",
+        "url": "https://codeload.github.com/njh/twolame/tar.gz/6fced852d4d5cfad58cf9dbe3ea619b08e87d398",
+        "filename": "ffmpeg-twolame-6fced852d4d5.tar.gz",
+        "sha256": "6fd32a3d16a57ceacd5a64c4b6c54d6118b213fe8c63bc2900045200e2012000",
+        "recipe": "scripts.d/50-twolame.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/njh/twolame.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libtwolame"
+        ]
+      },
+      {
+        "name": "ffmpeg-openjpeg-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "8314119b067c0fc77834731168daaebd379fdb12",
+        "url": "https://codeload.github.com/uclouvain/openjpeg/tar.gz/8314119b067c0fc77834731168daaebd379fdb12",
+        "filename": "ffmpeg-openjpeg-8314119b067c.tar.gz",
+        "sha256": "e723e8babb2188e8743308842bb1bfc9809f0375cd964cfeac2fb17285094321",
+        "recipe": "scripts.d/50-openjpeg.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/uclouvain/openjpeg.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libopenjpeg"
+        ]
+      },
+      {
+        "name": "ffmpeg-libass-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "f61db567e6593df3470e91594bcd4ad2d0473aff",
+        "url": "https://codeload.github.com/libass/libass/tar.gz/f61db567e6593df3470e91594bcd4ad2d0473aff",
+        "filename": "ffmpeg-libass-f61db567e659.tar.gz",
+        "sha256": "edb3e866ca9394152484bc9a83b68a395f5c9052ae0dc502e4100035c250330b",
+        "recipe": "scripts.d/50-libass.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/libass/libass.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libass"
+        ]
+      },
+      {
+        "name": "ffmpeg-libaribb24-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "5e9be272f96e00f15a2f3c5f8ba7e124862aec38",
+        "url": "https://codeload.github.com/nkoriyama/aribb24/tar.gz/5e9be272f96e00f15a2f3c5f8ba7e124862aec38",
+        "filename": "ffmpeg-libaribb24-5e9be272f96e.tar.gz",
+        "sha256": "651e88af3c8189d4faed538bee3affde360eb4698a70505765fc7e5653f5eb23",
+        "recipe": "scripts.d/50-libaribb24.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/nkoriyama/aribb24.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libaribb24"
+        ]
+      },
+      {
+        "name": "ffmpeg-libaribcaption-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "c64c23b8905ba514b87c9789269e9f66f949ffe0",
+        "url": "https://codeload.github.com/xqq/libaribcaption/tar.gz/c64c23b8905ba514b87c9789269e9f66f949ffe0",
+        "filename": "ffmpeg-libaribcaption-c64c23b8905b.tar.gz",
+        "sha256": "9f91ac8f677fb8b1a9a27a792f3bf0b3b8b5348f13a0c07d372d496e6cde9e6a",
+        "recipe": "scripts.d/50-libaribcaption.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xqq/libaribcaption.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libaribcaption"
+        ]
+      },
+      {
+        "name": "ffmpeg-ffnvcodec-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "ced4f8eba3ba5dd431932cba17928f0dffdaeb2b",
+        "url": "https://codeload.github.com/FFmpeg/nv-codec-headers/tar.gz/ced4f8eba3ba5dd431932cba17928f0dffdaeb2b",
+        "filename": "ffmpeg-ffnvcodec-ced4f8eba3ba.tar.gz",
+        "sha256": "625ddd8f2a603699fdba101bebcde0e7a97bcc7b8a82ec7f45a7d06d61336597",
+        "recipe": "scripts.d/50-ffnvcodec.sh",
+        "recipe_slot": "2",
+        "repository": "https://github.com/FFmpeg/nv-codec-headers.git",
+        "required_notices": [
+          "include/ffnvcodec/dynlink_cuda.h",
+          "include/ffnvcodec/dynlink_cuviddec.h",
+          "include/ffnvcodec/dynlink_loader.h",
+          "include/ffnvcodec/dynlink_nvcuvid.h",
+          "include/ffnvcodec/nvEncodeAPI.h"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-ffnvcodec"
+        ]
+      },
+      {
+        "name": "ffmpeg-opencl-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "e6060189f4ebe8b52d885c37af71b9a50c272154",
+        "url": "https://codeload.github.com/KhronosGroup/OpenCL-Headers/tar.gz/e6060189f4ebe8b52d885c37af71b9a50c272154",
+        "filename": "ffmpeg-opencl-e6060189f4eb.tar.gz",
+        "sha256": "7425b23f33ed99fc1b39bc2f92db7db913d0a2f297e67a1e457594abd7b34ce8",
+        "recipe": "scripts.d/45-opencl.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/KhronosGroup/OpenCL-Headers.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-opencl"
+        ]
+      },
+      {
+        "name": "ffmpeg-uavs3d-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "0e20d2c291853f196c68922a264bcd8471d75b68",
+        "url": "https://codeload.github.com/uavs3/uavs3d/tar.gz/0e20d2c291853f196c68922a264bcd8471d75b68",
+        "filename": "ffmpeg-uavs3d-0e20d2c29185.tar.gz",
+        "sha256": "1c1eb778b6080bc01493180ea7ae671c6444ce3aa760b5d021ba882eb0f9e3a0",
+        "recipe": "scripts.d/50-uavs3d.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/uavs3/uavs3d.git",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libuavs3d"
+        ]
+      },
+      {
+        "name": "ffmpeg-opencl-loader-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "5192c84f8059e5f703e5452929b613f9487f6e4c",
+        "url": "https://codeload.github.com/KhronosGroup/OpenCL-ICD-Loader/tar.gz/5192c84f8059e5f703e5452929b613f9487f6e4c",
+        "filename": "ffmpeg-opencl-loader-5192c84f8059.tar.gz",
+        "sha256": "c4ac098692a8b23827050cc10169aaae7b5d7578c4da6e2a9cd532964ef25583",
+        "recipe": "scripts.d/45-opencl.sh",
+        "recipe_slot": "2",
+        "repository": "https://github.com/KhronosGroup/OpenCL-ICD-Loader.git",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-opencl"
+        ]
+      },
+      {
+        "name": "ffmpeg-xz-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "3b1efb04d17c3a9ef7f473d73af13f1531428ffe",
+        "url": "https://codeload.github.com/tukaani-project/xz/tar.gz/3b1efb04d17c3a9ef7f473d73af13f1531428ffe",
+        "filename": "ffmpeg-xz-3b1efb04d17c.tar.gz",
+        "recipe": "scripts.d/25-xz.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/tukaani-project/xz.git",
+        "configure_flags": [
+          "--enable-lzma"
+        ],
+        "sha256": "0d35404f5e2bf0042523945b9fc10ab1c653fc7d96905e2c3179961a4a128b5f",
+        "required_notices": [
+          "COPYING",
+          "COPYING.0BSD",
+          "COPYING.GPLv2",
+          "COPYING.GPLv3",
+          "COPYING.LGPLv2.1"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-fontconfig-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "bd8f7b597de96761750d0365abb49b19d2f8d5c3",
+        "url": "https://gitlab.freedesktop.org/fontconfig/fontconfig/-/archive/bd8f7b597de96761750d0365abb49b19d2f8d5c3/fontconfig-bd8f7b597de96761750d0365abb49b19d2f8d5c3.tar.gz",
+        "filename": "ffmpeg-fontconfig-bd8f7b597de9.tar.gz",
+        "recipe": "scripts.d/45-fonts/35-fontconfig.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/fontconfig/fontconfig.git",
+        "configure_flags": [
+          "--enable-fontconfig"
+        ],
+        "sha256": "9430e47c9fc3b1ff1b6575c63f08c0beb2268d325a1d11831420894e48a055d3",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-freetype-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "d333439633039de426f943f28a2926c7f97b5ae5",
+        "url": "https://gitlab.freedesktop.org/freetype/freetype/-/archive/d333439633039de426f943f28a2926c7f97b5ae5/freetype-d333439633039de426f943f28a2926c7f97b5ae5.tar.gz",
+        "filename": "ffmpeg-freetype-d33343963303.tar.gz",
+        "recipe": "scripts.d/45-fonts/50-freetype.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/freetype/freetype.git",
+        "configure_flags": [
+          "--enable-libfreetype"
+        ],
+        "sha256": "e9d4680f9d751add3571e5407f2943a18ece9c02a78e1bb456aae305254d8bc9",
+        "required_notices": [
+          "LICENSE.TXT"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-pulseaudio-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "77d25a1e613095bdf87a1d13b65e7c330565077a",
+        "url": "https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/archive/77d25a1e613095bdf87a1d13b65e7c330565077a/pulseaudio-77d25a1e613095bdf87a1d13b65e7c330565077a.tar.gz",
+        "filename": "ffmpeg-pulseaudio-77d25a1e6130.tar.gz",
+        "recipe": "scripts.d/45-pulseaudio.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/pulseaudio/pulseaudio.git",
+        "configure_flags": [
+          "--enable-libpulse"
+        ],
+        "sha256": "271397ca5521994de7c8675df086d2308ae2e2dac484dc081cdeac2502b965c8",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ]
+      },
+      {
+        "name": "ffmpeg-libxcb-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "d4e07bab5729c7d7cc3d2b95568cd9a661a53c4f",
+        "url": "https://gitlab.freedesktop.org/xorg/lib/libxcb/-/archive/d4e07bab5729c7d7cc3d2b95568cd9a661a53c4f/libxcb-d4e07bab5729c7d7cc3d2b95568cd9a661a53c4f.tar.gz",
+        "filename": "ffmpeg-libxcb-d4e07bab5729.tar.gz",
+        "recipe": "scripts.d/45-x11/30-libxcb.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/xorg/lib/libxcb.git",
+        "configure_flags": [
+          "--enable-libxcb"
+        ],
+        "sha256": "f6e9cb1b8fc61938c95bda17074983dc795a199d4b454f5709707679d5bd7878",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ]
+      },
+      {
+        "name": "ffmpeg-libxv-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "f315ec50fcad9bdbaed46c3e78dc5e7fe209f933",
+        "url": "https://gitlab.freedesktop.org/xorg/lib/libxv/-/archive/f315ec50fcad9bdbaed46c3e78dc5e7fe209f933/libxv-f315ec50fcad9bdbaed46c3e78dc5e7fe209f933.tar.gz",
+        "filename": "ffmpeg-libxv-f315ec50fcad.tar.gz",
+        "recipe": "scripts.d/45-x11/60-libxv.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/xorg/lib/libxv.git",
+        "configure_flags": [
+          "--enable-xlib"
+        ],
+        "sha256": "5f952681dfa38d36ea6af9e560d886d36d1cc8ef6b9161cbfafc9f18fba4ac6c",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ]
+      },
+      {
+        "name": "ffmpeg-vulkan-loader-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "65b3936528cd92eb4ea3de485d03f858a3850484",
+        "url": "https://codeload.github.com/BtbN/Vulkan-Shim-Loader/tar.gz/65b3936528cd92eb4ea3de485d03f858a3850484",
+        "filename": "ffmpeg-vulkan-loader-65b3936528cd.tar.gz",
+        "recipe": "scripts.d/47-vulkan/45-vulkan-loader.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/BtbN/Vulkan-Shim-Loader.git",
+        "configure_flags": [
+          "--enable-vulkan"
+        ],
+        "sha256": "1cea0208588bd9d30379e7b83800dd7a32ca68d43c118642693be57782f8633d",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-shaderc-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "a8abeb0b8a9d4b11e3d59ca9f4550b8213e733ab",
+        "url": "https://codeload.github.com/google/shaderc/tar.gz/a8abeb0b8a9d4b11e3d59ca9f4550b8213e733ab",
+        "filename": "ffmpeg-shaderc-a8abeb0b8a9d.tar.gz",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/google/shaderc.git",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "sha256": "4a2451e747e011695d25847e75316722df80120b3f141600c43c9f5cedd70578",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-dav1d-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "9711965b60bb692ae24004659acf61f5c7d9ed61",
+        "url": "https://code.videolan.org/videolan/dav1d/-/archive/9711965b60bb692ae24004659acf61f5c7d9ed61/dav1d-9711965b60bb692ae24004659acf61f5c7d9ed61.tar.gz",
+        "filename": "ffmpeg-dav1d-9711965b60bb.tar.gz",
+        "recipe": "scripts.d/50-dav1d.sh",
+        "recipe_slot": "",
+        "repository": "https://code.videolan.org/videolan/dav1d.git",
+        "configure_flags": [
+          "--enable-libdav1d"
+        ],
+        "sha256": "d4956d2a926011e242659e0d0e21b0213d61e14e853fa5585a8b79b2a0f115ba",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-gme-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "f68963b1de0633149b05732113d3c3113c6f63a1",
+        "url": "https://codeload.github.com/libgme/game-music-emu/tar.gz/f68963b1de0633149b05732113d3c3113c6f63a1",
+        "filename": "ffmpeg-gme-f68963b1de06.tar.gz",
+        "recipe": "scripts.d/50-gme.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/libgme/game-music-emu.git",
+        "configure_flags": [
+          "--enable-libgme"
+        ],
+        "sha256": "c4c47251e12b2b147eabb54499c94cf3b607b68f830e231a396f541f4897e74e",
+        "required_notices": [
+          "license.gpl2.txt",
+          "license.txt"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-kvazaar-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "2b06691bb5844404c0e703f12a5d7b0fee914ec7",
+        "url": "https://codeload.github.com/ultravideo/kvazaar/tar.gz/2b06691bb5844404c0e703f12a5d7b0fee914ec7",
+        "filename": "ffmpeg-kvazaar-2b06691bb584.tar.gz",
+        "recipe": "scripts.d/50-kvazaar.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/ultravideo/kvazaar.git",
+        "configure_flags": [
+          "--enable-libkvazaar"
+        ],
+        "sha256": "c2a72f486941ef8f70d712c1e717b66d9272797d233611640d3283d2cafacf22",
+        "required_notices": [
+          "LICENSE",
+          "LICENSE.EXT.greatest"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-lcevcdec-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "17804ac54db8fbb42717f3275b1e73f3c0b067d3",
+        "url": "https://codeload.github.com/v-novaltd/LCEVCdec/tar.gz/17804ac54db8fbb42717f3275b1e73f3c0b067d3",
+        "filename": "ffmpeg-lcevcdec-17804ac54db8.tar.gz",
+        "recipe": "scripts.d/50-lcevcdec.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/v-novaltd/LCEVCdec.git",
+        "configure_flags": [
+          "--enable-liblcevc-dec"
+        ],
+        "sha256": "0e84df3e1efa14340da53a91c938cd2d2f7b457fd1f26e7c6e05d8200bfd6d11",
+        "required_notices": [
+          "COPYING",
+          "LICENSE.md"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libbluray-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "a24f4fad4d62893de647abc8671397747b2359dd",
+        "url": "https://code.videolan.org/videolan/libbluray/-/archive/a24f4fad4d62893de647abc8671397747b2359dd/libbluray-a24f4fad4d62893de647abc8671397747b2359dd.tar.gz",
+        "filename": "ffmpeg-libbluray-a24f4fad4d62.tar.gz",
+        "recipe": "scripts.d/50-libbluray.sh",
+        "recipe_slot": "",
+        "repository": "https://code.videolan.org/videolan/libbluray.git",
+        "configure_flags": [
+          "--enable-libbluray"
+        ],
+        "sha256": "f596c2ede4131fa4471bb292c28c327ea2115b1a3ea010d6ddfb75f0935600b7",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libjxl-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b87738951c1254cd8cccaa6d47712ba735da56d8",
+        "url": "https://codeload.github.com/libjxl/libjxl/tar.gz/b87738951c1254cd8cccaa6d47712ba735da56d8",
+        "filename": "ffmpeg-libjxl-b87738951c12.tar.gz",
+        "recipe": "scripts.d/50-libjxl/50-libjxl.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/libjxl/libjxl.git",
+        "configure_flags": [
+          "--enable-libjxl"
+        ],
+        "sha256": "2c42e84002a3554f24777cef8fb0f995225fed9539c8b872b179125c9af1c24f",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libplacebo-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "1937beef3a2f508266c68efea1491e3fc4600e04",
+        "url": "https://code.videolan.org/videolan/libplacebo/-/archive/1937beef3a2f508266c68efea1491e3fc4600e04/libplacebo-1937beef3a2f508266c68efea1491e3fc4600e04.tar.gz",
+        "filename": "ffmpeg-libplacebo-1937beef3a2f.tar.gz",
+        "recipe": "scripts.d/50-libplacebo.sh",
+        "recipe_slot": "",
+        "repository": "https://code.videolan.org/videolan/libplacebo.git",
+        "configure_flags": [
+          "--enable-libplacebo"
+        ],
+        "sha256": "696ba3cc9608d2f6116b1eb217d6c974a7d7db52dbb5a2525632d0002d473be5",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-librist-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "4f45ef8f78983892d52ccd52d9f675435b23738f",
+        "url": "https://code.videolan.org/rist/librist/-/archive/4f45ef8f78983892d52ccd52d9f675435b23738f/librist-4f45ef8f78983892d52ccd52d9f675435b23738f.tar.gz",
+        "filename": "ffmpeg-librist-4f45ef8f7898.tar.gz",
+        "recipe": "scripts.d/50-librist/50-librist.sh",
+        "recipe_slot": "",
+        "repository": "https://code.videolan.org/rist/librist.git",
+        "configure_flags": [
+          "--enable-librist"
+        ],
+        "sha256": "391c2fbb081445a3260cccf97a083bd95a4ece6d7241d219ec5aec80582f5b0a",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-librsvg-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "7612431eb02dc009319094f8513d63c1faaecfb4",
+        "url": "https://codeload.github.com/GNOME/librsvg/tar.gz/7612431eb02dc009319094f8513d63c1faaecfb4",
+        "filename": "ffmpeg-librsvg-7612431eb02d.tar.gz",
+        "recipe": "scripts.d/50-librsvg/99-librsvg.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/GNOME/librsvg.git",
+        "configure_flags": [
+          "--enable-librsvg"
+        ],
+        "sha256": "3787f63f63d8725da97065a8809910d4c05189c8b22fd838deffa5f3579a65be",
+        "required_notices": [
+          "COPYING.LIB"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libssh-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "76e0a8639e61436c28d877586f65a7707edc6ee5",
+        "url": "https://gitlab.com/libssh/libssh-mirror/-/archive/76e0a8639e61436c28d877586f65a7707edc6ee5/libssh-mirror-76e0a8639e61436c28d877586f65a7707edc6ee5.tar.gz",
+        "filename": "ffmpeg-libssh-76e0a8639e61.tar.gz",
+        "recipe": "scripts.d/50-libssh.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.com/libssh/libssh-mirror.git",
+        "configure_flags": [
+          "--enable-libssh"
+        ],
+        "sha256": "5087991d61006e5732b3355d5f3ae8e0ece41d20c99f57b7b875e85389d5b56e",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libtheora-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "28fd5ec77f0ad0e07a371cef1047828116f6bd8a",
+        "url": "https://codeload.github.com/xiph/theora/tar.gz/28fd5ec77f0ad0e07a371cef1047828116f6bd8a",
+        "filename": "ffmpeg-libtheora-28fd5ec77f0a.tar.gz",
+        "recipe": "scripts.d/50-libtheora.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xiph/theora.git",
+        "configure_flags": [
+          "--enable-libtheora"
+        ],
+        "sha256": "b92c94380b3c86db5797e8f248373eecfc6230c8a0b374e64b4041645b0d2152",
+        "required_notices": [
+          "COPYING",
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libzmq-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "46493370217ac135246617fa2f6ac819d8b61bfc",
+        "url": "https://codeload.github.com/zeromq/libzmq/tar.gz/46493370217ac135246617fa2f6ac819d8b61bfc",
+        "filename": "ffmpeg-libzmq-46493370217a.tar.gz",
+        "recipe": "scripts.d/50-libzmq.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/zeromq/libzmq.git",
+        "configure_flags": [
+          "--enable-libzmq"
+        ],
+        "sha256": "a5219efcc1bd863f1e37c170ce05a04f0c11cce497ea52222dd8a1952a78c1b9",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-lilv-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "4b8f30055fa5cb4134a2eb45fc1555bc04289314",
+        "url": "https://codeload.github.com/lv2/lilv/tar.gz/4b8f30055fa5cb4134a2eb45fc1555bc04289314",
+        "filename": "ffmpeg-lilv-4b8f30055fa5.tar.gz",
+        "recipe": "scripts.d/50-lilv/99-lilv.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/lv2/lilv.git",
+        "configure_flags": [
+          "--enable-lv2"
+        ],
+        "sha256": "37c5df93860082273ab02104556b45625303a04a299d2914f5dd215f39a29409",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-onevpl-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "674d015bcb294bc39fa276e99a652ea045423e82",
+        "url": "https://codeload.github.com/intel/libvpl/tar.gz/674d015bcb294bc39fa276e99a652ea045423e82",
+        "filename": "ffmpeg-onevpl-674d015bcb29.tar.gz",
+        "recipe": "scripts.d/50-onevpl.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/intel/libvpl.git",
+        "configure_flags": [
+          "--enable-libvpl"
+        ],
+        "sha256": "9d5d3c221b9d41468e04add6855cf5eec6df06dae7be649f84e1f846c98e38fb",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-openal-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "c89b8cf7bba4822f230c69f0a6696a52e5322dca",
+        "url": "https://codeload.github.com/kcat/openal-soft/tar.gz/c89b8cf7bba4822f230c69f0a6696a52e5322dca",
+        "filename": "ffmpeg-openal-c89b8cf7bba4.tar.gz",
+        "recipe": "scripts.d/50-openal.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/kcat/openal-soft.git",
+        "configure_flags": [
+          "--enable-openal"
+        ],
+        "sha256": "82a81a2f824efa6a1398d0dd93c0557ad202587eac65f5b78957a89f583428a7",
+        "required_notices": [
+          "COPYING",
+          "LICENSE-pffft",
+          "LICENSE.Apache-2.0.txt",
+          "LICENSE.BSD-3-Clause.txt"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-openapv-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "a58ce739be0dfb083643d929aee8f0e0ba9bdf63",
+        "url": "https://codeload.github.com/AcademySoftwareFoundation/openapv/tar.gz/a58ce739be0dfb083643d929aee8f0e0ba9bdf63",
+        "filename": "ffmpeg-openapv-a58ce739be0d.tar.gz",
+        "recipe": "scripts.d/50-openapv.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/AcademySoftwareFoundation/openapv.git",
+        "configure_flags": [
+          "--enable-liboapv"
+        ],
+        "sha256": "ccd87b3ea2aeecf7e867e361bb8729789de9da6d46e74b89bedbe37aa9236826",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-openh264-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "8b2d28faade10d74d99ac80e199aef664c9c5a3b",
+        "url": "https://codeload.github.com/cisco/openh264/tar.gz/8b2d28faade10d74d99ac80e199aef664c9c5a3b",
+        "filename": "ffmpeg-openh264-8b2d28faade1.tar.gz",
+        "recipe": "scripts.d/50-openh264.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/cisco/openh264.git",
+        "configure_flags": [
+          "--enable-libopenh264"
+        ],
+        "sha256": "ab798665ac2fb872e22c2a4b037a11ededa48f867c040fe478cdcc5994f69424",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-openmpt-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "f83cedb0cd5446e4dfaa83ac97e3087107e26767",
+        "url": "https://codeload.github.com/OpenMPT/openmpt/tar.gz/f83cedb0cd5446e4dfaa83ac97e3087107e26767",
+        "filename": "ffmpeg-openmpt-f83cedb0cd54.tar.gz",
+        "recipe": "scripts.d/50-openmpt.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/OpenMPT/openmpt.git",
+        "configure_flags": [
+          "--enable-libopenmpt"
+        ],
+        "sha256": "222de6e3e8cb654f7eaae180ddfceed173d4b70797b8d1f902c56e8d4b68fb2f",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-rav1e-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "31435de9d76fddd38f6dcc31d4014574cebb2092",
+        "url": "https://codeload.github.com/xiph/rav1e/tar.gz/31435de9d76fddd38f6dcc31d4014574cebb2092",
+        "filename": "ffmpeg-rav1e-31435de9d76f.tar.gz",
+        "recipe": "scripts.d/50-rav1e.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xiph/rav1e.git",
+        "configure_flags": [
+          "--enable-librav1e"
+        ],
+        "sha256": "ac56fef82e5f41b53d2c6088f4b0693380c389a55665a698ba768908ee17f073",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-sdl-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b90ac95029d801c5abc59472ba8e2200dff31e1e",
+        "url": "https://codeload.github.com/libsdl-org/SDL/tar.gz/b90ac95029d801c5abc59472ba8e2200dff31e1e",
+        "filename": "ffmpeg-sdl-b90ac95029d8.tar.gz",
+        "recipe": "scripts.d/50-sdl.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/libsdl-org/SDL.git",
+        "configure_flags": [
+          "--enable-sdl2"
+        ],
+        "sha256": "c750281ef7ed34deb2c36eb971e8acf65198372d6dde86cf590190312353c284",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-srt-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "ff8ab25c57aece5b7351defe36dacc94fc28527f",
+        "url": "https://codeload.github.com/Haivision/srt/tar.gz/ff8ab25c57aece5b7351defe36dacc94fc28527f",
+        "filename": "ffmpeg-srt-ff8ab25c57ae.tar.gz",
+        "recipe": "scripts.d/50-srt.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/Haivision/srt.git",
+        "configure_flags": [
+          "--enable-libsrt"
+        ],
+        "sha256": "86a337d0ea33e68434ac6cd23a59c834694527cb3be3d8d23fb75f41095dfc5c",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-svtav1-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "5ed9ffbcb5086da23f30fe9bc5b00145358462da",
+        "url": "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/5ed9ffbcb5086da23f30fe9bc5b00145358462da/SVT-AV1-5ed9ffbcb5086da23f30fe9bc5b00145358462da.tar.gz",
+        "filename": "ffmpeg-svtav1-5ed9ffbcb508.tar.gz",
+        "recipe": "scripts.d/50-svtav1.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
+        "configure_flags": [
+          "--enable-libsvtav1"
+        ],
+        "sha256": "30137902c7d3f30e04f8b0d8a37a459a9ee26fb8877797418a409897ed3cbe65",
+        "required_notices": [
+          "LICENSE-BSD2.md",
+          "LICENSE.md"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libva-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6b07f7100512817f736967e899b8c26313c20623",
+        "url": "https://codeload.github.com/intel/libva/tar.gz/6b07f7100512817f736967e899b8c26313c20623",
+        "filename": "ffmpeg-libva-6b07f7100512.tar.gz",
+        "recipe": "scripts.d/50-vaapi/50-libva.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/intel/libva.git",
+        "configure_flags": [
+          "--enable-vaapi"
+        ],
+        "sha256": "7f71fc0656b8a365ca4b5806ef03b1ef860e6b8bf462f1acb757c42e62c65159",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-vvenc-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b1cfb2ad495af6ae4cc214b7a060e8b4166c4629",
+        "url": "https://codeload.github.com/fraunhoferhhi/vvenc/tar.gz/b1cfb2ad495af6ae4cc214b7a060e8b4166c4629",
+        "filename": "ffmpeg-vvenc-b1cfb2ad495a.tar.gz",
+        "recipe": "scripts.d/50-vvenc.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/fraunhoferhhi/vvenc.git",
+        "configure_flags": [
+          "--enable-libvvenc"
+        ],
+        "sha256": "ff85354992bec5aa5cba54f4816e892d682e5f7bc8e7a10c757bdb8d28d45405",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-zvbi-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "d3a5ee9f2b047bf16cd1ee5ccf6ec05ee75409d0",
+        "url": "https://codeload.github.com/zapping-vbi/zvbi/tar.gz/d3a5ee9f2b047bf16cd1ee5ccf6ec05ee75409d0",
+        "filename": "ffmpeg-zvbi-d3a5ee9f2b04.tar.gz",
+        "recipe": "scripts.d/50-zvbi.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/zapping-vbi/zvbi",
+        "configure_flags": [
+          "--enable-libzvbi"
+        ],
+        "sha256": "e0b339e277eef4083ba24a1b1696b5a05cdcd34736b023c8daf0aa11134cfec4",
+        "required_notices": [
+          "COPYING.md"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libffi-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "bc553867367246d140cd156f060bd0409f57f157",
+        "url": "https://codeload.github.com/libffi/libffi/tar.gz/bc553867367246d140cd156f060bd0409f57f157",
+        "filename": "ffmpeg-libffi-bc5538673672.tar.gz",
+        "recipe": "scripts.d/45-libffi.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/libffi/libffi.git",
+        "configure_flags": [
+          "--enable-librsvg"
+        ],
+        "sha256": "93e39e60c6a2486f50661a57a95b8d70587c3e9d05e15aae27ccce04c4fe33ac",
+        "required_notices": [
+          "LICENSE",
+          "LICENSE-BUILDTOOLS"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libsamplerate-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "0844c208f683527c08ea8a80acc13b398aa9c8bf",
+        "url": "https://codeload.github.com/libsndfile/libsamplerate/tar.gz/0844c208f683527c08ea8a80acc13b398aa9c8bf",
+        "filename": "ffmpeg-libsamplerate-0844c208f683.tar.gz",
+        "recipe": "scripts.d/45-libsamplerate.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/libsndfile/libsamplerate.git",
+        "configure_flags": [
+          "--enable-sdl2"
+        ],
+        "sha256": "c5b976c99196df8247dd429fcaa05f44e281ec15b48f185c9b60c979c468d4c6",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-libunibreak-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "28a2756b864c343f438cd22537d49d394d4666a5",
+        "url": "https://codeload.github.com/adah1972/libunibreak/tar.gz/28a2756b864c343f438cd22537d49d394d4666a5",
+        "filename": "ffmpeg-libunibreak-28a2756b864c.tar.gz",
+        "recipe": "scripts.d/45-libunibreak.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/adah1972/libunibreak.git",
+        "configure_flags": [
+          "--enable-libass"
+        ],
+        "sha256": "4d0714d29207bfcaabe2a9376f83330bfb477673ecfb53994e47bd6d07738581",
+        "required_notices": [
+          "LICENCE",
+          "README.md",
+          "src/linebreak.h"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-pcre2-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "09eb19dc1102b34e7557408f33318364cb97d2b0",
+        "url": "https://codeload.github.com/PCRE2Project/pcre2/tar.gz/09eb19dc1102b34e7557408f33318364cb97d2b0",
+        "filename": "ffmpeg-pcre2-09eb19dc1102.tar.gz",
+        "recipe": "scripts.d/45-pcre2.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/PCRE2Project/pcre2.git",
+        "configure_flags": [
+          "--enable-librsvg"
+        ],
+        "sha256": "daaf6025b317c91999cb297f35122fe1e68d328f89bcce6edad9d7b4da87ef3b",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-lcms2-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "a0b0d7a69b13b461bdbd9cff9f7f1d59ccd1858c",
+        "url": "https://codeload.github.com/mm2/Little-CMS/tar.gz/a0b0d7a69b13b461bdbd9cff9f7f1d59ccd1858c",
+        "filename": "ffmpeg-lcms2-a0b0d7a69b13.tar.gz",
+        "recipe": "scripts.d/50-libjxl/45-lcms2.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/mm2/Little-CMS.git",
+        "configure_flags": [
+          "--enable-libjxl"
+        ],
+        "sha256": "6aaf79567ee171c9822d21baa94acf9c73069a26c178140fc533f616a73723ab",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-mingw-std-threads-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "c931bac289dd431f1dd30fc4a5d1a7be36668073",
+        "url": "https://codeload.github.com/meganz/mingw-std-threads/tar.gz/c931bac289dd431f1dd30fc4a5d1a7be36668073",
+        "filename": "ffmpeg-mingw-std-threads-c931bac289dd.tar.gz",
+        "recipe": "scripts.d/10-mingw-std-threads.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/meganz/mingw-std-threads.git",
+        "configure_flags": [
+          "--enable-libopenmpt"
+        ],
+        "sha256": "bba362a5fd537ecd223239efa1f7e7c570018e6d5ea7b26cc0515d3ede9da5ad",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-lv2-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "3c57dae600a5ad8d05acd53ee3490f7d91cb7be6",
+        "url": "https://codeload.github.com/lv2/lv2/tar.gz/3c57dae600a5ad8d05acd53ee3490f7d91cb7be6",
+        "filename": "ffmpeg-lv2-3c57dae600a5.tar.gz",
+        "recipe": "scripts.d/50-lilv/96-lv2.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/lv2/lv2.git",
+        "configure_flags": [
+          "--enable-lv2"
+        ],
+        "sha256": "4769e649aabf1774aaf2cb4dede19ae2463ded0e94cd3cc3af81403992398457",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-serd-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b6053bb2a4533e6a8e3821c1061f140d5e666938",
+        "url": "https://codeload.github.com/drobilla/serd/tar.gz/b6053bb2a4533e6a8e3821c1061f140d5e666938",
+        "filename": "ffmpeg-serd-b6053bb2a453.tar.gz",
+        "recipe": "scripts.d/50-lilv/96-serd.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/drobilla/serd.git",
+        "configure_flags": [
+          "--enable-lv2"
+        ],
+        "sha256": "bb3ed8dd1948d22da3c71e4a083ffb071a8ab70452b188d6cc3fb5ec3abeca9b",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-zix-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "17d632393f5addb6fa24dda2927b96515407cca7",
+        "url": "https://codeload.github.com/drobilla/zix/tar.gz/17d632393f5addb6fa24dda2927b96515407cca7",
+        "filename": "ffmpeg-zix-17d632393f5a.tar.gz",
+        "recipe": "scripts.d/50-lilv/96-zix.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/drobilla/zix.git",
+        "configure_flags": [
+          "--enable-lv2"
+        ],
+        "sha256": "a1b95d6eb32a00f881f620edcab9d27335250e37c6ad879feb0c29a7fc2c02e5",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-sord-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "4b5232bb91e7f2f1b84df384494d073fabbcd312",
+        "url": "https://codeload.github.com/drobilla/sord/tar.gz/4b5232bb91e7f2f1b84df384494d073fabbcd312",
+        "filename": "ffmpeg-sord-4b5232bb91e7.tar.gz",
+        "recipe": "scripts.d/50-lilv/97-sord.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/drobilla/sord.git",
+        "configure_flags": [
+          "--enable-lv2"
+        ],
+        "sha256": "b5a1d3a34d7b177fd33f4ac7f96c3904861b2c6cf9b3039cb6856f6cb9abb995",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-sratom-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "9e8ee84eed502e6030ce8bb49694fd28542b08fc",
+        "url": "https://codeload.github.com/lv2/sratom/tar.gz/9e8ee84eed502e6030ce8bb49694fd28542b08fc",
+        "filename": "ffmpeg-sratom-9e8ee84eed50.tar.gz",
+        "recipe": "scripts.d/50-lilv/98-sratom.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/lv2/sratom.git",
+        "configure_flags": [
+          "--enable-lv2"
+        ],
+        "sha256": "7a1785d825e6d1d60f11c7371a0a5fc8a6d66f407eddf9d37eb50dd87afe274f",
+        "required_notices": [
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-spirv-cross-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "aa217aeb6c9f0ace7a0ab233b28807edf45eb165",
+        "url": "https://codeload.github.com/KhronosGroup/SPIRV-Cross/tar.gz/aa217aeb6c9f0ace7a0ab233b28807edf45eb165",
+        "filename": "ffmpeg-spirv-cross-aa217aeb6c9f.tar.gz",
+        "recipe": "scripts.d/47-vulkan/55-spirv-cross.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/KhronosGroup/SPIRV-Cross.git",
+        "configure_flags": [
+          "--enable-vulkan"
+        ],
+        "sha256": "b99db6ee6182dbeb102257e755bf6d4978c23dcfd3329033304779279bc27212",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-spirv-headers-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "2b7475f6d664efbad4d4315c94ecec9640831e5b",
+        "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/2b7475f6d664efbad4d4315c94ecec9640831e5b",
+        "filename": "ffmpeg-spirv-headers-2b7475f6d664.tar.gz",
+        "recipe": "scripts.d/47-vulkan/60-spirv-headers.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+        "configure_flags": [
+          "--enable-vulkan"
+        ],
+        "sha256": "c6b662f240c60cfa9d2548a58de76c6d4991b2c29bb4fa23bfbc687c08ff1db3",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ]
+      },
+      {
+        "name": "ffmpeg-openssl-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "d3c1b1169b3569ff3069e5b399f47b2b28e03d79",
+        "recipe_revision": "openssl-3.6.4",
+        "recipe_tag_object_url": "https://api.github.com/repos/openssl/openssl/git/tags/360ffdb6d82f298d8d22c838dc2b7bf61ece056d",
+        "url": "https://codeload.github.com/openssl/openssl/tar.gz/d3c1b1169b3569ff3069e5b399f47b2b28e03d79",
+        "filename": "ffmpeg-openssl-d3c1b1169b35.tar.gz",
+        "sha256": "f4e3080732a86b21e2220cf31c3c60026e923d6193bf371ba872e71fb13bb7c7",
+        "recipe": "scripts.d/25-openssl.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/openssl/openssl.git",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libssh",
+          "--enable-libsrt"
+        ]
+      },
+      {
+        "name": "ffmpeg-vulkan-headers-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6802bb4733b63ed5efd3adb308a6c885ef180ea1",
+        "recipe_revision": "v1.4.363",
+        "recipe_tag_object_url": "https://api.github.com/repos/KhronosGroup/Vulkan-Headers/git/tags/7feeb71f59b8c1531ef5f7bb4b36e1aac46a0acb",
+        "url": "https://codeload.github.com/KhronosGroup/Vulkan-Headers/tar.gz/6802bb4733b63ed5efd3adb308a6c885ef180ea1",
+        "filename": "ffmpeg-vulkan-headers-6802bb4733b6.tar.gz",
+        "sha256": "9044fbb356160e43201dc2094acb44c8a906722a63a35f48fc0f051579db9bb6",
+        "recipe": "scripts.d/47-vulkan/45-vulkan-loader.sh",
+        "recipe_slot": "2",
+        "repository": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+        "required_notices": [
+          "LICENSE.md"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-vulkan"
+        ]
+      },
+      {
+        "name": "ffmpeg-aom-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b4ce2cd097b00921b0327bfb5f07b5f8361ade99",
+        "url": "https://aomedia.googlesource.com/aom/+archive/b4ce2cd097b00921b0327bfb5f07b5f8361ade99.tar.gz",
+        "filename": "ffmpeg-aom-b4ce2cd097b0.tar",
+        "sha256": "aa3168259e9c86bcc1760ba13cfc44cfe381726c76a07c5f7df4a69b1caac184",
+        "recipe": "scripts.d/50-aom.sh",
+        "recipe_slot": "",
+        "repository": "https://aomedia.googlesource.com/aom",
+        "required_notices": [
+          "AUTHORS",
+          "LICENSE",
+          "PATENTS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libaom"
+        ],
+        "strip_components": 0,
+        "canonical_tar": true
+      },
+      {
+        "name": "ffmpeg-libvpx-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "5e680f30801d03c21078f8c4b772464752516211",
+        "url": "https://chromium.googlesource.com/webm/libvpx/+archive/5e680f30801d03c21078f8c4b772464752516211.tar.gz",
+        "filename": "ffmpeg-libvpx-5e680f30801d.tar",
+        "sha256": "6898df69a2a1cd2803809e43bc0ef023282d1de5aaafc815f28c50e6a1261d44",
+        "recipe": "scripts.d/50-libvpx.sh",
+        "recipe_slot": "",
+        "repository": "https://chromium.googlesource.com/webm/libvpx",
+        "required_notices": [
+          "AUTHORS",
+          "LICENSE",
+          "PATENTS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libvpx"
+        ],
+        "strip_components": 0,
+        "canonical_tar": true
+      },
+      {
+        "name": "ffmpeg-libwebp-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "5c168cd23b1872969c38e34b01b04dcf29849288",
+        "url": "https://chromium.googlesource.com/webm/libwebp/+archive/5c168cd23b1872969c38e34b01b04dcf29849288.tar.gz",
+        "filename": "ffmpeg-libwebp-5c168cd23b18.tar",
+        "sha256": "730b7c1d1f45ce3c91bb6214fe02ec9ed6b16011d9bf7fa6aca08bee9514f68d",
+        "recipe": "scripts.d/50-libwebp.sh",
+        "recipe_slot": "",
+        "repository": "https://chromium.googlesource.com/webm/libwebp",
+        "required_notices": [
+          "AUTHORS",
+          "COPYING",
+          "PATENTS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libwebp"
+        ],
+        "strip_components": 0,
+        "canonical_tar": true
+      },
+      {
+        "name": "ffmpeg-libdrm-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b97cbde15c5c3abfe44d78e8f57139e50f612fec",
+        "url": "https://gitlab.freedesktop.org/api/v4/projects/mesa%2Fdrm/repository/archive.tar.gz?sha=b97cbde15c5c3abfe44d78e8f57139e50f612fec",
+        "filename": "ffmpeg-libdrm-b97cbde15c5c.tar.gz",
+        "sha256": "08dbcb1304671a555f0ce8e2df92535f352baa2530412d1937797ff453b6695a",
+        "recipe": "scripts.d/50-vaapi/40-libdrm.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/mesa/drm.git",
+        "required_notices": [
+          "LICENSES/MIT.txt",
+          "meson.build",
+          "gen_table_fourcc.py",
+          "include/drm/amdgpu_drm.h",
+          "include/drm/drm.h",
+          "include/drm/drm_fourcc.h",
+          "include/drm/drm_mode.h",
+          "include/drm/drm_sarea.h",
+          "include/drm/i915_drm.h",
+          "include/drm/mach64_drm.h",
+          "include/drm/mga_drm.h",
+          "include/drm/msm_drm.h",
+          "include/drm/nouveau_drm.h",
+          "include/drm/qxl_drm.h",
+          "include/drm/r128_drm.h",
+          "include/drm/radeon_drm.h",
+          "include/drm/savage_drm.h",
+          "include/drm/sis_drm.h",
+          "include/drm/tegra_drm.h",
+          "include/drm/vc4_drm.h",
+          "include/drm/via_drm.h",
+          "include/drm/virtgpu_drm.h",
+          "include/drm/vmwgfx_drm.h",
+          "libdrm_lists.h",
+          "libdrm_macros.h",
+          "libsync.h",
+          "util_double_list.h",
+          "util_math.h",
+          "xf86atomic.h",
+          "xf86drm.c",
+          "xf86drm.h",
+          "xf86drmHash.c",
+          "xf86drmHash.h",
+          "xf86drmMode.c",
+          "xf86drmMode.h",
+          "xf86drmRandom.c",
+          "xf86drmRandom.h",
+          "xf86drmSL.c"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libdrm"
+        ]
+      },
+      {
+        "name": "ffmpeg-mingw-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "57b595039040eaa15bece85b7cc71d952281b269",
+        "url": "https://codeload.github.com/mingw-w64/mingw-w64/tar.gz/57b595039040eaa15bece85b7cc71d952281b269",
+        "filename": "ffmpeg-mingw-57b595039040.tar.gz",
+        "sha256": "a68816e314290facd5da1ac96c7eead7e6de6ea4f709a1fbdcf8185497c57eb2",
+        "recipe": "scripts.d/10-mingw.sh",
+        "recipe_slot": "",
+        "repository": "https://git.code.sf.net/p/mingw-w64/mingw-w64.git",
+        "required_notices": [
+          "COPYING",
+          "COPYING.MinGW-w64/COPYING.MinGW-w64.txt",
+          "COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt",
+          "DISCLAIMER",
+          "DISCLAIMER.PD",
+          "AUTHORS",
+          "mingw-w64-libraries/winpthreads/COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "configure_flags": [
+          "--enable-pthreads"
+        ],
+        "source_mirror_documentation": "https://www.mingw-w64.org/source/"
+      },
+      {
+        "name": "ffmpeg-gnulib-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "eb72eb6f75f5621c5d648acd11467fd124584617",
+        "url": "https://codeload.github.com/coreutils/gnulib/tar.gz/eb72eb6f75f5621c5d648acd11467fd124584617",
+        "filename": "ffmpeg-gnulib-eb72eb6f75f5.tar.gz",
+        "sha256": "b97aaa8c6d2178387802ea9a7b3d53eb307a930a72d050c699f19867160caa6c",
+        "recipe": "scripts.d/20-libiconv.sh",
+        "recipe_slot": "2",
+        "repository": "https://git.savannah.gnu.org/git/gnulib.git",
+        "required_notices": [
+          "COPYING",
+          "README",
+          "doc/COPYING.LESSERv2",
+          "doc/COPYING.LESSERv3",
+          "doc/COPYINGv2",
+          "doc/COPYINGv3",
+          "etc/license-notices/GPLv2+",
+          "etc/license-notices/GPLv3+",
+          "etc/license-notices/LGPLv2+",
+          "etc/license-notices/LGPLv3+",
+          "etc/license-notices/LGPLv3+_or_GPLv2+",
+          "etc/license-notices/README",
+          "etc/license-notices/public_domain",
+          "etc/license-notices/unlimited"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "configure_flags": [
+          "--enable-iconv"
+        ],
+        "source_mirror_recipe_variable": "SCRIPT_MIRROR2"
+      },
+      {
+        "name": "ffmpeg-libiconv-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0",
+        "url": "https://https.git.savannah.gnu.org/git/libiconv.git",
+        "filename": "ffmpeg-libiconv-1df3087ba811.tar",
+        "sha256": "e34d8677c5dbff5cde6fbc8c31858e7b7288315c3cc10c86682d985b9cbc8778",
+        "recipe": "scripts.d/20-libiconv.sh",
+        "recipe_slot": "",
+        "repository": "https://git.savannah.gnu.org/git/libiconv.git",
+        "required_notices": [
+          "COPYING",
+          "COPYING.LIB",
+          "AUTHORS",
+          "README",
+          "libcharset/COPYING.LIB",
+          "libcharset/AUTHORS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-iconv"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "libiconv-1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0"
+      },
+      {
+        "name": "ffmpeg-soxr-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "945b592b70470e29f917f4de89b4281fbbd540c0",
+        "url": "https://git.code.sf.net/p/soxr/code",
+        "filename": "ffmpeg-soxr-945b592b7047.tar",
+        "sha256": "f92241dec2243a4018a4aac3a601654a699f6a44c76ef2eead3ca62d169b3ec5",
+        "recipe": "scripts.d/50-soxr.sh",
+        "recipe_slot": "",
+        "repository": "https://git.code.sf.net/p/soxr/code",
+        "required_notices": [
+          "LICENCE",
+          "COPYING.LGPL",
+          "AUTHORS",
+          "README"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libsoxr"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "soxr-945b592b70470e29f917f4de89b4281fbbd540c0"
+      },
+      {
+        "name": "ffmpeg-opencore-amr-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "7dba8c32238418ce0b316a852b2224df586ca896",
+        "url": "https://git.code.sf.net/p/opencore-amr/code",
+        "filename": "ffmpeg-opencore-amr-7dba8c322384.tar",
+        "sha256": "8ff33b12f204c82e67ec3600473b64d7e09d77bb88e5c61da1b30fb10fcf8950",
+        "recipe": "scripts.d/50-opencore-amr.sh",
+        "recipe_slot": "",
+        "repository": "https://git.code.sf.net/p/opencore-amr/code",
+        "required_notices": [
+          "LICENSE",
+          "README",
+          "opencore/README"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libopencore-amrnb",
+          "--enable-libopencore-amrwb"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "opencore-amr-7dba8c32238418ce0b316a852b2224df586ca896"
+      },
+      {
+        "name": "ffmpeg-lame-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6835",
+        "url": "https://svn.code.sf.net/p/lame/svn/!svn/bc/6835/trunk/lame/",
+        "filename": "ffmpeg-lame-svn-r6835.tar",
+        "sha256": "327c004523193b96e1aa2613c974f96d635b5717ba04ee9296d0aa60a477fa64",
+        "recipe": "scripts.d/50-libmp3lame.sh",
+        "recipe_slot": "",
+        "repository": "https://svn.code.sf.net/p/lame/svn/trunk/lame",
+        "required_notices": [
+          "LICENSE",
+          "COPYING",
+          "mpglib/AUTHORS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libmp3lame"
+        ],
+        "svn_snapshot": true,
+        "svn_archive_prefix": "lame-6835",
+        "svn_repository_uuid": "981c7233-bbb0-e711-95a9-001517a2e1a4"
+      },
+      {
+        "name": "ffmpeg-amf-headers-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "6277e353fd625121a8f627b1d0540323ef372a49",
+        "url": "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git",
+        "filename": "ffmpeg-amf-headers-6277e353fd62.tar",
+        "sha256": "29439aca5019bc665264f8a0c3fb994e837cd7a7a6a0af21df9d3c7e4d463a8a",
+        "recipe": "scripts.d/50-amf.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git",
+        "required_notices": [
+          "LICENSE.txt",
+          "amf/public/include/components/AMFXInput.h",
+          "amf/public/include/components/Ambisonic2SRenderer.h",
+          "amf/public/include/components/AudioCapture.h",
+          "amf/public/include/components/Capture.h",
+          "amf/public/include/components/ChromaKey.h",
+          "amf/public/include/components/ColorSpace.h",
+          "amf/public/include/components/Component.h",
+          "amf/public/include/components/ComponentCaps.h",
+          "amf/public/include/components/CursorCapture.h",
+          "amf/public/include/components/DisplayCapture.h",
+          "amf/public/include/components/FFMPEGAudioConverter.h",
+          "amf/public/include/components/FFMPEGAudioDecoder.h",
+          "amf/public/include/components/FFMPEGAudioEncoder.h",
+          "amf/public/include/components/FFMPEGComponents.h",
+          "amf/public/include/components/FFMPEGEncoderAV1.h",
+          "amf/public/include/components/FFMPEGEncoderH264.h",
+          "amf/public/include/components/FFMPEGEncoderHEVC.h",
+          "amf/public/include/components/FFMPEGFileDemuxer.h",
+          "amf/public/include/components/FFMPEGFileMuxer.h",
+          "amf/public/include/components/FFMPEGVideoDecoder.h",
+          "amf/public/include/components/FRC.h",
+          "amf/public/include/components/HQScaler.h",
+          "amf/public/include/components/MediaSource.h",
+          "amf/public/include/components/PreAnalysis.h",
+          "amf/public/include/components/PreProcessing.h",
+          "amf/public/include/components/SupportedCodecs.h",
+          "amf/public/include/components/VQEnhancer.h",
+          "amf/public/include/components/VideoCapture.h",
+          "amf/public/include/components/VideoConverter.h",
+          "amf/public/include/components/VideoDecoderUVD.h",
+          "amf/public/include/components/VideoEncoderAV1.h",
+          "amf/public/include/components/VideoEncoderHEVC.h",
+          "amf/public/include/components/VideoEncoderVCE.h",
+          "amf/public/include/components/VideoStitch.h",
+          "amf/public/include/components/ZCamLiveStream.h",
+          "amf/public/include/core/AudioBuffer.h",
+          "amf/public/include/core/Buffer.h",
+          "amf/public/include/core/Compute.h",
+          "amf/public/include/core/ComputeFactory.h",
+          "amf/public/include/core/Context.h",
+          "amf/public/include/core/CurrentTime.h",
+          "amf/public/include/core/D3D12AMF.h",
+          "amf/public/include/core/Data.h",
+          "amf/public/include/core/Debug.h",
+          "amf/public/include/core/Dump.h",
+          "amf/public/include/core/Factory.h",
+          "amf/public/include/core/Interface.h",
+          "amf/public/include/core/Plane.h",
+          "amf/public/include/core/Platform.h",
+          "amf/public/include/core/PropertyStorage.h",
+          "amf/public/include/core/PropertyStorageEx.h",
+          "amf/public/include/core/Result.h",
+          "amf/public/include/core/Surface.h",
+          "amf/public/include/core/Trace.h",
+          "amf/public/include/core/Variant.h",
+          "amf/public/include/core/Version.h",
+          "amf/public/include/core/VulkanAMF.h"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-amf"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "AMF-6277e353fd625121a8f627b1d0540323ef372a49",
+        "git_archive_paths": [
+          "LICENSE.txt",
+          "amf/public/include"
+        ]
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "revision": "503d81b138d76621aae4b12786e90de48aa8db3a",
+        "repository": "https://github.com/xiph/opus.git",
+        "recipe": "scripts.d/50-libopus.sh",
+        "recipe_slot": "",
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libopus"
+        ],
+        "name": "ffmpeg-libopus-generated-source",
+        "url": "https://media.xiph.org/opus/models/opus_data-a5177ec6fb7d15058e99e57029746100121f68e4890b1467d4094aa336b6013e.tar.gz",
+        "filename": "ffmpeg-libopus-generated-a5177ec6fb7d.tar",
+        "sha256": "422f148f64bcb60932e03d3273a219f68a6eec767ee9016ed402de8b43e6a475",
+        "canonical_tar": true,
+        "canonical_tar_paths": [
+          "dnn/bbwenet_data.c",
+          "dnn/bbwenet_data.h",
+          "dnn/dred_rdovae_constants.h",
+          "dnn/dred_rdovae_dec_data.c",
+          "dnn/dred_rdovae_dec_data.h",
+          "dnn/dred_rdovae_enc_data.c",
+          "dnn/dred_rdovae_enc_data.h",
+          "dnn/dred_rdovae_stats_data.c",
+          "dnn/dred_rdovae_stats_data.h",
+          "dnn/fargan_data.c",
+          "dnn/fargan_data.h",
+          "dnn/lace_data.c",
+          "dnn/lace_data.h",
+          "dnn/lossgen_data.c",
+          "dnn/lossgen_data.h",
+          "dnn/nolace_data.c",
+          "dnn/nolace_data.h",
+          "dnn/pitchdnn_data.c",
+          "dnn/pitchdnn_data.h",
+          "dnn/plc_data.c",
+          "dnn/plc_data.h"
+        ],
+        "strip_components": 0,
+        "upstream_sha256": "a5177ec6fb7d15058e99e57029746100121f68e4890b1467d4094aa336b6013e",
+        "generated_input": {
+          "kind": "opus-dnn",
+          "parent": "ffmpeg-libopus-source"
+        },
+        "required_notices": [
+          "dnn/bbwenet_data.h",
+          "dnn/dred_rdovae_constants.h",
+          "dnn/dred_rdovae_dec_data.h",
+          "dnn/dred_rdovae_enc_data.h",
+          "dnn/dred_rdovae_stats_data.h",
+          "dnn/fargan_data.h",
+          "dnn/lace_data.h",
+          "dnn/lossgen_data.h",
+          "dnn/nolace_data.h",
+          "dnn/pitchdnn_data.h",
+          "dnn/plc_data.h"
+        ]
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/50-zimg.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libzimg"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "name": "ffmpeg-graphengine-source",
+        "revision": "cb5b2ce13384ec2491f0c37256ea210034799f69",
+        "repository": "https://github.com/sekrit-twc/graphengine.git",
+        "url": "https://codeload.github.com/sekrit-twc/graphengine/tar.gz/cb5b2ce13384ec2491f0c37256ea210034799f69",
+        "filename": "ffmpeg-graphengine-cb5b2ce13384.tar.gz",
+        "sha256": "663bc958094280e3dabfa76a408296a51f5222f56115fd7782eae737edeaa179",
+        "required_notices": [
+          "COPYING"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-zimg-source",
+          "path": "graphengine",
+          "commit_base64": "dHJlZSA4NTUwOGU0MmEyMjUwMWFmNDZlNDY5ZDZmOThlMDk0YTY3OGEwOWRkCnBhcmVudCBmNmNjNzVhZDIzZGIxYmI5YzUzNjczYzE1NTIzZTZiNmU5NjBmZmM2CmF1dGhvciBBbGZyZWQgV2luZ2F0ZSA8cGFyb25hQHByb3Rvbm1haWwuY29tPiAxNzg4NDYyNjQzICswMzAwCmNvbW1pdHRlciBzZWtyaXQtdHdjIDxzZWtyaXQtdHdjQHVzZXJzLm5vcmVwbHkuZ2l0aHViLmNvbT4gMTc4ODQ5MjQyOCAtMDcwMAoKQWRkIG1pc3NpbmcgaW5jbHVkZXMgZm9yIGxpYmN4eC0yMwoKQnVnOiBodHRwczovL2J1Z3MuZ2VudG9vLm9yZy85ODE4NzkKU2lnbmVkLW9mZi1ieTogQWxmcmVkIFdpbmdhdGUgPHBhcm9uYUBwcm90b25tYWlsLmNvbT4K",
+          "trees_base64": {
+            "85508e42a22501af46e469d6f98e094a678a09dd": "MTAwNjQ0IC5jb3Zlcml0eS1wcmVwYXJlLnNoAEhAPNBRfJrNk2sOrZNM1GZQ21FkNDAwMDAgLmdpdGh1YgBcZH8ZdcB7f0a5jRhItWolL91cSDEwMDY0NCAuZ2l0aWdub3JlAPeqzrY+5GZ1SbMzZCxMgh//JqU/MTAwNjQ0IC5naXRtb2R1bGVzAOBvJgyo197cW53qa35q5qgODeyMMTAwNzU1IC50cmF2aXMtc2NyaXB0LnNoAFUueXyLiq0WtNiYWkWwposW6IGRMTAwNjQ0IC50cmF2aXMueW1sANZUy+93ED1xX/J2Ng1RRDXKT5HZMTAwNjQ0IENPUFlJTkcAWo4zJUX2Z6q5vzoX8R26J8cLZWoxMDA2NDQgQ2hhbmdlTG9nADovXtPQGxPfqw56vwGEsx1cZ8TgMTAwNjQ0IE1ha2VmaWxlLmFtAGGYDP2bFj7WDmNR0RX0fATXSZupMTAwNjQ0IFJFQURNRS5tZAACyj5oFG+Ewi6SWFB6XL8muUD5QDQwMDAwIF9tc3ZjANoe2GatoaihJU/GGli7TTKKjX9NMTAwNzU1IGF1dG9nZW4uc2gAqP2IXsUbfS9v0KRD4n/mT+/DtZAxMDA2NDQgY29uZmlndXJlLmFjAJPcr4ERMx6lByjpLg1GeFqO/4hCNDAwMDAgZG9jAN+jQv39UgXqfA7fYun+exVnhOaRMTAwNjQ0IGR1bW15LmNwcADmneKbstHWQ0uLKa53WtjC5IxTkTE2MDAwMCBncmFwaGVuZ2luZQDLWyzhM4TsJJHww3JW6iEANHmfaTQwMDAwIG00AHOvHm2QPpsxO2IgAxXmeuhxMeOONDAwMDAgc3JjACIeTFp3FZIS0X6uq+wAqhA7aXK4NDAwMDAgdGVzdABWOu6hv21O7BuaRKFjPKYNN2YpgzEwMDY0NCB6aW1nLnBjLmluAMmrgng7SmbhxuFSZUWJkK0SSJAz"
+          }
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/50-libjxl/50-libjxl.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libjxl"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-highway-source",
+        "revision": "457c891775a7397bdb0376bb1031e6e027af1c48",
+        "repository": "https://github.com/google/highway",
+        "url": "https://codeload.github.com/google/highway/tar.gz/457c891775a7397bdb0376bb1031e6e027af1c48",
+        "filename": "ffmpeg-highway-457c891775a7.tar.gz",
+        "sha256": "5124b0501c98d9930dbb065bfa1a5bbbd59ce0f12facb7e1e33aaef01a5f1f1a",
+        "required_notices": [
+          "LICENSE",
+          "LICENSE-BSD3"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-libjxl-source",
+          "path": "third_party/highway",
+          "commit_base64": "dHJlZSAzNDJiN2UxNTljZWNiOTM1YTZjMjI3NjY4ZGU2ZDNlYjQzMmNlNDk5CnBhcmVudCA3NzQxYzhjZTk5OThjYmFmZmFiZWM1Y2FkZDA1MWIxYjY4YWZhM2UyCmF1dGhvciBHYWxheHk0NTk0IDwxNjQ0NDA3OTkrR2FsYXh5NDU5NEB1c2Vycy5ub3JlcGx5LmdpdGh1Yi5jb20+IDE3ODk5MDE5OTAgKzAwMDAKY29tbWl0dGVyIEdpdEh1YiA8bm9yZXBseUBnaXRodWIuY29tPiAxNzg5OTAxOTkwICswMDAwCmdwZ3NpZyAtLS0tLUJFR0lOIFBHUCBTSUdOQVRVUkUtLS0tLQogCiB3c0ZjQkFBQkNBQVFCUUpxcjd5MkNSQzFhUTd1dTVVaGxBQUFRU1FRQUgxd2F4aVMrSE9kVTNlNWpvY2VJVGVkCiA3bEVoYlVab3dPSFNwTm1UT2JIby8zd2piSSt4WTg1dWU2ZThubmFLVUNka09ST0ZGSVlha0tMdFIyeE9wK3FlCiBCL1hlbzd0OEdQKzMzam9GQ28xRXhPUzltSWlTMDB4YVYzenFWS0xqNzNON2J0Rmhtc0JYQWdDdnNOU1o1NDIvCiBxUlZIU3dpZ05HS3NkNzE5SlE0enNrQ0pWQmZJcE1TOVhkS25teXdkQzJqL3BnZm9kZ0lGb25CQjdQY2daMS9KCiBNQWVROWFLekR6ZldJWDZwb0kzMHQ4NEIyVU40RUdWdUx4czJOeDVYR0cyVDY5aTVoblZYdEY5ZW0yaXIwRllxCiBtdUJEdmVXTkZqV0VDRFk0RStBUVQvVlYwQkc3ZnpkZStreWxmWm4xdElGQ3dKWHlKcHFKSDZlMWRWbVlPVGVwCiBtNHJPaWxFNlFlMFNhWDFDazMyb2RzZnZrSENRaEY2Z2ZDNC9KVmdkeXZOdEY4WTFncnhuQTdlaGhZUHZETVNVCiA1bHBGYWFMd0J6dkVyMWdxZWl3b2pBeXprSkptcDNnVWpxTGcwU0plTCtTNkJKcjNidWl1dkd4cUVpdnRvZ1JrCiBadWROMmJtOFlFenR6a1Rhb0pDQk0yRGs1MXZhYUlZUEhxWEZzbFVqektMRUViTXdEeW5ZYm5Hb0FNSDU3bEUwCiBZSzBlM3l2M3lSNU52K0ttL2QxTFJyS1dTR2lXQlNTc1I1eEtnT1ZtcEszcDRKckZ5eE5ueHAweTg0RGM4RVBSCiBrUlR3T3BFYVp1OTVUUGt6aU5aREtsaDJCSkxSdEpKOWIraXFzdmtnZU1vQ0NmV3YrTE9uaFg3MHBVSXBMSlZYCiAxcHFWbDM2VVhoZXBpdkltUllvRAogPUkxeWMKIC0tLS0tRU5EIFBHUCBTSUdOQVRVUkUtLS0tLQogCgpBbGlnbiBzdHJpcF9hbHBoYSB3aXRoIGJvb2xlYW4gZXhwZWN0YXRpb25zIGFuZCBpbXByb3ZlIGZsb2F0IGNoZWNrcyAoIzQ5ODQpCgoqIEFsaWduIHN0cmlwX2FscGhhIHdpdGggYm9vbGVhbiBleHBlY3RhdGlvbnMgYW5kIGltcHJvdmUgZmxvYXQgY2hlY2tzCgoqIGNvbXBpbGUgZml4ZXM=",
+          "trees_base64": {
+            "342b7e159cecb935a6c227668de6d3eb432ce499": "MTAwNjQ0IC5iYXplbGlnbm9yZQCRLqzBtSdCAh9xwlhhnXnsvQ/ajDEwMDY0NCAuY2xhbmctZm9ybWF0AKYbYcVpckfore1SGs6knGybaQuZMTAwNjQ0IC5jbGFuZy10aWR5AGOpus6v5XwE4Jtr9C4J6rINfs7IMTAwNjQ0IC5jbGFuZ2QA2FbsPJt8dC6TUEFAgWXhaW/7a2M0MDAwMCAuZGV2Y29udGFpbmVyAHkE4Ce45mIuBI3MdxvGMJrSamFbNDAwMDAgLmdpdGh1YgC6e0EZ1DrWwTt/kB0YNT7NfEARojEwMDY0NCAuZ2l0aWdub3JlAGGW1MJIe6m/s/Vp5qviIGYweOyxMTAwNjQ0IC5naXRtb2R1bGVzADBpyq86H6iXUd7IIHbyZcLUOwIfMTAwNjQ0IC5wcmUtY29tbWl0LWNvbmZpZy55YW1sAJa11/tSVMhjhOrJ7mk++BzLqWb+MTAwNjQ0IC5yZWFkdGhlZG9jcy55YW1sAO4l/tSBb/HMXON1tOeUGeTc/kWbMTAwNjQ0IEFVVEhPUlMADf8lmQsj/oh6T1F/J3mU1L+3MSYxMDA2NDQgQlVJTEQuYmF6ZWwARcUmGi6kfy93PF3YlCqCfFfacBYxMDA2NDQgQlVJTERJTkcubWQAfpvCqtOkAGTw62HdqdRc6k2fzK8xMDA2NDQgQlVJTERJTkdfSGFpa3UubWQAH/yhRTx3svi7gdnAADg71DzDnFsxMDA2NDQgQlVJTERJTkdfT1NYLm1kALX14023EeFEGHWOad3+OV5+UzTFMTAwNjQ0IENIQU5HRUxPRy5tZABZYbZysS0HhUJtfKoDH9ODwhS26DEwMDY0NCBDTWFrZUxpc3RzLnR4dAB8anxN36thrMGfJ/ziQZABxRzW/jEwMDY0NCBDT0RFX09GX0NPTkRVQ1QubWQAstgaMhQt7FzqiqtjQYlPs7LUBj0xMDA2NDQgQ09OVFJJQlVUSU5HLm1kAEJklLHQMLUg4Smt1CpLrM8Xtk5vMTAwNjQ0IENPTlRSSUJVVE9SUwCEgJb5IZt+yOe5No8fd6ussSnHiTEwMDY0NCBMSUNFTlNFAMZgNLEF8j0QilG0XIRtW1wZTMIpMTAwNjQ0IE1PRFVMRS5iYXplbACA7cR8egFnVO71OBJQCunJOcWIBzEwMDY0NCBNT0RVTEUuYmF6ZWwubG9jawCSZL3ttQU0JXMzXeEyNxUUfW8BCTEwMDY0NCBQQVRFTlRTAMlbj0EF8hDOsG/mONAz0Tsk4ieiMTAwNjQ0IFJFQURNRS5tZAARTYpEmp9WVzpS3mTyCt8KmL6RejEwMDY0NCBTRUNVUklUWS5tZADQMBKmOtlAEECi54aGlI7PMfP6uzEwMDc1NSBiYXNoX3Rlc3Quc2gAjYz3KfnxP+O62Djr4ozR+8jOijExMDA3NTUgY2kuc2gANjJ/YnWUoxSAQXor33P/sKgc7l80MDAwMCBjbWFrZQBRp7JmRW1vTzEScXimzAkamDjLpzEwMDY0NCBjbWFrZV91bmluc3RhbGwuY21ha2UuaW4AS2H4jj8zisVol+mAsRZudaer8YM0MDAwMCBkZWJpYW4AgIzi08Udrw3HDey5t3DaZPumxQcxMDA3NTUgZGVwcy5zaAAP7WORAhl2ie1lX3wX3e7xxUNr2zQwMDAwIGRvYwAGy/DgeHBKHj4WtIqcmjK1RcfvvjQwMDAwIGV4YW1wbGVzAJwQF78UCHSFs8VLLSGo2VFVzyQgMTAwNjQ0IGZsYWtlLmxvY2sAEyKHt5QgRZGEWo5asYx7ew5RrvkxMDA2NDQgZmxha2Uubml4AMmb1jcISF6mkb5pyjFxwhwrofdmNDAwMDAgbGliANRVZZqNH25jgwsKokUkxhYeTqk3NDAwMDAgcGx1Z2lucwBEG3TiFvC2kM/n1VjkHJHYTs/IJzE2MDAwMCB0ZXN0ZGF0YQBzaV0wNnDJDk1QbqidmQGwgThQiTQwMDAwIHRoaXJkX3BhcnR5AGi+vHb/hC3TNG3LMhUmkF5pAC8nNDAwMDAgdG9vbHMAGdOkO/HtgMTfKfP/h+iqhvhem+o=",
+            "68bebc76ff842dd3346dcb321526905e69002f27": "MTAwNjQ0IENNYWtlTGlzdHMudHh0AMR61jJE62F4adsx+78SEaTTGI2NNDAwMDAgSEVWQ1NvZnR3YXJlAI7rYd8+CQRqNQ9fAIyNqRpWmfi4MTYwMDAwIGJyb3RsaQACj7WiNmHxIwF8Bg2qVGtVz0veKTEwMDY0NCBkaXJlbnQuY2MAOQYITgMnTkls4CgfABZJ/nj2hRUxMDA2NDQgZGlyZW50LmgAN6CPQlvpJgvOjzxGOm8iNim9negxNjAwMDAgZ29vZ2xldGVzdABpEMnZFlgB2IJ9Yoy3LrfqndU4xTE2MDAwMCBoaWdod2F5AEV8iRd1pzl72wN2uxAx5uAnrxxIMTYwMDAwIGxjbXMAUXY0djV4XlPuXO6SMo92/adm7MYxMDA2NDQgbGNtczIuY21ha2UA3sa+k2eoaYFBop8d/xaKhIo+vlYxNjAwMDAgbGlianBlZy10dXJibwCOy6Nkfttt2UBGP+3zjKM6jipz0TE2MDAwMCBsaWJwbmcAhyVV9LqRAlJ4OvFQf55/4WU74lIxNjAwMDAgc2pwZWcAlODfbQ+LRCKN5b4P8177n5RqE8kxMDA2NDQgc2pwZWcuY21ha2UA8aaSUrpHJhH/711CxABoBqXT6/wxNjAwMDAgc2tjbXMAltkXHJS5N6G18Ck95zCawWMRtyIxMDA2NDQgc2tjbXMuY21ha2UAHnDCqgdjLYcel+7mcYktOw7pWvYxMDA2NDQgdGVzdGluZy5jbWFrZQDioZQT9MAp5nCxnkoHFd0U5n6LyjE2MDAwMCB6bGliAFG38qva3nHNm7Dno3PvJhDsb52v"
+          }
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-shaderc-glslang-source",
+        "revision": "e1b562a8bed273a02f30b59b66a5d499793cede5",
+        "repository": "https://github.com/KhronosGroup/glslang.git",
+        "url": "https://codeload.github.com/KhronosGroup/glslang/tar.gz/e1b562a8bed273a02f30b59b66a5d499793cede5",
+        "filename": "ffmpeg-shaderc-glslang-e1b562a8bed2.tar.gz",
+        "sha256": "907174a24713c6202c146f164bf81783f1fbc79c8cb821a30f18f159eb980312",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "deps_input": {
+          "parent": "ffmpeg-shaderc-source",
+          "path": "third_party/glslang"
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-shaderc-spirv-headers-source",
+        "revision": "04fd3caa1e8267e4d95c806cad901181728e1006",
+        "repository": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+        "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/04fd3caa1e8267e4d95c806cad901181728e1006",
+        "filename": "ffmpeg-shaderc-spirv-headers-04fd3caa1e82.tar.gz",
+        "sha256": "392f4801409aad9c4f1b77745f179952fd6264e4c8bd0fc1bc45dfa6807bf6d0",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "deps_input": {
+          "parent": "ffmpeg-shaderc-source",
+          "path": "third_party/spirv-headers"
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/47-vulkan/50-shaderc.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libshaderc"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-shaderc-spirv-tools-source",
+        "revision": "ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+        "repository": "https://github.com/KhronosGroup/SPIRV-Tools.git",
+        "url": "https://codeload.github.com/KhronosGroup/SPIRV-Tools/tar.gz/ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+        "filename": "ffmpeg-shaderc-spirv-tools-ef96ed763b43.tar.gz",
+        "sha256": "82c62146083fd558735a3171cf97cfc47903ca7d368482e87f94bd44883c0f00",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "deps_input": {
+          "parent": "ffmpeg-shaderc-source",
+          "path": "third_party/spirv-tools"
+        }
+      }
+    ]
+  }
+}

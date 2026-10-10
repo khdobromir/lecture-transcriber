@@ -4,12 +4,56 @@ Transcribe is MIT licensed. The AppImage contains separately executed tools and
 dynamically linked libraries with their own licenses. Notices are under
 `usr/share/transcribe/licenses`; exact versions and SHA-256 pins are recorded in
 `dependencies.json` and the complete payload inventory in `package-manifest.json`.
+`usr/share/transcribe/linux-library-provenance.json` records copied system
+libraries, their binary/source package versions and copyright hashes. The
+copyright files and common license texts are retained under `licenses/Linux-system`.
+SDK third-party libraries and any unresolved mappings are listed explicitly;
+this inventory alone is not a complete corresponding-source deliverable.
+`linux-source-provenance.json` maps these system libraries to exact Ubuntu source
+package versions and SHA-256-verified archives in the adjacent build-inputs
+deliverable. The builder needs matching authenticated `deb-src` indexes and
+downloads source packages without unpacking or executing them. An unavailable
+exact version or checksum mismatch stops packaging.
+The same provenance includes the DejaVu font and generated CA bundle, their
+package/source versions, payload hashes and the package-owned CA generator hash.
+`licenses/Qt-sdk-source-notices` retains ICU 73.2 notices from its verified source
+archive. The source mapping requires exact original hashes for all three ICU
+libraries from Qt 6.8.3; a different SDK payload stops packaging. This establishes
+source/notice attribution; the full SDK build configuration is still required.
+`licenses/AppImage-runtime-source-notices` retains notices for the pinned type-2
+runtime and its musl, mimalloc, zstd, zlib, libfuse and squashfuse sources.
+`licenses/appimage-runtime-provenance.json` ties those sources and Alpine recipe
+snapshots to the runtime binary SHA-256. The adjacent build-inputs archive
+retains all nine source/recipe archives, including the runtime's libfuse patch
+and exact Alpine package patches. Updating the runtime without an updated
+source mapping stops packaging. This remains a partial corresponding-source
+deliverable; toolchain/runtime details and other bundled components still need
+their complete build materials.
+`licenses/FFmpeg-dependency-source-notices` retains original notices from a
+partial set of 87 dependency sources. `ffmpeg-source-provenance.json` binds them
+to the FFmpeg input archive hash, exact build recipes and the bundled tool's
+configure flags. The verified sources are in the adjacent build-inputs archive.
+Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
+the retained source selection excludes upstream model checkpoints. Original
+Opus license texts remain in the parent Opus source notices.
+The retained Graphengine and Highway submodules are tied to their parent zimg
+and JPEG XL commits through verified Git commit/tree objects and `.gitmodules`.
+Their original license texts are included in the same notices directory.
+The shaderc glslang, SPIRV-Headers and SPIRV-Tools inputs are bound to the
+parent's pinned `DEPS` declarations, parsed without executing upstream Python.
+The upstream `lgpl` variant name does not describe every dependency's terms:
+its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
+Remaining libraries, nested inputs and SDK build settings/tool versions still
+require mapping.
+`licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
+texts and distribution metadata together with its binary hash and archive inventory.
 
 | Component | Source | License |
 | --- | --- | --- |
 | Qt 6.8.3 shared libraries and QML/plugins | https://download.qt.io/archive/qt/6.8/6.8.3/ | LGPLv3; preserve replacement/relinking rights |
+| ICU 73.2 from the Qt SDK | https://github.com/unicode-org/icu/releases/tag/release-73-2 | Original ICU LICENSE and included third-party notices |
 | whisper.cpp, pinned commit | https://github.com/ggml-org/whisper.cpp/tree/927cfce34f31707e17f2bff35c349632fb9e2c3a | MIT |
-| FFmpeg 8.1 LGPL build and linked dependencies | https://github.com/BtbN/FFmpeg-Builds/tree/master | LGPL; actual bundled dependency notices apply |
+| FFmpeg 8.1, BtbN lgpl variant, and linked dependencies | https://github.com/BtbN/FFmpeg-Builds/tree/master | FFmpeg core LGPL; bundled dependency terms also apply |
 | yt-dlp Linux standalone, including Python and libraries | https://github.com/yt-dlp/yt-dlp/tree/2026.08.19 | Includes GPLv3+ dependencies; bundled notices apply |
 | AppImage runtime | https://github.com/AppImage/type2-runtime | MIT, embedded runtime dependencies have their own notices |
 | Public root certificates | Ubuntu ca-certificates package / Mozilla CA store | Bundled package copyright applies |

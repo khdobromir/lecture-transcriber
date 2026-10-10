@@ -16,6 +16,7 @@ class ArchiveTests(unittest.TestCase):
         files = {f"{directory}/{runtime}": b"fixture" for directory in ["bin", "bin/tools"]
                  for runtime in ["msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"]}
         files["bin/Файл 😀.txt"] = b"fixture"
+        files["bin/tools/.transcribe-bundle"] = b"1\n"
         manifest = {"version": 1, "source": "a" * 40,
                     "files": [{"path": name, "sha256": hashlib.sha256(content).hexdigest()} for name, content in files.items()]}
         if mutation:
@@ -48,6 +49,14 @@ class ArchiveTests(unittest.TestCase):
         archive, destination = self.fixture()
         with self.assertRaises(ValueError):
             extract_verified(archive, destination, "b" * 40)
+
+    def test_manifest_cannot_approve_a_zip_without_portable_marker(self):
+        def mutation(files, manifest):
+            files.pop("bin/tools/.transcribe-bundle")
+            manifest["files"] = [entry for entry in manifest["files"] if entry["path"] != "bin/tools/.transcribe-bundle"]
+        archive, destination = self.fixture(mutation)
+        with self.assertRaisesRegex(ValueError, "portable bundle marker"):
+            extract_verified(archive, destination, "a" * 40)
 
 
 if __name__ == "__main__":
