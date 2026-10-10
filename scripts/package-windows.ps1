@@ -13,14 +13,9 @@ $Project = (Resolve-Path "$PSScriptRoot\..").Path
 $QtRoot = (Resolve-Path $QtRoot).Path
 $Lock = Get-Content "$Project\packaging\windows\dependencies.json" -Raw | ConvertFrom-Json
 $SourceLock = Get-Content "$Project\packaging\source-inputs.json" -Raw -Encoding utf8 | ConvertFrom-Json
-$BinaryHashes = @($Lock.downloads | ForEach-Object { $_.sha256 })
-foreach ($Source in $SourceLock.downloads) {
-    $MatchesBinary = @($Source.for_binary_sha256 | Where-Object { $BinaryHashes -contains $_ })
-    if ($MatchesBinary.Count -eq 0) { throw "Source input does not match pinned binary: $($Source.name)" }
-}
-if ($SourceLock.qt.version -ne $Lock.qt -or @($SourceLock.qt.downloads | Where-Object { $_.revision -ne $Lock.qt }).Count -ne 0) {
-    throw 'Qt source input does not match pinned SDK.'
-}
+$SourceRecordsJson = & python "$Project\scripts\package_inputs.py" select-sources "$Project\packaging\source-inputs.json" "$Project\packaging\windows\dependencies.json"
+if ($LASTEXITCODE -ne 0) { throw 'Source input mappings do not match pinned binaries/SDK.' }
+$Sources = @(($SourceRecordsJson | ConvertFrom-Json).downloads)
 if (-not [Environment]::Is64BitProcess) { throw 'Run 64-bit PowerShell on Windows x64.' }
 if (-not (Test-Path "$QtRoot\bin\windeployqt.exe")) { throw 'QtRoot must be the MSVC x64 Qt SDK directory.' }
 $QtVersion = (& "$QtRoot\bin\qmake.exe" -query QT_VERSION).Trim()
@@ -97,7 +92,11 @@ Copy-Item "$Project\third_party\nlohmann\LICENSE.MIT" "$Licenses\nlohmann-json-M
 Copy-Item "$Project\LICENSE" "$Licenses\Transcribe-MIT.txt"
 foreach ($Dependency in $Lock.downloads) {
     $Archive = Get-Verified $Dependency
-    if ($Dependency.name -eq 'yt-dlp') { Copy-Item $Archive "$Tools\yt-dlp.exe" }
+    if ($Dependency.name -eq 'yt-dlp') {
+        Copy-Item $Archive "$Tools\yt-dlp.exe"
+        Invoke-Checked python @("$Project\scripts\package_standalone_notices.py", $Archive, $Dependency.sha256,
+            "$Licenses\yt-dlp-embedded-notices")
+    }
     elseif ($Dependency.name -eq 'ffmpeg') {
         $Extract = Join-Path $Stage 'ffmpeg'
         Expand-Archive -LiteralPath $Archive -DestinationPath $Extract
@@ -108,7 +107,7 @@ foreach ($Dependency in $Lock.downloads) {
             ForEach-Object { Copy-Item $_.FullName (Join-Path $Licenses ('FFmpeg-' + $_.Name)) }
     } else { throw "Unknown dependency $($Dependency.name)" }
 }
-foreach ($Source in @($SourceLock.downloads) + @($SourceLock.qt.downloads)) { $null = Get-Verified $Source }
+foreach ($Source in $Sources) { $null = Get-Verified $Source }
 Invoke-Checked python @("$Project\scripts\package_notices.py", "$Project\packaging\source-inputs.json", $Stage,
     "$Licenses\Qt-source-notices")
 if (-not $SkipTests) { Invoke-Checked "$Build\Release\test_split.exe" @("$Tools\ffmpeg.exe") }
@@ -166,14 +165,14 @@ if ($RealSmoke) {
 Invoke-Checked python $SmokeArguments
 $WhisperArchive = Join-Path $Stage 'whisper-source.tar'
 Invoke-Checked git @('-C', $Whisper, 'archive', '--format=tar', "--output=$WhisperArchive", 'HEAD')
-$Inputs = [ordered]@{ downloads = @($Lock.downloads) + @($SourceLock.downloads) + @($SourceLock.qt.downloads) + @([ordered]@{
+$Inputs = [ordered]@{ downloads = @($Lock.downloads) + $Sources + @([ordered]@{
     name = 'whisper-source'; filename = 'whisper-source.tar'; revision = $Lock.whisper.revision
     url = $Lock.whisper.repository; sha256 = (Get-FileHash $WhisperArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 }) }
 $InputsFile = Join-Path $Stage 'build-input-records.json'
 $Inputs | ConvertTo-Json -Depth 8 | Set-Content $InputsFile -Encoding utf8
 $InputsArchive = $Zip + '.build-inputs.tar.gz'
-Invoke-Checked python @("$Project\scripts\package_inputs.py", $InputsFile, $Stage, $InputsArchive,
+Invoke-Checked python @("$Project\scripts\package_inputs.py", 'archive', $InputsFile, $Stage, $InputsArchive,
     '--material', "$Project\packaging\windows\dependencies.json", '--material', "$Project\scripts\patch-whisper-windows.py",
     '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
     '--material', "$Project\packaging\source-inputs.json")

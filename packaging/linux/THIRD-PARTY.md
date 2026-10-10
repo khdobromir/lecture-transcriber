@@ -9,6 +9,8 @@ libraries, their binary/source package versions and copyright hashes. The
 copyright files and common license texts are retained under `licenses/Linux-system`.
 SDK third-party libraries and any unresolved mappings are listed explicitly;
 this inventory alone is not a complete corresponding-source deliverable.
+`licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
+texts and distribution metadata together with its binary hash and archive inventory.
 
 | Component | Source | License |
 | --- | --- | --- |

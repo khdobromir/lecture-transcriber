@@ -84,6 +84,12 @@ BtbN build recipes и восемь Qt source modules точными revisions/SH
 соответствующего source mapping отклоняется. `package_notices.py` копирует
 Qt notices/attributions и указанные ими license/copyright files из проверенных
 архивов в пакет; `Qt-source-notices/notices.json` фиксирует hashes и происхождение.
+`package_standalone_notices.py` сохраняет notices и metadata из проверенного
+yt-dlp PyInstaller archive без исполнения кода. Source lock также содержит
+раздельные по binary SHA исходники встроенного Python и Python dependencies;
+оба упаковщика используют общий `package_inputs.py select-sources` selector.
+Linux дополнительно сохраняет binary/source package versions и copyright texts
+в `linux-library-provenance.json` и `licenses/Linux-system`.
 Это ещё не полный corresponding-source комплект: зависимости FFmpeg/yt-dlp,
 AppImage runtime, build configuration Qt и скопированных Linux libraries собираются
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется

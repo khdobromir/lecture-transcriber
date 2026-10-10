@@ -150,6 +150,38 @@ SDK libraries не считаются автоматически покрыты�
 затем прошёл. Реальная сборка нового payload в hosted builder ещё необходима.
 Полнота corresponding sources остаётся false до завершения F7.
 
+## Проверки 10 октября: Linux notices и standalone dependencies
+
+На `024e6b54e9b351f491f00a208017d04803456a62` прошли
+[CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/37983033395),
+[Linux portable с real ASR/offline containers](https://github.com/khdobromir/lecture-transcriber/actions/runs/37983037263)
+и [отдельный Real Whisper smoke](https://github.com/khdobromir/lecture-transcriber/actions/runs/37983041111).
+AppImage и build inputs скачаны и сверены: соответственно
+`a01e92fecd87ec6100283ed925384db784c98e6e8dad4fec9ee7ef6aef4d573b` и
+`de6b4acb3210994aa7c0299f0824573dd4c02c8154c6f676a7cf4d2302eb1eac`.
+Provenance содержит 116 библиотек, в том числе 41 точную версию system source
+packages. Unresolved: три Whisper/ggml libraries и три ICU 73 libraries из SDK;
+исходники Whisper сохранены отдельно, ICU и system source archives ещё необходимы.
+
+Последующий код упаковки сохраняет оригинальные встроенные notices yt-dlp:
+проверенный Linux standalone дал 9 notice/metadata files и 159 archive entries,
+Windows — 5 файлов и 151 entry. Python code objects не читаются через marshal
+и не исполняются. Реальный Windows архив маркирует data files как BINARY;
+это отличие воспроизведено regression и учтено при чтении.
+Binary SHA mismatch, traversal и duplicate entries отклоняются до записи.
+
+Закреплены 20 дополнительных source archives Python и runtime dependencies
+yt-dlp. Shared selector выбирает Windows Python 3.10.11/websockets 16.1.1
+и Linux Python 3.14.7/websockets 17.0.1; Linux SecretStorage/cryptography/Jeepney
+не включаются в Windows source set. Версии Python подтверждены runtime/PE
+metadata; source versions проверены в patchlevel.h, SHA — по digest из
+официальных Sigstore metadata (проверка криптографической подписи не заявляется).
+PyPI source bytes сверены с release-specific SHA-256. Linux/Windows build-input
+archives с выбранными runtime sources созданы и перечитаны с проверкой hashes.
+Для новых изменений требуется новый hosted packaging run; F7 и ручные gates
+остаются открытыми. Полный комплект также требует FFmpeg dependencies,
+native dependencies standalone runtime, ICU, system packages и AppImage runtime.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и

@@ -1,5 +1,8 @@
 The application is MIT licensed. The ZIP includes separately executed tools and
 dynamically linked libraries with their own licenses. Notices are in `licenses/`.
+`licenses/yt-dlp-embedded-notices` retains the standalone executable's original
+third-party license texts and distribution metadata, read without executing its
+embedded Python code. `notices.json` records the binary hash and archive inventory.
 
 | Component | Pinned input | License / source |
 | --- | --- | --- |

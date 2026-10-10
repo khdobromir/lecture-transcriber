@@ -9,6 +9,8 @@ import sys
 import tempfile
 import unittest
 import tarfile
+import struct
+import zlib
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -18,6 +20,42 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_standalone_notices_are_read_without_running_the_executable(self):
+        from package_standalone_notices import collect_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def fixture(names, kind=b"x"):
+                data = bytearray(); toc = bytearray()
+                for name, content in names:
+                    compressed = zlib.compress(content); encoded = name.encode() + b"\0"
+                    toc += struct.pack("!IIIIBc", 18 + len(encoded), len(data), len(compressed), len(content), 1, kind) + encoded
+                    data += compressed
+                offset = len(data); data += toc
+                data += struct.pack("!8sIIII64s", b"MEI\x0c\x0b\x0a\x0b\x0e", len(data) + 88, offset, len(toc), 314, b"libpython3.14.so")
+                binary = root / "standalone"; binary.write_bytes(b"not executable" + data)
+                return binary, hashlib.sha256(binary.read_bytes()).hexdigest()
+            binary, checksum = fixture([("THIRD_PARTY_LICENSES.txt", b"Original notices"),
+                                        ("demo.dist-info\\licenses\\LICENSE", b"Dependency terms"),
+                                        ("demo.dist-info/METADATA", b"Name: demo\nVersion: 1.0\n"),
+                                        ("executable.pyc", b"never execute")])
+            result = collect_notices(binary, checksum, root / "notices")
+            self.assertEqual((root / "notices/THIRD_PARTY_LICENSES.txt").read_bytes(), b"Original notices")
+            self.assertEqual((root / "notices/demo.dist-info/licenses/LICENSE").read_bytes(), b"Dependency terms")
+            self.assertFalse((root / "notices/executable.pyc").exists())
+            self.assertEqual(result["binary_sha256"], checksum)
+            self.assertEqual(result["distributions"], [{"name": "demo", "version": "1.0"}])
+            # The Windows release labels these plain data files as BINARY.
+            binary, checksum = fixture([("THIRD_PARTY_LICENSES.txt", b"Windows terms")], kind=b"b")
+            collect_notices(binary, checksum, root / "windows-notices")
+            self.assertEqual((root / "windows-notices/THIRD_PARTY_LICENSES.txt").read_bytes(), b"Windows terms")
+            with self.assertRaisesRegex(ValueError, "checksum"):
+                collect_notices(binary, "0" * 64, root / "corrupt")
+            for names in [[("../LICENSE", b"escape")], [("THIRD_PARTY_LICENSES.txt", b"one"), ("THIRD_PARTY_LICENSES.txt", b"two")]]:
+                binary, checksum = fixture(names)
+                with self.assertRaises(ValueError):
+                    collect_notices(binary, checksum, root / "unsafe")
+                self.assertFalse((root / "unsafe").exists())
+
     def test_qt_notices_include_referenced_files_and_reject_incomplete_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -60,11 +98,25 @@ class SourceIdentityTests(unittest.TestCase):
             binaries = lock["downloads"]
             binaries = list(binaries.values()) if isinstance(binaries, dict) else binaries
             records = source_records(source_lock, binaries, lock["qt"])
-            self.assertEqual({record["name"] for record in records if "for_binary_sha256" in record},
+            self.assertEqual({record["name"] for record in records if "for_binary_sha256" in record and record.get("kind") != "standalone-runtime-source"},
                              {"ffmpeg-source", "ffmpeg-build-recipes", "yt-dlp-source"})
             self.assertEqual({record["name"] for record in records if "for_binary_sha256" not in record},
                              {"qtbase", "qtdeclarative", "qtwayland", "qtsvg", "qtimageformats",
                               "qtshadertools", "qttranslations", "qttools"})
+            standalone = [record for record in records if record.get("kind") == "standalone-runtime-source"]
+            python = next(record for record in standalone if record["name"].startswith("yt-dlp-cpython-source"))
+            websockets = next(record for record in standalone if record["name"].startswith("yt-dlp-websockets-source"))
+            self.assertEqual(python["revision"], "3.14.7" if platform == "linux" else "3.10.11")
+            self.assertEqual(websockets["revision"], "17.0.1" if platform == "linux" else "16.1.1")
+            self.assertEqual(any(record["name"].startswith("yt-dlp-cryptography-source") for record in standalone), platform == "linux")
+            cli = subprocess.run([sys.executable, str(project / "scripts/package_inputs.py"), "select-sources",
+                                  str(project / "packaging/source-inputs.json"), str(project / f"packaging/{platform}/dependencies.json")],
+                                 check=True, text=True, stdout=subprocess.PIPE)
+            self.assertEqual(json.loads(cli.stdout)["downloads"], records)
+            stale = json.loads(json.dumps(source_lock))
+            stale["standalone_dependencies"]["for_binary_sha256"] = ["0" * 64]
+            with self.assertRaisesRegex(ValueError, "Standalone dependency sources do not match"):
+                source_records(stale, binaries, lock["qt"])
             with self.assertRaisesRegex(ValueError, "does not match pinned SDK"):
                 source_records(source_lock, binaries, "0.0.0")
             for name in ["ffmpeg", "yt-dlp"]:

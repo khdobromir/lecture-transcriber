@@ -15,6 +15,7 @@ from package_source import validate_identity
 from package_inputs import archive_inputs, source_records
 from package_notices import collect_qt_notices
 from package_linux_notices import collect_system_notices, write_provenance
+from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -221,6 +222,8 @@ def main():
     tools = appdir / "usr/bin/tools"; tools.mkdir()
     licenses = appdir / "usr/share/transcribe/licenses"; licenses.mkdir(parents=True)
     collect_qt_notices(source_lock["qt"]["downloads"], cache, licenses / "Qt-source-notices")
+    collect_standalone_notices(dependencies["yt-dlp"], lock["downloads"]["yt-dlp"]["sha256"],
+                              licenses / "yt-dlp-embedded-notices")
     source = stage / "whisper-source"; extract_sources(dependencies["whisper"], source)
     whisper = source / ("whisper.cpp-" + lock["downloads"]["whisper"]["revision"])
     whisper_build = stage / "whisper-build"

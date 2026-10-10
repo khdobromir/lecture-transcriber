@@ -16,7 +16,19 @@ def source_records(lock, binaries, qt_version):
             raise ValueError("Source input does not match pinned binary: " + record["name"])
     if lock["qt"]["version"] != qt_version or any(record["revision"] != qt_version for record in lock["qt"]["downloads"]):
         raise ValueError("Qt source input does not match pinned SDK")
-    return lock["downloads"] + lock["qt"]["downloads"]
+    selected = lock["downloads"] + lock["qt"]["downloads"]
+    if "standalone_dependencies" in lock:
+        standalone = lock["standalone_dependencies"]
+        supported = set(standalone["for_binary_sha256"])
+        tools = [record for record in lock["downloads"] if record["name"] == "yt-dlp-source"]
+        if len(tools) != 1 or available.intersection(tools[0]["for_binary_sha256"]) != available.intersection(supported):
+            raise ValueError("Standalone dependency sources do not match pinned binary")
+        for record in standalone["downloads"]:
+            if not record["for_binary_sha256"] or not set(record["for_binary_sha256"]).issubset(supported):
+                raise ValueError("Standalone dependency source has an unknown binary mapping")
+            if available.intersection(record["for_binary_sha256"]):
+                selected.append(record)
+    return selected
 
 
 def archive_inputs(records, cache, destination, materials=()):
@@ -65,11 +77,23 @@ def archive_inputs(records, cache, destination, materials=()):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("records", type=Path)
-    parser.add_argument("cache", type=Path)
-    parser.add_argument("destination", type=Path)
-    parser.add_argument("--material", action="append", type=Path, default=[])
+    commands = parser.add_subparsers(dest="command", required=True)
+    select = commands.add_parser("select-sources", help="Validate source mappings and print inputs for one platform")
+    select.add_argument("sources", type=Path)
+    select.add_argument("binaries", type=Path)
+    archive = commands.add_parser("archive", help="Retain checksum-verified inputs")
+    archive.add_argument("records", type=Path)
+    archive.add_argument("cache", type=Path)
+    archive.add_argument("destination", type=Path)
+    archive.add_argument("--material", action="append", type=Path, default=[])
     args = parser.parse_args()
+    if args.command == "select-sources":
+        lock = json.loads(args.binaries.read_text(encoding="utf-8-sig"))
+        binaries = lock["downloads"]
+        records = source_records(json.loads(args.sources.read_text(encoding="utf-8-sig")),
+                                 list(binaries.values()) if isinstance(binaries, dict) else binaries, lock["qt"])
+        print(json.dumps(dict(downloads=records)))
+        return
     records = json.loads(args.records.read_text(encoding="utf-8-sig"))["downloads"]
     archive_inputs(list(records.values()) if isinstance(records, dict) else records,
                    args.cache, args.destination, args.material)
