@@ -29,7 +29,7 @@ Python не нужен.
 Модели и доступ к аккаунту VK для автоматических тестов не нужны.
 
 Набор CTest зависит от платформы, GUI и наличия FFmpeg; актуальный список:
-`ctest --test-dir build -N`. В Linux CLI configuration с FFmpeg доступны 17 suites,
+`ctest --test-dir build -N`. В Linux CLI configuration с FFmpeg доступны 18 suites,
 в GUI — ещё пять (включая real-smoke harness с отдельными prerequisites).
 Метки: `unit`, `integration`, `installation`, `preflight`; GUI имеет также свои метки.
 Unit-тесты не запускают FFmpeg или Whisper; pipeline

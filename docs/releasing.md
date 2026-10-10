@@ -90,8 +90,15 @@ yt-dlp PyInstaller archive без исполнения кода. Source lock т�
 оба упаковщика используют общий `package_inputs.py select-sources` selector.
 Linux дополнительно сохраняет binary/source package versions и copyright texts
 в `linux-library-provenance.json` и `licenses/Linux-system`.
+`package_linux_sources.py` сопоставляет эти библиотеки точным source package
+versions из authenticated APT indexes, сохраняет `.dsc`/upstream/Debian archives
+без распаковки и проверяет их SHA-256. `linux-source-provenance.json` связывает
+сохранённые inputs с payload hashes. Container builder включает `deb-src` и
+сохраняет индексы; при локальной сборке matching indexes нужны заранее.
+Отсутствующая exact version, неоднозначные checksums или изменённый cache
+останавливают упаковку. Источники нельзя заменять ближайшей доступной версией.
 Это ещё не полный corresponding-source комплект: зависимости FFmpeg/yt-dlp,
-AppImage runtime, build configuration Qt и скопированных Linux libraries собираются
+AppImage runtime, build configuration Qt и SDK libraries собираются
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 

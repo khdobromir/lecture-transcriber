@@ -9,6 +9,11 @@ libraries, their binary/source package versions and copyright hashes. The
 copyright files and common license texts are retained under `licenses/Linux-system`.
 SDK third-party libraries and any unresolved mappings are listed explicitly;
 this inventory alone is not a complete corresponding-source deliverable.
+`linux-source-provenance.json` maps these system libraries to exact Ubuntu source
+package versions and SHA-256-verified archives in the adjacent build-inputs
+deliverable. The builder needs matching authenticated `deb-src` indexes and
+downloads source packages without unpacking or executing them. An unavailable
+exact version or checksum mismatch stops packaging.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.
 

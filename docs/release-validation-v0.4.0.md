@@ -182,6 +182,41 @@ archives с выбранными runtime sources созданы и перечи�
 остаются открытыми. Полный комплект также требует FFmpeg dependencies,
 native dependencies standalone runtime, ICU, system packages и AppImage runtime.
 
+## Проверенный комплект e436846 и следующий шаг F7
+
+Для `e4368463d6b3f7a9fc8d60499dff350cc3868fe0` прошли
+[CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/38038945825),
+[Linux portable](https://github.com/khdobromir/lecture-transcriber/actions/runs/38038947954)
+и [Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38038949629).
+Скачанные package sidecars и каждый файл build-input archives сверены локально:
+
+| Deliverable | SHA-256 |
+| --- | --- |
+| AppImage | `c52e6c4e6ea6f7af9666efc1f7dd5c05e4d49b202678c23d360f3ac18a7f1d4f` |
+| Linux build inputs | `181d49c1bb6072441b39ba351ee9cebd90d0bb743b965e76727727fb56f6b278` |
+| Windows ZIP | `a9d4b5b724f868d7275860df7999af8b02a891f70fc22ece40789adbcbe18509` |
+| Windows build inputs | `dcc2389528a07b54f81f84652112d28cd8e37ffea91c3fc3a9fef45cc019725b` |
+
+Windows evidence подтверждает native probes, Unicode paths, startup и real GUI→CLI
+speech на hosted runner; `manual_clean_windows_11` остаётся `unverified`.
+Linux provenance по-прежнему содержит 116 libraries / 41 system source versions;
+три ICU SDK libraries остаются unresolved, Whisper sources сохранены отдельно.
+
+Частичная native проверка предыдущего `024e6b5` AppImage выполнена на
+Omarchy/Hyprland 0.56.2: обычный FUSE startup, native Wayland, видимый русский UI,
+file dialog/navigation/cancel, Tab/Shift+Tab и Ctrl+Q с exit 0.
+Масштаб монитора был 133%, а не требуемые 160%; minimum window, clipboard,
+open exports и model matrix не проверены. Наблюдались fontconfig warnings при
+чтении host configuration. Это agent-supervised проверка с осмотром изображений
+собственного окна, не полная ручная приёмка final artifact.
+
+Следующее изменение упаковки сохраняет exact Ubuntu source archives для
+скопированных system libraries, проверяет SHA-256 из APT metadata и архивирует
+payload→source mappings. Четыре локальных теста проверяют exact selection,
+conflicting indexes, unsafe filenames, shared-package deduplication, cache reuse
+и отказ при изменённых байтах. Actual APT integration требует нового hosted run.
+`corresponding_sources_complete=false`: F7 и все открытые ручные gates сохраняются.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
