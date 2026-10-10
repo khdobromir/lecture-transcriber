@@ -217,6 +217,54 @@ conflicting indexes, unsafe filenames, shared-package deduplication, cache reuse
 и отказ при изменённых байтах. Actual APT integration требует нового hosted run.
 `corresponding_sources_complete=false`: F7 и все открытые ручные gates сохраняются.
 
+## Проверенный комплект 8283ed4 и дальнейшее сопоставление F7
+
+Для `8283ed4ad966b3813934c89a21b605735140f0dc` прошли
+[CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/38040568453),
+[Linux portable с real ASR и offline Ubuntu/Debian](https://github.com/khdobromir/lecture-transcriber/actions/runs/38040570228)
+и [Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38040571888).
+AppImage SHA-256: `c219da2a133a36aeeb640865ecd01cb55b988fa037e9eae9b01f3287e0c57f89`;
+build inputs: `6c4c5d752258716e66e1859d5ef5e91f7c27b36a0695d4528c69ab821ab3aaec`.
+Локально перечитаны и сверены все 179 retained entries, включая 139 архивов
+для 41 exact Ubuntu source package, сопоставленные с 68 system libraries.
+Это результат 8283ed4; subsequent changes требуют новых artifacts и CI.
+
+Дополнительный technical CLI smoke предыдущего AppImage `e436846` использовал
+закреплённый 30-секундный русский public fixture и существующие medium/turbo/VAD
+models только для чтения. До/после проверены model hashes; данные и default-model
+испытания изолированы. Успешны все четыре сценария:
+
+| Recognition + VAD | Chunks / jobs / threads | Wall time, seconds |
+| --- | --- | --- |
+| Default medium | 1 / 1 / 2 | 41.59 |
+| Default medium | 3 / 1 / 2 | 83.21 |
+| Turbo | 1 / 1 / 2 | 42.64 |
+| Turbo | 3 / 1 / 2 | 118.25 |
+
+Проверены completed/exit 0, фактическая загрузка Silero и VAD reduction во всех
+Whisper logs, ненулевые TXT/SRT/VTT, ordering и timestamps в пределах 30 секунд.
+Это не проверка WER, длинной лекции, GUI или final artifact. Начальный запуск
+локального harness с закрытым stdin штатно отменился с 141; повторный harness
+сохранял machine control pipe открытым до завершения, как GUI. App code не менялся.
+
+В следующем изменении `linux_sdk_dependencies` закрепляет ICU 73.2 source archive
+(`818a80712ed3caacd9b652305e01afc7fa167e6f2e94996da44b90c2ab604ce1`)
+и original SDK hashes трёх библиотек. Версия установлена статически по строке,
+на которую ссылается `u_getVersion_73`; код библиотеки не исполнялся.
+Source bytes сверены с официальным SHA-512; upstream `LICENSE` и `license.html`
+скопированы с hashes. Секции `.text`, `.rodata`, `.data`, `.comment` (где присутствуют)
+совпали с официальным Qt prebuilt ICU для RHEL 8.6. Полное совпадение файлов
+и воспроизводимость SDK по этому сравнению не заявляются.
+Actual collector применён к provenance 8283ed4: ICU source/notices mapping
+подтверждён, retained source archive перечитан с проверкой SHA-256.
+
+DejaVu font и generated CA bundle также добавлены в exact Ubuntu source mapping:
+копии должны совпадать с builder inputs, а font/generator — принадлежать ожидаемым
+пакетам. Десять Linux packaging tests и четыре source-input tests проходят локально.
+Новый actual Ubuntu packaging run ещё необходим. `corresponding_sources_complete`
+остаётся false: native/FFmpeg dependencies, SDK build materials и AppImage runtime
+ещё требуют работы. Ручная матрица и final-SHA gates остаются открытыми.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и

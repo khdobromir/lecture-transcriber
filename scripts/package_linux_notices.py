@@ -1,4 +1,5 @@
-"""Attribute deployed Linux libraries and retain their Debian copyright files."""
+"""Attribute deployed Linux libraries/data and retain Debian copyright files."""
+import copy
 import json
 import os
 from pathlib import Path
@@ -41,6 +42,52 @@ def package_owner(original):
     raise ValueError("Cannot uniquely attribute system library: " + str(original))
 
 
+def package_metadata(owner):
+    fields = query(["dpkg-query", "-W", "-f",
+                    "${binary:Package}\t${Version}\t${source:Package}\t${source:Version}\n", owner]).strip().split("\t")
+    if len(fields) != 4 or not all(fields) or fields[0] != owner:
+        raise ValueError("Incomplete system package metadata: " + owner)
+    return dict(binary_package=fields[0], binary_version=fields[1],
+                source_package=fields[2], source_version=fields[3])
+
+
+def copy_copyright(owner, licenses, system_root):
+    package = owner.split(":", 1)[0]
+    notice = system_root / "usr/share/doc" / package / "copyright"
+    if not notice.is_file():
+        raise ValueError("Missing system package copyright: " + owner)
+    target = licenses / "Linux-system" / package / "copyright"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if not target.exists():
+        shutil.copyfile(notice, target)
+    if digest(target) != digest(notice):
+        raise ValueError("System package copyright changed: " + owner)
+    return dict(copyright=target.relative_to(licenses).as_posix(), copyright_sha256=digest(target))
+
+
+def collect_data_notices(provenance, appdir, licenses, entries, system_root=Path("/")):
+    records = []
+    for entry in entries:
+        original, owner = entry["original"], entry["package"]
+        payload = appdir / entry["payload"]
+        original_hash = digest(original)
+        if digest(payload) != original_hash:
+            raise ValueError("Data payload differs from builder input: " + entry["payload"])
+        # The CA bundle is generated; attribute its package-owned generator.
+        input_owner = package_owner(entry.get("generator", original))
+        if input_owner != owner:
+            raise ValueError("Data input owner does not match declared package: " + owner)
+        record = dict(payload=entry["payload"], provider="deb", original_sha256=original_hash,
+                      payload_sha256=original_hash, **package_metadata(owner),
+                      **copy_copyright(owner, licenses, system_root))
+        if "generator" in entry:
+            record["generator_sha256"] = digest(entry["generator"])
+        records.append(record)
+    result = copy.deepcopy(provenance)
+    result["data_files"] = records
+    return result
+
+
 def collect_system_notices(appdir, licenses, qt_libs, system_root=Path("/")):
     """Record unresolved libraries explicitly; this is not a complete source offer."""
     originals = {}
@@ -74,24 +121,8 @@ def collect_system_notices(appdir, licenses, qt_libs, system_root=Path("/")):
             record["original_sha256"] = digest(original)
             try:
                 owner = package_owner(original)
-                fields = query(["dpkg-query", "-W", "-f",
-                                "${binary:Package}\t${Version}\t${source:Package}\t${source:Version}\n", owner]).strip().split("\t")
-                if len(fields) != 4 or not all(fields) or fields[0] != owner:
-                    raise ValueError("Incomplete system package metadata: " + owner)
-                record.update(binary_package=fields[0], binary_version=fields[1],
-                              source_package=fields[2], source_version=fields[3])
-                package = owner.split(":", 1)[0]
-                notice = system_root / "usr/share/doc" / package / "copyright"
-                if not notice.is_file():
-                    raise ValueError("Missing system package copyright: " + owner)
-                target = destination / package / "copyright"
-                target.parent.mkdir(exist_ok=True)
-                if not target.exists():
-                    shutil.copyfile(notice, target)
-                if digest(target) != digest(notice):
-                    raise ValueError("System package copyright changed: " + owner)
-                record.update(provider="deb", copyright=target.relative_to(licenses).as_posix(),
-                              copyright_sha256=digest(target))
+                record.update(package_metadata(owner))
+                record.update(provider="deb", **copy_copyright(owner, licenses, system_root))
             except (subprocess.CalledProcessError, ValueError) as error:
                 # Preserve useful partial evidence without claiming complete coverage.
                 record["reason"] = str(error)

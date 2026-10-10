@@ -97,8 +97,14 @@ versions из authenticated APT indexes, сохраняет `.dsc`/upstream/Debi
 сохраняет индексы; при локальной сборке matching indexes нужны заранее.
 Отсутствующая exact version, неоднозначные checksums или изменённый cache
 останавливают упаковку. Источники нельзя заменять ближайшей доступной версией.
+Та же процедура включает DejaVu и CA bundle: записываются hashes payload,
+точные binary/source versions и hash принадлежащего пакету генератора CA bundle.
+`package_sdk_sources.py` проверяет original hashes трёх ICU libraries из Qt SDK
+по `linux_sdk_dependencies` в source lock. Проверенные ICU 73.2 sources входят
+в Linux build inputs, notices — в `licenses/Qt-sdk-source-notices`. Обновление
+SDK binaries без проверенного mapping отклоняется даже при прежней версии Qt.
 Это ещё не полный corresponding-source комплект: зависимости FFmpeg/yt-dlp,
-AppImage runtime, build configuration Qt и SDK libraries собираются
+AppImage runtime и build configuration Qt/SDK libraries собираются
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 

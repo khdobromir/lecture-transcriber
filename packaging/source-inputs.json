@@ -358,5 +358,28 @@
         ]
       }
     ]
+  },
+  "linux_sdk_dependencies": {
+    "qt": "6.8.3",
+    "downloads": [
+      {
+        "name": "icu4c-source",
+        "revision": "73.2",
+        "filename": "icu4c-73_2-src.tgz",
+        "url": "https://github.com/unicode-org/icu/releases/download/release-73-2/icu4c-73_2-src.tgz",
+        "sha256": "818a80712ed3caacd9b652305e01afc7fa167e6f2e94996da44b90c2ab604ce1",
+        "upstream_sha512": "76dd782db6205833f289d7eb68b60860dddfa3f614f0ba03fe7ec13117077f82109f0dc1becabcdf4c8a9c628b94478ab0a46134bdb06f4302be55f74027ce62",
+        "kind": "qt-sdk-third-party-source",
+        "required_notices": [
+          "LICENSE",
+          "license.html"
+        ],
+        "libraries": {
+          "libicudata.so.73": "4f182a855296cf96d39f75c9028b12765a78fe6afff3d3781d633110525b7a8b",
+          "libicui18n.so.73": "a18e48266e59efff3ec872d9dc5cc99b776e180b8ede57269d354e6bc6595778",
+          "libicuuc.so.73": "b76380b2c15c8ff8b3c94576ac98b40d34fc0a091db4a89324d72e271c7699f0"
+        }
+      }
+    ]
   }
 }

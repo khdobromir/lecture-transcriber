@@ -20,6 +20,69 @@ spec.loader.exec_module(builder)
 
 
 class LinuxPackageTests(unittest.TestCase):
+    def test_sdk_sources_require_exact_qt_and_library_hashes_before_copying_notices(self):
+        from package_sdk_sources import sdk_source_records, collect_sdk_notices
+        import copy
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "icu.tar"
+            with tarfile.open(source, "w") as archive:
+                entry = tarfile.TarInfo("icu/LICENSE"); entry.size = 11
+                archive.addfile(entry, io.BytesIO(b"ICU license"))
+            record = dict(name="icu", revision="73.2", filename=source.name,
+                          sha256=builder.digest(source), libraries={"libicuuc.so.73": "a" * 64},
+                          required_notices=["LICENSE"])
+            lock = dict(linux_sdk_dependencies=dict(qt="6.8.3", downloads=[record]))
+            self.assertEqual(sdk_source_records(lock, "6.8.3"), [record])
+            with self.assertRaisesRegex(ValueError, "SDK source inputs do not match Qt"):
+                sdk_source_records(lock, "6.11.2")
+            provenance = dict(corresponding_sources_complete=False,
+                              libraries=[dict(payload="usr/lib/libicuuc.so.73", provider="sdk-third-party",
+                                              payload_sha256="b" * 64, original_sha256="a" * 64)],
+                              unresolved=["usr/lib/libicuuc.so.73"])
+            before = copy.deepcopy(provenance)
+            result = collect_sdk_notices(provenance, [record], root, root / "licenses")
+            self.assertEqual(provenance, before, "Do not mutate provenance before all checks succeed")
+            self.assertEqual(result["unresolved"], [])
+            self.assertFalse(result["corresponding_sources_complete"])
+            library = result["libraries"][0]
+            self.assertEqual(library["source_input"]["sha256"], record["sha256"])
+            self.assertEqual((root / "licenses" / library["copyright"]).read_bytes(), b"ICU license")
+            for field, value in [("original_sha256", "c" * 64), ("provider", "deb")]:
+                changed = copy.deepcopy(provenance); changed["libraries"][0][field] = value
+                destination = root / ("wrong-" + field)
+                with self.assertRaisesRegex(ValueError, "SDK library does not match"):
+                    collect_sdk_notices(changed, [record], root, destination)
+                self.assertFalse(destination.exists())
+            with self.assertRaisesRegex(ValueError, "SDK library does not match"):
+                collect_sdk_notices(dict(libraries=[], unresolved=[]), [record], root, root / "missing-library")
+            ambiguous = copy.deepcopy(provenance)
+            duplicate = dict(ambiguous["libraries"][0], payload="usr/plugins/libicuuc.so.73")
+            ambiguous["libraries"].append(duplicate)
+            with self.assertRaisesRegex(ValueError, "SDK library does not match"):
+                collect_sdk_notices(ambiguous, [record], root, root / "ambiguous")
+            source.write_bytes(b"corrupt")
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                collect_sdk_notices(provenance, [record], root, root / "corrupt")
+
+    def test_sdk_mapping_rejects_missing_required_notice_and_duplicate_claims(self):
+        from package_sdk_sources import collect_sdk_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "icu.tar"
+            with tarfile.open(source, "w") as archive:
+                entry = tarfile.TarInfo("icu/COPYING"); entry.size = 11
+                archive.addfile(entry, io.BytesIO(b"ICU license"))
+            record = dict(name="icu", revision="73.2", filename=source.name,
+                          sha256=builder.digest(source), libraries={"libicuuc.so.73": "a" * 64},
+                          required_notices=["LICENSE"])
+            provenance = dict(libraries=[dict(payload="usr/lib/libicuuc.so.73", provider="sdk-third-party",
+                                             original_sha256="a" * 64)], unresolved=["usr/lib/libicuuc.so.73"])
+            with self.assertRaisesRegex(ValueError, "Missing required SDK notice"):
+                collect_sdk_notices(provenance, [record], root, root / "missing-notice")
+            with self.assertRaisesRegex(ValueError, "Duplicate SDK library source mapping"):
+                collect_sdk_notices(provenance, [record, record], root, root / "duplicates")
+
     def test_system_library_owner_handles_usrmerge_and_rejects_ambiguous_ownership(self):
         from package_linux_notices import package_owner
         def output(command, **kwargs):
@@ -33,6 +96,42 @@ class LinuxPackageTests(unittest.TestCase):
                    return_value="one:amd64, two:amd64: /lib/transcribe-fixture.so.1\n"):
             with self.assertRaisesRegex(ValueError, "uniquely attribute"):
                 package_owner(Path("/lib/transcribe-fixture.so.1"))
+
+    def test_data_payloads_retain_exact_sources_and_verify_the_owner_or_generator(self):
+        from package_linux_notices import collect_data_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); app = root / "app"; app.mkdir()
+            source = root / "font"; source.write_bytes(b"font bytes")
+            payload = app / "font.ttf"; payload.write_bytes(source.read_bytes())
+            generator = root / "update-ca-certificates"; generator.write_bytes(b"generator recipe")
+            bundle = app / "ca-bundle.crt"; bundle.write_bytes(b"CA bundle")
+            original_bundle = root / "original.crt"; original_bundle.write_bytes(bundle.read_bytes())
+            system = root / "system"
+            for package in ["fonts-demo", "ca-certificates"]:
+                notice = system / "usr/share/doc" / package / "copyright"
+                notice.parent.mkdir(parents=True); notice.write_bytes(b"Copyright " + package.encode())
+            entries = [dict(payload="font.ttf", original=source, package="fonts-demo"),
+                       dict(payload="ca-bundle.crt", original=original_bundle,
+                            package="ca-certificates", generator=generator)]
+            def query(command):
+                if command[:2] == ["dpkg-query", "-S"]:
+                    owner = "fonts-demo" if command[-1] == str(source) else "ca-certificates"
+                    return owner + ": " + command[-1] + "\n"
+                owner = command[-1]
+                return f"{owner}\t1.0-2\t{owner}-source\t1.0-2\n"
+            with patch("package_linux_notices.query", side_effect=query):
+                result = collect_data_notices(dict(libraries=[]), app, root / "licenses", entries, system)
+                self.assertEqual([r["source_package"] for r in result["data_files"]],
+                                 ["fonts-demo-source", "ca-certificates-source"])
+                self.assertEqual(result["data_files"][1]["generator_sha256"], builder.digest(generator))
+                payload.write_bytes(b"altered data")
+                with self.assertRaisesRegex(ValueError, "Data payload differs from builder input"):
+                    collect_data_notices(dict(libraries=[]), app, root / "changed", entries, system)
+            payload.write_bytes(source.read_bytes())
+            with patch("package_linux_notices.query", side_effect=query), \
+                    patch("package_linux_notices.package_owner", return_value="unrelated-package"), \
+                    self.assertRaisesRegex(ValueError, "Data input owner does not match"):
+                collect_data_notices(dict(libraries=[]), app, root / "wrong-owner", entries, system)
 
     def test_system_library_provenance_copies_package_and_common_notices(self):
         from package_linux_notices import collect_system_notices

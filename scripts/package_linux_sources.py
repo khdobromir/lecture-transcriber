@@ -65,7 +65,7 @@ def verify_file(path, record):
 
 def collect_sources(provenance, cache):
     grouped = {}
-    for record in provenance["libraries"]:
+    for record in provenance["libraries"] + provenance.get("data_files", []):
         if record["provider"] != "deb" and "source_package" not in record:
             continue
         package, version = record.get("source_package", ""), record.get("source_version", "")

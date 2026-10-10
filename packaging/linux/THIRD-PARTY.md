@@ -14,12 +14,19 @@ package versions and SHA-256-verified archives in the adjacent build-inputs
 deliverable. The builder needs matching authenticated `deb-src` indexes and
 downloads source packages without unpacking or executing them. An unavailable
 exact version or checksum mismatch stops packaging.
+The same provenance includes the DejaVu font and generated CA bundle, their
+package/source versions, payload hashes and the package-owned CA generator hash.
+`licenses/Qt-sdk-source-notices` retains ICU 73.2 notices from its verified source
+archive. The source mapping requires exact original hashes for all three ICU
+libraries from Qt 6.8.3; a different SDK payload stops packaging. This establishes
+source/notice attribution; the full SDK build configuration is still required.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.
 
 | Component | Source | License |
 | --- | --- | --- |
 | Qt 6.8.3 shared libraries and QML/plugins | https://download.qt.io/archive/qt/6.8/6.8.3/ | LGPLv3; preserve replacement/relinking rights |
+| ICU 73.2 from the Qt SDK | https://github.com/unicode-org/icu/releases/tag/release-73-2 | Original ICU LICENSE and included third-party notices |
 | whisper.cpp, pinned commit | https://github.com/ggml-org/whisper.cpp/tree/927cfce34f31707e17f2bff35c349632fb9e2c3a | MIT |
 | FFmpeg 8.1 LGPL build and linked dependencies | https://github.com/BtbN/FFmpeg-Builds/tree/master | LGPL; actual bundled dependency notices apply |
 | yt-dlp Linux standalone, including Python and libraries | https://github.com/yt-dlp/yt-dlp/tree/2026.08.19 | Includes GPLv3+ dependencies; bundled notices apply |

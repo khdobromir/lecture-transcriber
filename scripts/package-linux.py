@@ -14,8 +14,9 @@ import urllib.request
 from package_source import validate_identity
 from package_inputs import archive_inputs, source_records
 from package_notices import collect_qt_notices
-from package_linux_notices import collect_system_notices, write_provenance
+from package_linux_notices import collect_system_notices, collect_data_notices, write_provenance
 from package_linux_sources import collect_sources
+from package_sdk_sources import sdk_source_records, collect_sdk_notices
 from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -176,6 +177,8 @@ def main():
     lock = json.loads((PROJECT / "packaging/linux/dependencies.json").read_text())
     source_lock = json.loads((PROJECT / "packaging/source-inputs.json").read_text(encoding="utf-8"))
     sources = source_records(source_lock, lock["downloads"].values(), lock["qt"])
+    sdk_sources = sdk_source_records(source_lock, lock["qt"])
+    sources += sdk_sources
     for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate", "dpkg-query", "ldconfig", "apt-cache", "apt-get"]:
         if not shutil.which(name):
             parser.error("Missing build tool " + name + "; use bash scripts/package-linux.sh --container")
@@ -307,12 +310,6 @@ def main():
         command += ["--library", matches[0]]
     run("deploy", command, environment=deploy_env)
     complete_libraries(appdir, env)
-    library_provenance = appdir / "usr/share/transcribe/linux-library-provenance.json"
-    system_libraries = collect_system_notices(appdir, licenses, Path(qt_libs))
-    write_provenance(system_libraries, library_provenance)
-    system_sources = collect_sources(system_libraries, cache)
-    source_provenance = appdir / "usr/share/transcribe/linux-source-provenance.json"
-    write_provenance(system_sources, source_provenance)
     # linuxdeploy's executable deployment can also copy tools to usr/bin. Keep
     # the private tools directory as the single authoritative tool location.
     for name in ["whisper-cli", "ffmpeg", "ffprobe", "yt-dlp"]:
@@ -344,6 +341,17 @@ def main():
     shutil.copy2(PROJECT / "packaging/linux/fonts.conf", appdir / "usr/share/transcribe/fonts.conf")
     shutil.copy2("/etc/ssl/certs/ca-certificates.crt", appdir / "usr/share/transcribe/ca-certificates.crt")
     shutil.copy2("/usr/share/doc/ca-certificates/copyright", licenses / "ca-certificates-copyright.txt")
+    library_provenance = appdir / "usr/share/transcribe/linux-library-provenance.json"
+    system_libraries = collect_system_notices(appdir, licenses, Path(qt_libs))
+    system_libraries = collect_sdk_notices(system_libraries, sdk_sources, cache, licenses)
+    system_libraries = collect_data_notices(system_libraries, appdir, licenses,
+        [dict(payload="usr/share/fonts/DejaVuSans.ttf", original=font, package="fonts-dejavu-core"),
+         dict(payload="usr/share/transcribe/ca-certificates.crt", original=Path("/etc/ssl/certs/ca-certificates.crt"),
+              package="ca-certificates", generator=Path("/usr/sbin/update-ca-certificates"))])
+    write_provenance(system_libraries, library_provenance)
+    system_sources = collect_sources(system_libraries, cache)
+    source_provenance = appdir / "usr/share/transcribe/linux-source-provenance.json"
+    write_provenance(system_sources, source_provenance)
     shutil.copy2(PROJECT / "packaging/linux/THIRD-PARTY.md", appdir / "usr/share/transcribe/THIRD-PARTY.md")
     shutil.copy2(PROJECT / "packaging/linux/dependencies.json", appdir / "usr/share/transcribe/dependencies.json")
     maximum = check_glibc(appdir, lock["minimum_glibc"])

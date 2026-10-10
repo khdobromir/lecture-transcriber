@@ -53,7 +53,8 @@ class LinuxSourcesTests(unittest.TestCase):
                 (destination / "demo_2.0-3.dsc").write_bytes(b"dsc!!")
             with patch("package_linux_sources.query", return_value=metadata) as query, \
                     patch("package_linux_sources.subprocess.run", side_effect=download) as run:
-                result = collect_sources(dict(libraries=libs), cache)
+                # Non-ELF data payloads must join the same exact-source mapping.
+                result = collect_sources(dict(libraries=libs[:1], data_files=libs[1:]), cache)
                 self.assertEqual(query.call_args.args[0], ["apt-cache", "showsrc", "--only-source", "demo"])
                 self.assertEqual(run.call_count, 1)
                 self.assertEqual(len(result["packages"]), 1)
