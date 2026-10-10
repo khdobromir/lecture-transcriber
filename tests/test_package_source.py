@@ -48,6 +48,20 @@ class SourceIdentityTests(unittest.TestCase):
             self.assertFalse(result["corresponding_sources_complete"])
             self.assertEqual(result["ffmpeg_input_sha256"], checksum)
             self.assertEqual((root / "licenses/FFmpeg-dependency-source-notices/tool/README").read_bytes(), b"Further terms")
+            original_recipe = (root / recipe["filename"]).read_bytes()
+            original_checksum = recipe["sha256"]
+            tagged = archive("recipes.tar", {"build/scripts.d/tool.sh":
+                b'SCRIPT_REPO2="https://github.com/example/tool.git"\nSCRIPT_COMMIT2="release-1.0"\n'})
+            recipe["sha256"] = tagged["sha256"]
+            source["recipe_revision"] = "release-1.0"
+            tagged_result = collect_ffmpeg_notices(lock, pinned, root, root / "tagged", "--enable-tool")
+            self.assertEqual(tagged_result["sources"][0]["revision"], "a" * 40)
+            source["recipe_revision"] = "release-2.0"
+            with self.assertRaisesRegex(ValueError, "recipe does not match"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "wrong-tag", "--enable-tool")
+            source.pop("recipe_revision")
+            (root / recipe["filename"]).write_bytes(original_recipe)
+            recipe["sha256"] = original_checksum
             with self.assertRaisesRegex(ValueError, "configuration"):
                 collect_ffmpeg_notices(lock, pinned, root, root / "disabled", "--enable-tool --disable-tool")
             self.assertFalse((root / "disabled").exists())

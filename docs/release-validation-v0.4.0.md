@@ -10,12 +10,12 @@ Exact candidate source SHA/fingerprint и package SHA фиксируются у�
 
 | Требование плана | Реализация | Подтверждение / остаток |
 | --- | --- | --- |
-| F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Native package regression в CI 5e1c83b прошёл; final SHA требует повтора |
-| F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | Native package regression в CI 5e1c83b прошёл; final SHA требует повтора |
-| F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container Real Whisper на 5e1c83b прошёл; ссылка ниже |
-| F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Hosted 5e1c83b прошёл; 6322ad9 artifact независимо сверён; native final smoke открыт |
-| F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation/concurrent commit tests и CI 5e1c83b прошли |
-| F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | CI 5e1c83b прошёл; final SHA требует повтора |
+| F1: Windows trusted backend search | Патч pinned loader: executable directory, запрет GGML env, ограниченные dependency flags | Native package regression в CI 8bd77f8 прошёл; final SHA требует повтора |
+| F2: strict portable tools | Windows marker; bundled engine приоритетнее data-home; preflight ffmpeg и URL tools | Native package regression в CI 8bd77f8 прошёл; final SHA требует повтора |
+| F3: Python в real workflow | python3 добавлен без выключения BUILD_TESTING | Fresh-container Real Whisper на 8bd77f8 прошёл; ссылка ниже |
+| F4: один AppImage | Единственная сборка; candidate.json с path/hash; offline containers получают тот же audio/model | Hosted 8bd77f8 прошёл; 5e1c83b build inputs независимо сверены; native final smoke открыт |
+| F6: provenance | Общий SHA/dirty/fingerprint/version guard до сборки и после smoke; release запрещает dirty/SkipTests | Mutation/concurrent commit tests и CI 8bd77f8 прошли |
+| F6: staging | Windows проверяет ZIP до переноса; имена обоих пакетов versioned и уникальны | CI 8bd77f8 прошёл; final SHA требует повтора |
 | F7: материалы сторонних компонентов | Verified build inputs, exact Ubuntu sources, Qt/ICU, standalone sources/notices, runtime sources/recipes; добавляется partial FFmpeg dependency set | Полные corresponding source/build materials и сопоставление фактическому payload НЕ завершены |
 | F8: документация и VERSION | 0.4.0 candidate, Python/test/packaging/support/cancellation docs и release notes | Локальные help/version; окончательные manifests ожидаются |
 
@@ -318,8 +318,15 @@ native FFmpeg/standalone dependencies и Qt SDK build configuration.
 [CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/38044496095),
 [Linux portable с real ASR и offline Ubuntu/Debian](https://github.com/khdobromir/lecture-transcriber/actions/runs/38044497989)
 и [Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38044499646).
-Его source lock включает runtime sources/notices. Скачивание artifact начато;
-независимая проверка retained bytes и checksum ещё не завершена.
+Его artifact скачан: AppImage SHA-256
+`066048254fb8ebbd5d231f74c865c5356d4f2ecda5f8dd63bea9265e6929399f`,
+build inputs SHA-256
+`13d9bfe1190d6a703a750571cb10c18436ff6924b26038e5418fca83bf96ea84`.
+Независимо перечитаны все 194 файла build-inputs archive и сверены их SHA-256,
+включая девять runtime source/recipe archives. Проверены manifest source,
+clean/tested/real-smoke flags и source/artifact hash в offline Ubuntu/Debian
+evidence. Повторная распаковка и сверка каждого payload file этого AppImage
+пока не выполнялись; это не результат native desktop приёмки.
 
 ## Исходники и notices части зависимостей FFmpeg после 5e1c83b
 
@@ -348,6 +355,52 @@ FFmpeg и binary pins не менялись. `corresponding_sources_complete=fal
 После этого изменения необходимы новые hosted CI/portable artifacts; результаты
 5e1c83b не считаются проверкой нового head. Ручные платформенные gates открыты.
 
+## Hosted проверки 8bd77f8 и расширение FFmpeg materials
+
+Коммит `8bd77f807a68cc8273fbdab62de6f7ecd5e7846c` прошёл
+[CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/38045641969),
+[Linux portable с real ASR и offline Ubuntu/Debian](https://github.com/khdobromir/lecture-transcriber/actions/runs/38045643983)
+и [Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38045645981).
+Windows package job и Linux Qt 6.8.3 real candidate step выполнены успешно.
+Это подтверждает hosted работу collector для первого набора 24 dependencies;
+Artifacts этого SHA ещё не скачаны для независимой локальной проверки.
+
+Следующее расширение сохраняет 72 immutable source archives: 71 для Linux,
+69 для Windows. Добавлены, среди прочего, SDL, OpenH264, SVT-AV1, rav1e,
+libjxl/LCMS2, libplacebo/shaderc, libssh/SRT/OpenSSL, FreeType/Fontconfig,
+PulseAudio/XCB, LV2 chain и зависимости шрифтов. Все новые архивы скачаны по
+full commit SHA из upstream repositories, прочитаны как данные и проверены
+действующим collector против pinned recipe snapshot и configuration обоих
+FFmpeg inputs. Original LICENCE/README/header notices libunibreak сохранены
+явно; никакой сторонний build/autogen code не запускался.
+
+OpenSSL `openssl-3.6.4` разрешён через annotated tag object
+`360ffdb6d82f298d8d22c838dc2b7bf61ece056d` в commit
+`d3c1b1169b3569ff3069e5b399f47b2b28e03d79`; Vulkan Headers `v1.4.363` —
+через tag object `7feeb71f59b8c1531ef5f7bb4b36e1aac46a0acb` в commit
+`6802bb4733b63ed5efd3adb308a6c885ef180ea1`. Проверены ответы upstream Git API;
+проверка криптографических подписей тегов не заявляется. Исходные tag names
+сохраняются для сверки recipe, source URL/hash закрепляют immutable archives.
+OpenSSL включён также в Windows materials по libssh/SRT configure flags,
+хотя непосредственно FFmpeg использует Schannel.
+
+Локально collector сохранил 253 notices для Linux и 250 для Windows.
+Все 72 source archives упакованы и перечитаны с SHA-256 validation.
+Packaging CTest suites прошли 6/6; shared source tests проверяют правильный
+recipe tag и отказ при несовпадении, сохраняя full commit в provenance.
+Новый tag case сначала падал, после изменения collector прошёл.
+
+Набор остаётся частичным. В частности, shaderc DEPS, libjxl highway,
+PCRE2 sljit, libbluray udfread, Rust crates и генерируемые входы ещё не
+закрыты родительскими archives. Rav1e recipe выполняет `cargo update cc`,
+поэтому исходный Cargo.lock сам по себе не доказывает final build dependency
+versions. Остальные FFmpeg libraries, standalone native dependencies,
+toolchain/runtime details и Qt SDK build configuration также требуют работы.
+`corresponding_sources_complete=false`; capabilities и binary pins прежние.
+Новые sources/helper требуют hosted проверки нового SHA. Пользователь подтвердил,
+что clean Windows 11 без SDK и Ubuntu 24.04 desktop сейчас недоступны;
+соответствующие manual gates остаются открытыми.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -355,10 +408,10 @@ FFmpeg и binary pins не менялись. `corresponding_sources_complete=fal
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Реализация Windows isolation, portable artifact identity и provenance подготовлена для hosted CI |
+| Summary | Windows isolation, portable identity и provenance дополнены 72 pinned FFmpeg source archives и проверкой recipe tags |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | Полный static analysis и pinned Qt matrix ещё должны подтвердиться в CI |
+| Minor issues | Static analysis и pinned Qt matrix прошли на 8bd77f8; после расширения materials необходим новый exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |

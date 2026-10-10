@@ -115,10 +115,16 @@ toolchain/runtime details и build configuration Qt/SDK libraries собираю
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 
-`ffmpeg_dependencies` сохраняет частичный набор 24 pinned dependency sources
-для обеих платформ. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
+`ffmpeg_dependencies` сохраняет частичный набор 72 pinned dependency source archives:
+71 для Linux и 69 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
 archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
-каждой библиотеки, включая нумерованные recipe slots. Проверяются также enable
+каждой библиотеки, включая нумерованные recipe slots. Если recipe использует тег,
+`recipe_revision` сохраняет его имя, а `revision` и URL архива закрепляют полный
+resolved commit; `recipe_tag_object_url` указывает на проверенный upstream tag
+object. При обновлении такого input нужно заново проверить разрешение тега
+в commit. Например, Windows FFmpeg использует Schannel, но его libssh/SRT всё
+равно требуют OpenSSL; соответствующие sources сохраняются на обеих платформах.
+Проверяются также enable
 flags настоящего bundled FFmpeg; notices из verified sources сохраняются в
 `licenses/FFmpeg-dependency-source-notices`, а связи — в
 `ffmpeg-source-provenance.json`. Для FFmpeg 8.1 используется recipe slot 2

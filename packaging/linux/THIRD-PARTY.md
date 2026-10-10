@@ -30,7 +30,7 @@ source mapping stops packaging. This remains a partial corresponding-source
 deliverable; toolchain/runtime details and other bundled components still need
 their complete build materials.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a
-partial set of 24 dependency sources. `ffmpeg-source-provenance.json` binds them
+partial set of 71 dependency sources. `ffmpeg-source-provenance.json` binds them
 to the FFmpeg input archive hash, exact build recipes and the bundled tool's
 configure flags. The verified sources are in the adjacent build-inputs archive.
 The upstream `lgpl` variant name does not describe every dependency's terms:

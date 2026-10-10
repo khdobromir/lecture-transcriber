@@ -45,7 +45,9 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
                 raise ValueError("Missing/ambiguous FFmpeg dependency recipe")
             safe_path(matches[0].name)
             text = archive.extractfile(matches[0]).read().decode("utf-8")
-            for variable, expected in [("SCRIPT_REPO", record["repository"]), ("SCRIPT_COMMIT", record["revision"])]:
+            # A recipe may name a tag; the retained archive still uses its resolved full commit.
+            recipe_revision = record.get("recipe_revision", record["revision"])
+            for variable, expected in [("SCRIPT_REPO", record["repository"]), ("SCRIPT_COMMIT", recipe_revision)]:
                 if re.findall(r'^' + variable + slot + r'="([^"\n]+)"$', text, re.MULTILINE) != [expected]:
                     raise ValueError("FFmpeg recipe does not match pinned dependency: " + record["name"])
             if any(flag not in flags or flag.replace("--enable-", "--disable-", 1) in flags
