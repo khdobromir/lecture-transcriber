@@ -2566,6 +2566,66 @@
           "dnn/pitchdnn_data.h",
           "dnn/plc_data.h"
         ]
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/50-zimg.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libzimg"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "name": "ffmpeg-graphengine-source",
+        "revision": "cb5b2ce13384ec2491f0c37256ea210034799f69",
+        "repository": "https://github.com/sekrit-twc/graphengine.git",
+        "url": "https://codeload.github.com/sekrit-twc/graphengine/tar.gz/cb5b2ce13384ec2491f0c37256ea210034799f69",
+        "filename": "ffmpeg-graphengine-cb5b2ce13384.tar.gz",
+        "sha256": "663bc958094280e3dabfa76a408296a51f5222f56115fd7782eae737edeaa179",
+        "required_notices": [
+          "COPYING"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-zimg-source",
+          "path": "graphengine",
+          "commit_base64": "dHJlZSA4NTUwOGU0MmEyMjUwMWFmNDZlNDY5ZDZmOThlMDk0YTY3OGEwOWRkCnBhcmVudCBmNmNjNzVhZDIzZGIxYmI5YzUzNjczYzE1NTIzZTZiNmU5NjBmZmM2CmF1dGhvciBBbGZyZWQgV2luZ2F0ZSA8cGFyb25hQHByb3Rvbm1haWwuY29tPiAxNzg4NDYyNjQzICswMzAwCmNvbW1pdHRlciBzZWtyaXQtdHdjIDxzZWtyaXQtdHdjQHVzZXJzLm5vcmVwbHkuZ2l0aHViLmNvbT4gMTc4ODQ5MjQyOCAtMDcwMAoKQWRkIG1pc3NpbmcgaW5jbHVkZXMgZm9yIGxpYmN4eC0yMwoKQnVnOiBodHRwczovL2J1Z3MuZ2VudG9vLm9yZy85ODE4NzkKU2lnbmVkLW9mZi1ieTogQWxmcmVkIFdpbmdhdGUgPHBhcm9uYUBwcm90b25tYWlsLmNvbT4K",
+          "trees_base64": {
+            "85508e42a22501af46e469d6f98e094a678a09dd": "MTAwNjQ0IC5jb3Zlcml0eS1wcmVwYXJlLnNoAEhAPNBRfJrNk2sOrZNM1GZQ21FkNDAwMDAgLmdpdGh1YgBcZH8ZdcB7f0a5jRhItWolL91cSDEwMDY0NCAuZ2l0aWdub3JlAPeqzrY+5GZ1SbMzZCxMgh//JqU/MTAwNjQ0IC5naXRtb2R1bGVzAOBvJgyo197cW53qa35q5qgODeyMMTAwNzU1IC50cmF2aXMtc2NyaXB0LnNoAFUueXyLiq0WtNiYWkWwposW6IGRMTAwNjQ0IC50cmF2aXMueW1sANZUy+93ED1xX/J2Ng1RRDXKT5HZMTAwNjQ0IENPUFlJTkcAWo4zJUX2Z6q5vzoX8R26J8cLZWoxMDA2NDQgQ2hhbmdlTG9nADovXtPQGxPfqw56vwGEsx1cZ8TgMTAwNjQ0IE1ha2VmaWxlLmFtAGGYDP2bFj7WDmNR0RX0fATXSZupMTAwNjQ0IFJFQURNRS5tZAACyj5oFG+Ewi6SWFB6XL8muUD5QDQwMDAwIF9tc3ZjANoe2GatoaihJU/GGli7TTKKjX9NMTAwNzU1IGF1dG9nZW4uc2gAqP2IXsUbfS9v0KRD4n/mT+/DtZAxMDA2NDQgY29uZmlndXJlLmFjAJPcr4ERMx6lByjpLg1GeFqO/4hCNDAwMDAgZG9jAN+jQv39UgXqfA7fYun+exVnhOaRMTAwNjQ0IGR1bW15LmNwcADmneKbstHWQ0uLKa53WtjC5IxTkTE2MDAwMCBncmFwaGVuZ2luZQDLWyzhM4TsJJHww3JW6iEANHmfaTQwMDAwIG00AHOvHm2QPpsxO2IgAxXmeuhxMeOONDAwMDAgc3JjACIeTFp3FZIS0X6uq+wAqhA7aXK4NDAwMDAgdGVzdABWOu6hv21O7BuaRKFjPKYNN2YpgzEwMDY0NCB6aW1nLnBjLmluAMmrgng7SmbhxuFSZUWJkK0SSJAz"
+          }
+        }
+      },
+      {
+        "kind": "ffmpeg-dependency-source",
+        "recipe": "scripts.d/50-libjxl/50-libjxl.sh",
+        "recipe_slot": "",
+        "configure_flags": [
+          "--enable-libjxl"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "name": "ffmpeg-highway-source",
+        "revision": "457c891775a7397bdb0376bb1031e6e027af1c48",
+        "repository": "https://github.com/google/highway",
+        "url": "https://codeload.github.com/google/highway/tar.gz/457c891775a7397bdb0376bb1031e6e027af1c48",
+        "filename": "ffmpeg-highway-457c891775a7.tar.gz",
+        "sha256": "5124b0501c98d9930dbb065bfa1a5bbbd59ce0f12facb7e1e33aaef01a5f1f1a",
+        "required_notices": [
+          "LICENSE",
+          "LICENSE-BSD3"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-libjxl-source",
+          "path": "third_party/highway",
+          "commit_base64": "dHJlZSAzNDJiN2UxNTljZWNiOTM1YTZjMjI3NjY4ZGU2ZDNlYjQzMmNlNDk5CnBhcmVudCA3NzQxYzhjZTk5OThjYmFmZmFiZWM1Y2FkZDA1MWIxYjY4YWZhM2UyCmF1dGhvciBHYWxheHk0NTk0IDwxNjQ0NDA3OTkrR2FsYXh5NDU5NEB1c2Vycy5ub3JlcGx5LmdpdGh1Yi5jb20+IDE3ODk5MDE5OTAgKzAwMDAKY29tbWl0dGVyIEdpdEh1YiA8bm9yZXBseUBnaXRodWIuY29tPiAxNzg5OTAxOTkwICswMDAwCmdwZ3NpZyAtLS0tLUJFR0lOIFBHUCBTSUdOQVRVUkUtLS0tLQogCiB3c0ZjQkFBQkNBQVFCUUpxcjd5MkNSQzFhUTd1dTVVaGxBQUFRU1FRQUgxd2F4aVMrSE9kVTNlNWpvY2VJVGVkCiA3bEVoYlVab3dPSFNwTm1UT2JIby8zd2piSSt4WTg1dWU2ZThubmFLVUNka09ST0ZGSVlha0tMdFIyeE9wK3FlCiBCL1hlbzd0OEdQKzMzam9GQ28xRXhPUzltSWlTMDB4YVYzenFWS0xqNzNON2J0Rmhtc0JYQWdDdnNOU1o1NDIvCiBxUlZIU3dpZ05HS3NkNzE5SlE0enNrQ0pWQmZJcE1TOVhkS25teXdkQzJqL3BnZm9kZ0lGb25CQjdQY2daMS9KCiBNQWVROWFLekR6ZldJWDZwb0kzMHQ4NEIyVU40RUdWdUx4czJOeDVYR0cyVDY5aTVoblZYdEY5ZW0yaXIwRllxCiBtdUJEdmVXTkZqV0VDRFk0RStBUVQvVlYwQkc3ZnpkZStreWxmWm4xdElGQ3dKWHlKcHFKSDZlMWRWbVlPVGVwCiBtNHJPaWxFNlFlMFNhWDFDazMyb2RzZnZrSENRaEY2Z2ZDNC9KVmdkeXZOdEY4WTFncnhuQTdlaGhZUHZETVNVCiA1bHBGYWFMd0J6dkVyMWdxZWl3b2pBeXprSkptcDNnVWpxTGcwU0plTCtTNkJKcjNidWl1dkd4cUVpdnRvZ1JrCiBadWROMmJtOFlFenR6a1Rhb0pDQk0yRGs1MXZhYUlZUEhxWEZzbFVqektMRUViTXdEeW5ZYm5Hb0FNSDU3bEUwCiBZSzBlM3l2M3lSNU52K0ttL2QxTFJyS1dTR2lXQlNTc1I1eEtnT1ZtcEszcDRKckZ5eE5ueHAweTg0RGM4RVBSCiBrUlR3T3BFYVp1OTVUUGt6aU5aREtsaDJCSkxSdEpKOWIraXFzdmtnZU1vQ0NmV3YrTE9uaFg3MHBVSXBMSlZYCiAxcHFWbDM2VVhoZXBpdkltUllvRAogPUkxeWMKIC0tLS0tRU5EIFBHUCBTSUdOQVRVUkUtLS0tLQogCgpBbGlnbiBzdHJpcF9hbHBoYSB3aXRoIGJvb2xlYW4gZXhwZWN0YXRpb25zIGFuZCBpbXByb3ZlIGZsb2F0IGNoZWNrcyAoIzQ5ODQpCgoqIEFsaWduIHN0cmlwX2FscGhhIHdpdGggYm9vbGVhbiBleHBlY3RhdGlvbnMgYW5kIGltcHJvdmUgZmxvYXQgY2hlY2tzCgoqIGNvbXBpbGUgZml4ZXM=",
+          "trees_base64": {
+            "342b7e159cecb935a6c227668de6d3eb432ce499": "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",
+            "68bebc76ff842dd3346dcb321526905e69002f27": "MTAwNjQ0IENNYWtlTGlzdHMudHh0AMR61jJE62F4adsx+78SEaTTGI2NNDAwMDAgSEVWQ1NvZnR3YXJlAI7rYd8+CQRqNQ9fAIyNqRpWmfi4MTYwMDAwIGJyb3RsaQACj7WiNmHxIwF8Bg2qVGtVz0veKTEwMDY0NCBkaXJlbnQuY2MAOQYITgMnTkls4CgfABZJ/nj2hRUxMDA2NDQgZGlyZW50LmgAN6CPQlvpJgvOjzxGOm8iNim9negxNjAwMDAgZ29vZ2xldGVzdABpEMnZFlgB2IJ9Yoy3LrfqndU4xTE2MDAwMCBoaWdod2F5AEV8iRd1pzl72wN2uxAx5uAnrxxIMTYwMDAwIGxjbXMAUXY0djV4XlPuXO6SMo92/adm7MYxMDA2NDQgbGNtczIuY21ha2UA3sa+k2eoaYFBop8d/xaKhIo+vlYxNjAwMDAgbGlianBlZy10dXJibwCOy6Nkfttt2UBGP+3zjKM6jipz0TE2MDAwMCBsaWJwbmcAhyVV9LqRAlJ4OvFQf55/4WU74lIxNjAwMDAgc2pwZWcAlODfbQ+LRCKN5b4P8177n5RqE8kxMDA2NDQgc2pwZWcuY21ha2UA8aaSUrpHJhH/711CxABoBqXT6/wxNjAwMDAgc2tjbXMAltkXHJS5N6G18Ck95zCawWMRtyIxMDA2NDQgc2tjbXMuY21ha2UAHnDCqgdjLYcel+7mcYktOw7pWvYxMDA2NDQgdGVzdGluZy5jbWFrZQDioZQT9MAp5nCxnkoHFd0U5n6LyjE2MDAwMCB6bGliAFG38qva3nHNm7Dno3PvJhDsb52v"
+          }
+        }
       }
     ]
   }

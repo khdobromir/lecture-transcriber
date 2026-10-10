@@ -1,5 +1,7 @@
 """Detect changed/committed source during packaging and reject unsafe release modes."""
 from pathlib import Path
+import base64
+import copy
 import hashlib
 import io
 import json
@@ -20,6 +22,81 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_ffmpeg_submodule_sources_require_verified_parent_git_objects_and_declaration(self):
+        from package_ffmpeg_sources import collect_ffmpeg_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); binary = root / "ffmpeg.zip"; binary.write_bytes(b"Pinned binary")
+            checksum = hashlib.sha256(binary.read_bytes()).hexdigest()
+            def archive(filename, files):
+                path = root / filename
+                with tarfile.open(path, "w") as output:
+                    for name, content in files.items():
+                        member = tarfile.TarInfo(name); member.size = len(content)
+                        output.addfile(member, io.BytesIO(content))
+                return dict(filename=filename, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            def object_hash(kind, body):
+                return hashlib.sha1(kind.encode() + b" " + str(len(body)).encode() + b"\0" + body).hexdigest()
+            def fixture(mode=b"160000"):
+                declaration = b'[submodule "deps/library"]\npath = deps/library\nurl = https://example.invalid/library.git\n'
+                revision = "c" * 40
+                subtree = mode + b" library\0" + bytes.fromhex(revision)
+                subtree_sha = object_hash("tree", subtree)
+                tree = (b"100644 .gitmodules\0" + bytes.fromhex(object_hash("blob", declaration))
+                        + b"40000 deps\0" + bytes.fromhex(subtree_sha))
+                tree_sha = object_hash("tree", tree)
+                commit = ("tree " + tree_sha + "\nauthor Example <example@example.invalid> 0 +0000\n"
+                          "committer Example <example@example.invalid> 0 +0000\n\nPinned parent\n").encode()
+                parent = archive("parent.tar", {"parent/LICENSE": b"Parent license", "parent/.gitmodules": declaration})
+                parent.update(name="parent", kind="ffmpeg-dependency-source", revision=object_hash("commit", commit),
+                              repository="https://example.invalid/parent.git", recipe="scripts.d/parent.sh", recipe_slot="",
+                              configure_flags=["--enable-parent"], required_notices=["LICENSE"], for_binary_sha256=[checksum])
+                recipe = archive("recipes.tar", {"build/scripts.d/parent.sh":
+                    ('SCRIPT_REPO="' + parent["repository"] + '"\nSCRIPT_COMMIT="' + parent["revision"] + '"\n').encode()})
+                recipe.update(name="ffmpeg-build-recipes", for_binary_sha256=[checksum])
+                child = parent | archive("library.tar", {"library/LICENSE": b"Original nested library license"})
+                child.update(name="library", revision=revision, repository="https://example.invalid/library.git",
+                             git_submodule=dict(parent="parent", path="deps/library",
+                                                commit_base64=base64.b64encode(commit).decode(),
+                                                trees_base64={tree_sha: base64.b64encode(tree).decode(),
+                                                              subtree_sha: base64.b64encode(subtree).decode()}))
+                lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=[checksum]), recipe],
+                            ffmpeg_dependencies=dict(for_binary_sha256=[checksum], downloads=[parent, child]))
+                return lock, parent, child
+            pinned = dict(filename=binary.name, sha256=checksum)
+            lock, parent, child = fixture()
+            result = collect_ffmpeg_notices(lock, pinned, root, root / "licenses", "--enable-parent")
+            self.assertEqual(result["git_submodules"], [dict(source="library", parent="parent",
+                             parent_sha256=parent["sha256"], path="deps/library", revision=child["revision"],
+                             declaration_sha256=hashlib.sha256(
+                                 b'[submodule "deps/library"]\npath = deps/library\nurl = https://example.invalid/library.git\n').hexdigest())])
+            self.assertEqual((root / "licenses/FFmpeg-dependency-source-notices/library/LICENSE").read_bytes(),
+                             b"Original nested library license")
+            module = child["git_submodule"]
+            mutations = [dict(revision="d" * 40), dict(repository="https://example.invalid/other.git"),
+                         dict(configure_flags=["--enable-other"]),
+                         dict(git_submodule=module | dict(parent="missing")),
+                         dict(git_submodule=module | dict(path="../escape")),
+                         dict(git_submodule=module | dict(path="deps/other")),
+                         dict(git_submodule=module | dict(commit_base64=base64.b64encode(b"Changed commit").decode())),
+                         dict(git_submodule=module | dict(commit_base64="invalid base64!")),
+                         dict(git_submodule=module | dict(trees_base64={})),
+                         dict(git_submodule=module | dict(trees_base64={key: base64.b64encode(b"Changed tree").decode()
+                                                                      for key in module["trees_base64"]}))]
+            for changes in mutations:
+                original = copy.deepcopy(child); child.update(changes)
+                with self.assertRaises(ValueError):
+                    collect_ffmpeg_notices(lock, pinned, root, root / "rejected", "--enable-parent")
+                self.assertFalse((root / "rejected").exists())
+                child.clear(); child.update(original)
+            parent.update(archive("parent.tar", {"parent/LICENSE": b"Parent license", "parent/.gitmodules": b"Changed declaration"}))
+            with self.assertRaisesRegex(ValueError, "declaration does not match"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "stale", "--enable-parent")
+            self.assertFalse((root / "stale").exists())
+            lock, parent, child = fixture(mode=b"100644")
+            with self.assertRaisesRegex(ValueError, "not a Git link"):
+                collect_ffmpeg_notices(lock, pinned, root, root / "ordinary-file", "--enable-parent")
+            self.assertFalse((root / "ordinary-file").exists())
+
     def test_generated_source_selection_retains_code_without_model_checkpoints(self):
         from package_canonical_sources import canonicalize_tar, canonicalize_verified_tar
         with tempfile.TemporaryDirectory() as temporary:

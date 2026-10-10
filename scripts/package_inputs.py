@@ -59,6 +59,20 @@ def ffmpeg_source_records(lock, binaries):
                            ["revision", "repository", "recipe", "recipe_slot", "recipe_revision",
                             "for_binary_sha256", "configure_flags"])):
                 raise ValueError("Incomplete generated FFmpeg source mapping")
+        if "git_submodule" in record:
+            module = record["git_submodule"]
+            parents = [parent for parent in group["downloads"] if isinstance(module, dict)
+                       and parent["name"] == module.get("parent")
+                       and "git_submodule" not in parent and "generated_input" not in parent]
+            if (not isinstance(module, dict)
+                    or set(module) != {"parent", "path", "commit_base64", "trees_base64"}
+                    or len(parents) != 1 or "generated_input" in record or is_svn
+                    or not isinstance(module["commit_base64"], str)
+                    or not isinstance(module["trees_base64"], dict)
+                    or any(record.get(key) != parents[0].get(key) for key in
+                           ["recipe", "recipe_slot", "recipe_revision", "for_binary_sha256", "configure_flags"])):
+                raise ValueError("Incomplete FFmpeg submodule source mapping")
+            selected_git_paths({"git_archive_paths": [module["path"]]})
         if is_svn:
             validate_svn_mapping(record)
         if available.intersection(record["for_binary_sha256"]):

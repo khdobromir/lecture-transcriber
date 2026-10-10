@@ -684,6 +684,56 @@ parent/reference, неправильный upstream hash, unsafe/missing selecti
 `corresponding_sources_complete=false`; ручная Windows 11/Ubuntu desktop
 приёмка остаётся открытой, эти среды сейчас недоступны.
 
+## Проверки d8bc131 и вложенные Graphengine/Highway sources
+
+На clean `d8bc1317d3222969c78559f618067f7fd34581b0` прошли
+[CI 38067380801](https://github.com/khdobromir/lecture-transcriber/actions/runs/38067380801)
+(10/10 jobs) и
+[Linux portable 38067380807](https://github.com/khdobromir/lecture-transcriber/actions/runs/38067380807).
+Это automatic runs: real Whisper steps пропущены; чистые контейнеры проверили
+startup. Последний полный real dispatch выше относится к `06fa74b`.
+
+Следующее изменение сохраняет два вложенных source inputs, которые используют
+закреплённые upstream recipes:
+
+| Parent / path | Exact nested revision | Source archive SHA-256 |
+| --- | --- | --- |
+| zimg / `graphengine` | `cb5b2ce13384ec2491f0c37256ea210034799f69` | `663bc958094280e3dabfa76a408296a51f5222f56115fd7782eae737edeaa179` |
+| libjxl / `third_party/highway` | `457c891775a7397bdb0376bb1031e6e027af1c48` | `5124b0501c98d9930dbb065bfa1a5bbbd59ce0f12facb7e1e33aaef01a5f1f1a` |
+
+Commit/tree object proofs входят в source lock и retained build materials.
+Collector проверяет Git object hashes, полную цепочку до mode `160000`, точную
+ревизию вложенного компонента, blob `.gitmodules` и declared repository URL.
+Parent recipe, binary pin, configure flags и source archive hash также проверяются.
+Git hooks и upstream scripts при этой проверке не исполняются.
+
+SKCMS и SJPEG явно отключены в pinned JPEG XL recipe; Brotli/LCMS2 берутся
+из отдельно сохранённых источников. PCRE2 autotools recipe не включает JIT,
+а pinned `configure.ac` задаёт `enable_jit=no`; sljit не добавлен как библиотека
+этой сборки. Наличие `.gitmodules` само по себе не означает включение компонента.
+
+Полный collector на original binary inputs/configurations проверил 86 source
+pins: 84 Linux sources / 420 notices и 82 Windows sources / 393 notices.
+Retained test archive readback проверил оба source archives и три build materials.
+Source tests: 15/15; Linux packaging tests: 15/15; packaging CTest: 6/6.
+Новый regression падает с `ValueError not raised` при отключённом Git-link guard
+и проходит с защитой; он покрывает stale revision, repository, parent, path,
+commit/tree proof, declaration и попытку выдать обычный файл за Git link.
+
+FFmpeg release archive hashes также сопоставлены с исходным upstream
+[build 36860751422](https://github.com/BtbN/FFmpeg-Builds/actions/runs/36860751422)
+на recipe commit `e88e49f624457c455700b058f0a84ca87d499cc2` и опубликованным
+`autobuild-2026-10-01-13-06`. Rust stages в логе были cached; этот лог не доказывает
+final Cargo.lock rav1e. Rust относится к существующим FFmpeg libraries, приложение
+остаётся C++/Qt. F7 включает исходники фактических компонентов, необходимые
+patches/build scripts/configuration и версии инструментов; рекурсивный сбор
+исходников всех компиляторов не вводится отдельным условием выпуска.
+
+Новые изменения требуют своего exact-SHA CI. `corresponding_sources_complete=false`:
+оставшиеся фактические nested/native inputs, dependency sources и SDK build
+settings ещё требуют проверки. Final real dispatch и обязательная ручная
+Windows 11/Ubuntu desktop приёмка остаются открытыми; этих desktop сред сейчас нет.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -691,10 +741,10 @@ parent/reference, неправильный upstream hash, unsafe/missing selecti
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation и portable identity дополнены 84 FFmpeg source inputs, Git/SVN snapshots и проверяемым выбором generated C/H sources без checkpoint files |
+| Summary | Windows isolation и portable identity дополнены 86 FFmpeg source inputs, проверенными Git submodule proofs и выбором generated C/H sources без checkpoint files |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | Все три workflow прошли на 06fa74b; Opus generated source retention требует своего exact-SHA CI |
+| Minor issues | CI 10/10 и Linux portable прошли на d8bc131; Graphengine/Highway retention требует своего exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |
