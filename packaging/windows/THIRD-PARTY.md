@@ -4,7 +4,7 @@ dynamically linked libraries with their own licenses. Notices are in `licenses/`
 third-party license texts and distribution metadata, read without executing its
 embedded Python code. `notices.json` records the binary hash and archive inventory.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a partial
-set of 72 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
+set of 75 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
 the input archive hash, exact upstream build recipes and configure flags from the
 bundled tool. These sources are retained in the adjacent build-inputs archive.
 The upstream `lgpl` variant name does not describe every dependency's terms:

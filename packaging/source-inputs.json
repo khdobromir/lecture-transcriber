@@ -2196,6 +2196,151 @@
         ],
         "strip_components": 0,
         "canonical_tar": true
+      },
+      {
+        "name": "ffmpeg-libdrm-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "b97cbde15c5c3abfe44d78e8f57139e50f612fec",
+        "url": "https://gitlab.freedesktop.org/api/v4/projects/mesa%2Fdrm/repository/archive.tar.gz?sha=b97cbde15c5c3abfe44d78e8f57139e50f612fec",
+        "filename": "ffmpeg-libdrm-b97cbde15c5c.tar.gz",
+        "sha256": "08dbcb1304671a555f0ce8e2df92535f352baa2530412d1937797ff453b6695a",
+        "recipe": "scripts.d/50-vaapi/40-libdrm.sh",
+        "recipe_slot": "",
+        "repository": "https://gitlab.freedesktop.org/mesa/drm.git",
+        "required_notices": [
+          "LICENSES/MIT.txt",
+          "meson.build",
+          "gen_table_fourcc.py",
+          "include/drm/amdgpu_drm.h",
+          "include/drm/drm.h",
+          "include/drm/drm_fourcc.h",
+          "include/drm/drm_mode.h",
+          "include/drm/drm_sarea.h",
+          "include/drm/i915_drm.h",
+          "include/drm/mach64_drm.h",
+          "include/drm/mga_drm.h",
+          "include/drm/msm_drm.h",
+          "include/drm/nouveau_drm.h",
+          "include/drm/qxl_drm.h",
+          "include/drm/r128_drm.h",
+          "include/drm/radeon_drm.h",
+          "include/drm/savage_drm.h",
+          "include/drm/sis_drm.h",
+          "include/drm/tegra_drm.h",
+          "include/drm/vc4_drm.h",
+          "include/drm/via_drm.h",
+          "include/drm/virtgpu_drm.h",
+          "include/drm/vmwgfx_drm.h",
+          "libdrm_lists.h",
+          "libdrm_macros.h",
+          "libsync.h",
+          "util_double_list.h",
+          "util_math.h",
+          "xf86atomic.h",
+          "xf86drm.c",
+          "xf86drm.h",
+          "xf86drmHash.c",
+          "xf86drmHash.h",
+          "xf86drmMode.c",
+          "xf86drmMode.h",
+          "xf86drmRandom.c",
+          "xf86drmRandom.h",
+          "xf86drmSL.c"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libdrm"
+        ]
+      },
+      {
+        "name": "ffmpeg-mingw-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "57b595039040eaa15bece85b7cc71d952281b269",
+        "url": "https://codeload.github.com/mingw-w64/mingw-w64/tar.gz/57b595039040eaa15bece85b7cc71d952281b269",
+        "filename": "ffmpeg-mingw-57b595039040.tar.gz",
+        "sha256": "a68816e314290facd5da1ac96c7eead7e6de6ea4f709a1fbdcf8185497c57eb2",
+        "recipe": "scripts.d/10-mingw.sh",
+        "recipe_slot": "",
+        "repository": "https://git.code.sf.net/p/mingw-w64/mingw-w64.git",
+        "required_notices": [
+          "COPYING",
+          "COPYING.MinGW-w64/COPYING.MinGW-w64.txt",
+          "COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt",
+          "DISCLAIMER",
+          "DISCLAIMER.PD",
+          "AUTHORS",
+          "mingw-w64-libraries/winpthreads/COPYING"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "configure_flags": [
+          "--enable-pthreads"
+        ],
+        "source_mirror_documentation": "https://www.mingw-w64.org/source/"
+      },
+      {
+        "name": "ffmpeg-gnulib-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "eb72eb6f75f5621c5d648acd11467fd124584617",
+        "url": "https://codeload.github.com/coreutils/gnulib/tar.gz/eb72eb6f75f5621c5d648acd11467fd124584617",
+        "filename": "ffmpeg-gnulib-eb72eb6f75f5.tar.gz",
+        "sha256": "b97aaa8c6d2178387802ea9a7b3d53eb307a930a72d050c699f19867160caa6c",
+        "recipe": "scripts.d/20-libiconv.sh",
+        "recipe_slot": "2",
+        "repository": "https://git.savannah.gnu.org/git/gnulib.git",
+        "required_notices": [
+          "COPYING",
+          "README",
+          "doc/COPYING.LESSERv2",
+          "doc/COPYING.LESSERv3",
+          "doc/COPYINGv2",
+          "doc/COPYINGv3",
+          "etc/license-notices/GPLv2+",
+          "etc/license-notices/GPLv3+",
+          "etc/license-notices/LGPLv2+",
+          "etc/license-notices/LGPLv3+",
+          "etc/license-notices/LGPLv3+_or_GPLv2+",
+          "etc/license-notices/README",
+          "etc/license-notices/public_domain",
+          "etc/license-notices/unlimited"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "configure_flags": [
+          "--enable-iconv"
+        ],
+        "source_mirror_recipe_variable": "SCRIPT_MIRROR2"
+      },
+      {
+        "name": "ffmpeg-libiconv-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0",
+        "url": "https://gitweb.git.savannah.gnu.org/gitweb/?p=libiconv.git&a=snapshot&h=1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0&sf=tgz",
+        "filename": "ffmpeg-libiconv-1df3087ba811.tar.gz",
+        "sha256": "55fa6f18d5e4da730820c7fe38ce97de2db881606f345b62e4de5dce8816b4fa",
+        "recipe": "scripts.d/20-libiconv.sh",
+        "recipe_slot": "",
+        "repository": "https://git.savannah.gnu.org/git/libiconv.git",
+        "required_notices": [
+          "COPYING",
+          "COPYING.LIB",
+          "AUTHORS",
+          "README",
+          "libcharset/COPYING.LIB",
+          "libcharset/AUTHORS"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-iconv"
+        ]
       }
     ]
   }

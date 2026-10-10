@@ -466,6 +466,54 @@ content/mode, unsafe/duplicate entries, сохранность прежнего 
 F7 остаётся частичным, обязательные manual gates открыты. Исходники libdrm с
 `LICENSES/MIT.txt` подготовлены отдельно и в этот checksum fix не включены.
 
+## Дополнительные source inputs: libdrm, MinGW, libiconv и gnulib
+
+Следующая часть F7 увеличивает retained FFmpeg source set до 79 inputs:
+77 для Linux и 75 для Windows. Исходники libdrm закреплены на
+`b97cbde15c5c3abfe44d78e8f57139e50f612fec` и сохраняют original
+`LICENSES/MIT.txt` и 37 original файлов с copyright/license notices
+из core sources, public headers и build script. MinGW/winpthreads на
+`57b595039040eaa15bece85b7cc71d952281b269` включён только для Windows;
+сохранены 14 original notices, включая runtime/winpthreads COPYING,
+AUTHORS и disclaimers. Архив получен с GitHub mirror, на который ссылается
+[upstream страница исходников](https://www.mingw-w64.org/source/);
+`repository` сохраняет SourceForge URL из pinned recipe.
+
+gnulib на `eb72eb6f75f5621c5d648acd11467fd124584617` соответствует
+`SCRIPT_COMMIT2` libiconv recipe; используется тот же `coreutils/gnulib` mirror,
+что `SCRIPT_MIRROR2`. Сохранены 16 original notices, включая COPYING и
+`etc/license-notices` без замены оригинальных terms пересказом. Исходное
+дерево libiconv на `1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0` получено
+с GNU Gitweb snapshot; две успешные загрузки дали один SHA-256. Сохранены
+шесть original notices, включая COPYING/COPYING.LIB и libcharset terms.
+Рецепт задаёт отдельный checkout gnulib; оба source inputs сохранены.
+
+Все четыре новых source archives проверены по SHA-256; их notices сверены с
+original archive bytes. Local source-inputs archive из четырёх компонентов
+перечитан с проверкой всех retained hashes. Полный collector на исходных
+закреплённых FFmpeg binary archives и их configurations прошёл для обеих
+платформ: Linux — 77 source components и 334 notices, Windows — 75 и 307.
+Проверена platform selection: MinGW отсутствует в Linux, libdrm — в Windows,
+libiconv и gnulib присутствуют в обоих. Fresh packaging CTest прошёл 6/6.
+
+Для checksum fix `6698ef8eaac7b9a9a413140b9d32d61136292cf0` отдельный
+[Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38059824646)
+прошёл. Его
+[CI](https://github.com/khdobromir/lecture-transcriber/actions/runs/38059820070)
+завершился успешно, 10/10 jobs, включая native Windows GUI/ZIP и реальные
+GUI/CLI сценарии.
+[Linux portable](https://github.com/khdobromir/lecture-transcriber/actions/runs/38059822318)
+также прошёл: сборка одного AppImage и offline ASR того же файла в чистых
+Ubuntu/Debian завершены. Этот SHA содержит 75 sources и не подтверждает
+hosted проверку добавленных четырёх inputs.
+
+F7 остаётся частичным: AMF headers, LAME, opencore-amr, soxr,
+nested/generated inputs, Rust crates и toolchain/SDK build materials ещё
+требуют завершения. SourceForge snapshot URLs для точных soxr/opencore commits
+возвращали 404; HTML страницы генерации не включены в verified inputs.
+Read-only SVN snapshot LAME revision 6835 доступен, но его retention ещё не
+реализован. `corresponding_sources_complete=false` и manual gates сохраняются.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -473,10 +521,10 @@ F7 остаётся частичным, обязательные manual gates о
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation, portable identity и 75 FFmpeg source inputs дополнены canonical Gitiles TAR pinning и явным project User-Agent |
+| Summary | Windows isolation, portable identity и canonical Gitiles downloads дополнены 79 FFmpeg source inputs, включая libdrm, MinGW/winpthreads, libiconv и gnulib |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | Static analysis и pinned Qt matrix прошли на 0c4b540; package download fixes требуют нового exact-SHA CI |
+| Minor issues | CI 10/10 и Linux portable прошли на 6698ef8; четыре дополнительных source inputs требуют нового exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |
