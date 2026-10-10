@@ -20,6 +20,59 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_canonical_source_archives_pin_content_modes_and_paths(self):
+        from package_canonical_sources import canonicalize_tar, canonicalize_verified_tar
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def fixture(name, timestamp, content=b"Original terms", mode=0o644, member_name="LICENSE", kind=tarfile.REGTYPE):
+                path = root / name
+                with tarfile.open(path, "w:gz", format=tarfile.PAX_FORMAT) as archive:
+                    member = tarfile.TarInfo(member_name); member.size = len(content) if kind == tarfile.REGTYPE else 0
+                    member.mtime = timestamp; member.uid = 123; member.gid = 456
+                    member.uname = "builder"; member.gname = "group"; member.mode = mode; member.type = kind
+                    archive.addfile(member, io.BytesIO(content) if member.isfile() else None)
+                return path
+            first = fixture("first.tar.gz", 1234.125)
+            later = fixture("later.tar.gz", 9876.875)
+            canonical = root / "expected.tar"
+            canonicalize_tar(first, canonical)
+            expected = hashlib.sha256(canonical.read_bytes()).hexdigest()
+            target = root / "verified.tar"
+            canonicalize_verified_tar(later, target, expected)
+            self.assertEqual(target.read_bytes(), canonical.read_bytes())
+            previous = root / "previous.tar"; previous.write_bytes(b"Previous input")
+            with self.assertRaisesRegex(ValueError, "cache checksum mismatch"):
+                canonicalize_verified_tar(later, previous, expected)
+            self.assertEqual(previous.read_bytes(), b"Previous input")
+            with tarfile.open(target) as archive:
+                member = archive.getmember("LICENSE")
+                self.assertEqual(archive.extractfile(member).read(), b"Original terms")
+                self.assertEqual((member.mtime, member.uid, member.gid, member.uname, member.gname), (0, 0, 0, "", ""))
+                self.assertEqual(member.mode, 0o644)
+            for content, mode in [(b"Changed terms", 0o644), (b"Original terms", 0o755)]:
+                changed = fixture("changed.tar.gz", 1234.125, content=content, mode=mode)
+                with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                    canonicalize_verified_tar(changed, root / "rejected.tar", expected)
+                self.assertFalse((root / "rejected.tar").exists())
+            for name, kind in [("../LICENSE", tarfile.REGTYPE), ("/LICENSE", tarfile.REGTYPE),
+                               ("C:/LICENSE", tarfile.REGTYPE), ("dir\\LICENSE", tarfile.REGTYPE),
+                               ("link", tarfile.SYMTYPE), ("device", tarfile.CHRTYPE)]:
+                unsafe = fixture("unsafe.tar.gz", 1, member_name=name, kind=kind)
+                with self.assertRaises(ValueError):
+                    canonicalize_verified_tar(unsafe, root / "unsafe.tar", expected)
+                self.assertFalse((root / "unsafe.tar").exists())
+            duplicate = root / "duplicate.tar.gz"
+            with tarfile.open(duplicate, "w:gz") as archive:
+                for _ in range(2):
+                    member = tarfile.TarInfo("LICENSE"); member.size = 1
+                    archive.addfile(member, io.BytesIO(b"x"))
+            with self.assertRaisesRegex(ValueError, "Duplicate"):
+                canonicalize_verified_tar(duplicate, root / "duplicate.tar", expected)
+            cli = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / "scripts/package_canonical_sources.py"),
+                                  str(later), str(root / "cli.tar"), expected], capture_output=True, text=True)
+            self.assertEqual(cli.returncode, 0, cli.stderr)
+            self.assertEqual((root / "cli.tar").read_bytes(), canonical.read_bytes())
+
     def test_ffmpeg_dependency_notices_require_exact_archive_recipe_and_configuration(self):
         from package_ffmpeg_sources import collect_ffmpeg_notices
         with tempfile.TemporaryDirectory() as temporary:
@@ -94,6 +147,10 @@ class SourceIdentityTests(unittest.TestCase):
         lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=["a" * 64, "b" * 64])],
                     ffmpeg_dependencies=dict(for_binary_sha256=["a" * 64, "b" * 64], downloads=[record]))
         self.assertEqual(ffmpeg_source_records(lock, [{"sha256": "a" * 64}]), [record])
+        record["canonical_tar"] = "true"
+        with self.assertRaisesRegex(ValueError, "Incomplete FFmpeg"):
+            ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
+        record.pop("canonical_tar")
         with self.assertRaisesRegex(ValueError, "FFmpeg.*pinned binary"):
             ffmpeg_source_records(lock, [{"sha256": "d" * 64}])
         record["for_binary_sha256"] = ["d" * 64]

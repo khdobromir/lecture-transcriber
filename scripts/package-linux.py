@@ -19,6 +19,7 @@ from package_linux_sources import collect_sources
 from package_sdk_sources import sdk_source_records, collect_sdk_notices
 from package_runtime_sources import runtime_source_records, collect_runtime_notices
 from package_ffmpeg_sources import collect_ffmpeg_notices
+from package_canonical_sources import canonicalize_verified_tar
 from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -60,15 +61,18 @@ def fetch(record, cache):
     with tempfile.NamedTemporaryFile(dir=cache, prefix="download-", delete=False) as stream:
         partial = Path(stream.name)
         try:
-            request = urllib.request.Request(record["url"], headers={"User-Agent": "Transcribe-Linux-package/1"})
+            request = urllib.request.Request(record["url"], headers={"User-Agent": "Transcribe-package/1"})
             with urllib.request.urlopen(request, timeout=120) as response:
                 if response.geturl().split(":", 1)[0] != "https":
                     raise ValueError("Dependency redirect must use HTTPS")
                 shutil.copyfileobj(response, stream, 1024 * 1024)
             stream.close()
-            if digest(partial) != record["sha256"]:
-                raise ValueError("Downloaded checksum mismatch: " + target.name)
-            partial.replace(target)
+            if record.get("canonical_tar") is True:
+                canonicalize_verified_tar(partial, target, record["sha256"])
+            else:
+                if digest(partial) != record["sha256"]:
+                    raise ValueError("Downloaded checksum mismatch: " + target.name)
+                partial.replace(target)
         finally:
             partial.unlink(missing_ok=True)
     return target

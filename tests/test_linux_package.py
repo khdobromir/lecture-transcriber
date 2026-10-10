@@ -20,6 +20,35 @@ spec.loader.exec_module(builder)
 
 
 class LinuxPackageTests(unittest.TestCase):
+    def test_download_verifies_canonical_content_and_discards_failed_partials(self):
+        from package_canonical_sources import canonicalize_tar
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / "cache"; cache.mkdir()
+            def archive(name, timestamp, data):
+                target = root / name
+                with tarfile.open(target, "w:gz", format=tarfile.PAX_FORMAT) as package:
+                    entry = tarfile.TarInfo("LICENSE"); entry.size = len(data); entry.mtime = timestamp
+                    package.addfile(entry, io.BytesIO(data))
+                return target
+            first = archive("first.tar.gz", 1000.125, b"Original terms")
+            later = archive("later.tar.gz", 2000.875, b"Original terms")
+            canonical = root / "canonical.tar"; canonicalize_tar(first, canonical)
+            record = dict(filename="codec.tar", url="https://example.invalid/source.tar.gz",
+                          sha256=builder.digest(canonical), canonical_tar=True)
+            def response(data):
+                stream = io.BytesIO(data); stream.geturl = lambda: record["url"]
+                return stream
+            with patch.object(builder.urllib.request, "urlopen", return_value=response(later.read_bytes())):
+                result = builder.fetch(record, cache)
+            self.assertEqual(result.read_bytes(), canonical.read_bytes())
+            self.assertEqual(list(cache.iterdir()), [result])
+            result.unlink()
+            changed = archive("changed.tar.gz", 3000.125, b"Changed terms")
+            with patch.object(builder.urllib.request, "urlopen", return_value=response(changed.read_bytes())):
+                with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                    builder.fetch(record, cache)
+            self.assertEqual(list(cache.iterdir()), [])
+
     def test_runtime_sources_bind_original_notices_and_recipes_to_exact_binary(self):
         from package_runtime_sources import runtime_source_records, collect_runtime_notices
         with tempfile.TemporaryDirectory() as temporary:

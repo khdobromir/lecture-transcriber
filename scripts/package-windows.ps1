@@ -36,7 +36,12 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 }
 function Get-Verified($Dependency) {
     $Target = Join-Path $Stage $Dependency.filename
-    Invoke-WebRequest -Uri $Dependency.url -OutFile ($Target + '.part')
+    Invoke-WebRequest -Uri $Dependency.url -UserAgent 'Transcribe-package/1' -OutFile ($Target + '.part')
+    if (($Dependency.PSObject.Properties.Name -contains 'canonical_tar') -and $Dependency.canonical_tar -eq $true) {
+        Invoke-Checked python @("$Project\scripts\package_canonical_sources.py", ($Target + '.part'), $Target, $Dependency.sha256)
+        Remove-Item -LiteralPath ($Target + '.part')
+        return $Target
+    }
     $Hash = (Get-FileHash ($Target + '.part') -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($Hash -ne $Dependency.sha256) { throw "SHA-256 mismatch: $($Dependency.name)" }
     Move-Item ($Target + '.part') $Target

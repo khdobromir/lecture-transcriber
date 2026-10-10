@@ -428,6 +428,44 @@ notices сохраняются без изменения путей; default pre
 уже прошёл. Для нового source SHA необходим отдельный hosted прогон.
 Полнота F7 и final manual gates по-прежнему не подтверждены.
 
+## Отказы загрузок 0c4b540 и проверка исправления
+
+Кандидат `0c4b5405a6555442a8f45cb28f871f8c93dccd65` завершил
+[CI](https://github.com/khdobromir/lecture-transcriber/actions/runs/38058053872)
+с 9 успешными jobs и ошибкой Windows package; его
+[Linux portable](https://github.com/khdobromir/lecture-transcriber/actions/runs/38058056139)
+также завершился ошибкой до clean-container проверок.
+[Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38058058281)
+прошёл. Эти package failures не заменяются предыдущими зелёными результатами.
+
+Linux downloader отказал на SHA-256 AOM. Повторная загрузка того же commit
+дала 1 598 записей с прежними names/types/modes/content hashes, но иными `mtime`
+у всех записей. Из-за этого отличаются и compressed, и uncompressed TAR bytes.
+Это подтверждённая изменчивость archive metadata, а не основание отключать pin.
+Три Gitiles inputs теперь сохраняются как canonical TAR: timestamp/owner fields
+нулевые, порядок стабилен, mode/path/type/content сохраняются и проверяются
+закреплённым SHA-256. Нормализация явно включается в source record и не
+применяется к остальным downloads.
+
+Windows job отказал на SHA-256 fontconfig. С PowerShell User-Agent повторно
+получен HTTP 200 `text/html` вместо gzip; тот же original source URL дважды
+вернул исходный закреплённый archive с общим `Transcribe-package/1` User-Agent.
+Этот явный project User-Agent установлен в обоих packagers. Строгий hash guard
+сохраняется; реальный Windows результат изменения ещё требует hosted проверки.
+
+Реальный исправленный Linux `fetch` скачал все три Gitiles inputs заново и
+проверил canonical SHA-256. Canonical sources дали те же 21 original notice
+hash, что прежние archives; три canonical inputs упакованы и перечитаны с
+SHA-256 проверкой. Shared source tests прошли 10/10, Linux packaging tests —
+13/13, fresh packaging CTest — 6/6. Новые проверки сначала падали до реализации;
+они подтверждают стабильность при изменении timestamps, отказ при изменении
+content/mode, unsafe/duplicate entries, сохранность прежнего cache input и
+удаление failed partials. Symlinks/devices не извлекаются и отвергаются.
+
+После исправления нужен новый exact-SHA hosted CI и portable artifact; статус
+F7 остаётся частичным, обязательные manual gates открыты. Исходники libdrm с
+`LICENSES/MIT.txt` подготовлены отдельно и в этот checksum fix не включены.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -435,10 +473,10 @@ notices сохраняются без изменения путей; default pre
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation, portable identity и provenance дополнены 75 pinned FFmpeg source archives, recipe tags и сбором notices из архивов без корневого каталога |
+| Summary | Windows isolation, portable identity и 75 FFmpeg source inputs дополнены canonical Gitiles TAR pinning и явным project User-Agent |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | Static analysis и pinned Qt matrix прошли на 8bd77f8; после расширения materials необходим новый exact-SHA CI |
+| Minor issues | Static analysis и pinned Qt matrix прошли на 0c4b540; package download fixes требуют нового exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |

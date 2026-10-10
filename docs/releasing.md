@@ -127,6 +127,16 @@ object. При обновлении такого input нужно заново �
 Для официальных Googlesource archives без enclosing directory поле
 `strip_components=0` сохраняет пути notices целиком. По умолчанию снимается
 один корневой каталог; другие значения, absolute paths и traversal отвергаются.
+Gitiles назначает файлам время создания archive при каждом запросе, поэтому
+у AOM/libvpx/libwebp `canonical_tar=true`: downloader формирует TAR с нулевыми
+timestamps/owners и стабильным порядком записей, затем проверяет его закреплённый
+`sha256`. Пин относится к сохраняемому `.tar`, а не к изменчивому upstream gzip.
+Пути, типы, permissions и содержимое файлов входят в проверяемые bytes; symlinks,
+devices, duplicate/unsafe entries и неизвестные PAX fields отвергаются. Оригинальные
+тексты notices сохраняются без изменений. Helper общий для Linux/Windows и
+публикует input только после совпадения SHA-256. Остальные downloads проверяются
+по исходным bytes. Обе платформы посылают явный `Transcribe-package/1` User-Agent;
+HTTP 200 с HTML challenge также отклоняется проверкой hash.
 Проверяются также enable
 flags настоящего bundled FFmpeg; notices из verified sources сохраняются в
 `licenses/FFmpeg-dependency-source-notices`, а связи — в

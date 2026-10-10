@@ -2127,8 +2127,8 @@
         "kind": "ffmpeg-dependency-source",
         "revision": "b4ce2cd097b00921b0327bfb5f07b5f8361ade99",
         "url": "https://aomedia.googlesource.com/aom/+archive/b4ce2cd097b00921b0327bfb5f07b5f8361ade99.tar.gz",
-        "filename": "ffmpeg-aom-b4ce2cd097b0.tar.gz",
-        "sha256": "c91a48c652dc788e0930879cc18990ddaaec6e23d92a9d5fe8e9bded7b9e317f",
+        "filename": "ffmpeg-aom-b4ce2cd097b0.tar",
+        "sha256": "aa3168259e9c86bcc1760ba13cfc44cfe381726c76a07c5f7df4a69b1caac184",
         "recipe": "scripts.d/50-aom.sh",
         "recipe_slot": "",
         "repository": "https://aomedia.googlesource.com/aom",
@@ -2144,15 +2144,16 @@
         "configure_flags": [
           "--enable-libaom"
         ],
-        "strip_components": 0
+        "strip_components": 0,
+        "canonical_tar": true
       },
       {
         "name": "ffmpeg-libvpx-source",
         "kind": "ffmpeg-dependency-source",
         "revision": "5e680f30801d03c21078f8c4b772464752516211",
         "url": "https://chromium.googlesource.com/webm/libvpx/+archive/5e680f30801d03c21078f8c4b772464752516211.tar.gz",
-        "filename": "ffmpeg-libvpx-5e680f30801d.tar.gz",
-        "sha256": "9271312d0a42d2b8605a3d4685299abf67a6421051bbc34332ed0db6701c2083",
+        "filename": "ffmpeg-libvpx-5e680f30801d.tar",
+        "sha256": "6898df69a2a1cd2803809e43bc0ef023282d1de5aaafc815f28c50e6a1261d44",
         "recipe": "scripts.d/50-libvpx.sh",
         "recipe_slot": "",
         "repository": "https://chromium.googlesource.com/webm/libvpx",
@@ -2168,15 +2169,16 @@
         "configure_flags": [
           "--enable-libvpx"
         ],
-        "strip_components": 0
+        "strip_components": 0,
+        "canonical_tar": true
       },
       {
         "name": "ffmpeg-libwebp-source",
         "kind": "ffmpeg-dependency-source",
         "revision": "5c168cd23b1872969c38e34b01b04dcf29849288",
         "url": "https://chromium.googlesource.com/webm/libwebp/+archive/5c168cd23b1872969c38e34b01b04dcf29849288.tar.gz",
-        "filename": "ffmpeg-libwebp-5c168cd23b18.tar.gz",
-        "sha256": "40aefb4608b68374de20b4bbe95233567135bab37619c1ef567b9089dae7eec6",
+        "filename": "ffmpeg-libwebp-5c168cd23b18.tar",
+        "sha256": "730b7c1d1f45ce3c91bb6214fe02ec9ed6b16011d9bf7fa6aca08bee9514f68d",
         "recipe": "scripts.d/50-libwebp.sh",
         "recipe_slot": "",
         "repository": "https://chromium.googlesource.com/webm/libwebp",
@@ -2192,7 +2194,8 @@
         "configure_flags": [
           "--enable-libwebp"
         ],
-        "strip_components": 0
+        "strip_components": 0,
+        "canonical_tar": true
       }
     ]
   }

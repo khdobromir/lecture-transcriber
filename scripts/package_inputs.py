@@ -23,6 +23,7 @@ def ffmpeg_source_records(lock, binaries):
             raise ValueError("FFmpeg dependency source has an unknown binary mapping")
         if (record["kind"] != "ffmpeg-dependency-source" or not record["required_notices"]
                 or not record["configure_flags"] or not re.fullmatch(r"[a-f0-9]{40}", record["revision"])
+                or ("canonical_tar" in record and record["canonical_tar"] is not True)
                 or any(not re.fullmatch(r"--enable-[a-z0-9-]+", flag) for flag in record["configure_flags"])):
             raise ValueError("Incomplete FFmpeg dependency source mapping")
         if available.intersection(record["for_binary_sha256"]):
