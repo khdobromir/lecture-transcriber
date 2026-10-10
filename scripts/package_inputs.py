@@ -24,6 +24,9 @@ def ffmpeg_source_records(lock, binaries):
         if (record["kind"] != "ffmpeg-dependency-source" or not record["required_notices"]
                 or not record["configure_flags"] or not re.fullmatch(r"[a-f0-9]{40}", record["revision"])
                 or ("canonical_tar" in record and record["canonical_tar"] is not True)
+                or ("git_snapshot" in record and (record["git_snapshot"] is not True
+                    or record.get("canonical_tar") is True
+                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", record.get("git_archive_prefix", ""))))
                 or any(not re.fullmatch(r"--enable-[a-z0-9-]+", flag) for flag in record["configure_flags"])):
             raise ValueError("Incomplete FFmpeg dependency source mapping")
         if available.intersection(record["for_binary_sha256"]):

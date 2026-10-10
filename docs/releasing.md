@@ -115,8 +115,8 @@ toolchain/runtime details и build configuration Qt/SDK libraries собираю
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 
-`ffmpeg_dependencies` сохраняет частичный набор 79 pinned dependency source archives:
-77 для Linux и 75 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
+`ffmpeg_dependencies` сохраняет частичный набор 81 pinned dependency source archives:
+79 для Linux и 77 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
 archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
 каждой библиотеки, включая нумерованные recipe slots. Если recipe использует тег,
 `recipe_revision` сохраняет его имя, а `revision` и URL архива закрепляют полный
@@ -131,8 +131,8 @@ upstream странице `https://www.mingw-w64.org/source/`. Для gnulib и�
 Для libdrm сохраняются original `LICENSES/MIT.txt` и copyright-bearing core sources,
 public headers/build script; для MinGW — runtime/winpthreads
 COPYING, AUTHORS и disclaimers; для gnulib — COPYING и original license-notices.
-Исходное дерево libiconv сохраняется отдельно из GNU Gitweb snapshot на полном
-`SCRIPT_COMMIT`, вместе с COPYING/COPYING.LIB и notices libcharset; его gnulib
+Исходное дерево libiconv сохраняется отдельно на полном `SCRIPT_COMMIT`,
+вместе с COPYING/COPYING.LIB и notices libcharset; его gnulib
 располагается по pinned recipe. Generated inputs и toolchain materials остаются
 отдельной незавершённой частью F7.
 Для официальных Googlesource archives без enclosing directory поле
@@ -148,6 +148,19 @@ devices, duplicate/unsafe entries и неизвестные PAX fields отве�
 публикует input только после совпадения SHA-256. Остальные downloads проверяются
 по исходным bytes. Обе платформы посылают явный `Transcribe-package/1` User-Agent;
 HTTP 200 с HTML challenge также отклоняется проверкой hash.
+Для libiconv, soxr и opencore-amr `git_snapshot=true` сохраняет TAR прямо из
+primary HTTPS Git repository. Общий `package_git_sources.py` fetches полный
+закреплённый commit в временный bare repository, проверяет FETCH_HEAD и SHA-256
+созданного `git archive` с явными prefix и `tar.umask=0022`. Checkout и source
+scripts не выполняются. Git system/global config, inherited GIT variables,
+hooks, credential helpers и redirects исключены; cache публикуется атомарно
+без замены существующего input. Original Git metadata и source symlinks
+остаются в pinned TAR как данные; notice collector не следует по ссылкам.
+Helpers `package_git_sources.py`, `package_canonical_sources.py` и
+`package_source.py` сохраняются также в `materials/` build-inputs архива.
+Linux downloader повторяет только HTTP 502/503/504, максимум три попытки
+с паузами 1 и 2 секунды; ошибка называет input. SHA mismatch, HTTP 404 и
+небезопасный redirect не повторяются. Эти retries не меняют закреплённые bytes.
 Проверяются также enable
 flags настоящего bundled FFmpeg; notices из verified sources сохраняются в
 `licenses/FFmpeg-dependency-source-notices`, а связи — в

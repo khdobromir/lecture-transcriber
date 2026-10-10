@@ -20,6 +20,78 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_git_sources_verify_revision_and_archive_before_publication(self):
+        from package_git_sources import fetch_git_source
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / "cache"; cache.mkdir()
+            archive = root / "source.tar"
+            with tarfile.open(archive, "w") as package:
+                member = tarfile.TarInfo("codec/LICENSE"); member.size = 14
+                package.addfile(member, io.BytesIO(b"Original terms"))
+            original = archive.read_bytes()
+            record = dict(url="https://example.invalid/codec.git", revision="a" * 40,
+                          git_archive_prefix="codec", sha256=hashlib.sha256(original).hexdigest())
+            returned_revision = record["revision"]; archive_bytes = original
+            def git(command, **kwargs):
+                environment = kwargs["env"]
+                self.assertNotIn("GIT_DIR", environment)
+                self.assertNotIn("GIT_TRACE", environment)
+                self.assertNotIn("GIT_CONFIG_COUNT", environment)
+                self.assertEqual(environment["GIT_CONFIG_NOSYSTEM"], "1")
+                self.assertEqual(environment["GIT_TERMINAL_PROMPT"], "0")
+                self.assertEqual(Path(environment["GIT_CONFIG_GLOBAL"]).read_bytes(), b"")
+                if "archive" in command:
+                    target = next(a[len("--output="):] for a in command if a.startswith("--output="))
+                    Path(target).write_bytes(archive_bytes)
+                output = (returned_revision + "\n").encode() if "rev-parse" in command else b""
+                return subprocess.CompletedProcess(command, 0, stdout=output, stderr=b"")
+            target = cache / "source.tar"
+            with patch.dict(os.environ, {"GIT_DIR": "/user/repository", "GIT_TRACE": "user-trace", "GIT_CONFIG_COUNT": "1"}), patch("package_git_sources.subprocess.run", side_effect=git):
+                fetch_git_source(record, target)
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(list(cache.iterdir()), [target])
+            with patch("package_git_sources.subprocess.run") as run:
+                fetch_git_source(record, target)
+            run.assert_not_called()
+            target.write_bytes(b"Previous input")
+            with self.assertRaisesRegex(ValueError, "cache checksum mismatch"):
+                fetch_git_source(record, target)
+            self.assertEqual(target.read_bytes(), b"Previous input")
+            target.unlink()
+            returned_revision = "b" * 40
+            with patch("package_git_sources.subprocess.run", side_effect=git):
+                with self.assertRaisesRegex(ValueError, "commit mismatch"):
+                    fetch_git_source(record, target)
+            self.assertEqual(list(cache.iterdir()), [])
+            returned_revision = record["revision"]; archive_bytes = b"Changed archive"
+            with patch("package_git_sources.subprocess.run", side_effect=git):
+                with self.assertRaisesRegex(ValueError, "source checksum mismatch"):
+                    fetch_git_source(record, target)
+            self.assertEqual(list(cache.iterdir()), [])
+            archive_bytes = original
+            def concurrent_git(command, **kwargs):
+                result = git(command, **kwargs)
+                if "archive" in command:
+                    target.write_bytes(b"Concurrent previous input")
+                return result
+            with patch("package_git_sources.subprocess.run", side_effect=concurrent_git):
+                with self.assertRaisesRegex(ValueError, "cache checksum mismatch"):
+                    fetch_git_source(record, target)
+            self.assertEqual(target.read_bytes(), b"Concurrent previous input")
+            target.unlink()
+            with patch("package_git_sources.subprocess.run", side_effect=[
+                    subprocess.CompletedProcess([], 0, stdout=b"", stderr=b""),
+                    subprocess.CompletedProcess([], 128, stdout=b"", stderr=b"Network failure")]):
+                with self.assertRaisesRegex(RuntimeError, "Network failure"):
+                    fetch_git_source(record, target)
+            self.assertEqual(list(cache.iterdir()), [])
+            for changes in [dict(url="http://example.invalid/source.git"), dict(url="https://user:secret@example.invalid/source.git"),
+                            dict(revision="--bad-option"), dict(git_archive_prefix="../escape")]:
+                with patch("package_git_sources.subprocess.run") as run:
+                    with self.assertRaises(ValueError):
+                        fetch_git_source(record | changes, target)
+                run.assert_not_called()
+
     def test_canonical_source_archives_pin_content_modes_and_paths(self):
         from package_canonical_sources import canonicalize_tar, canonicalize_verified_tar
         with tempfile.TemporaryDirectory() as temporary:
@@ -151,6 +223,14 @@ class SourceIdentityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Incomplete FFmpeg"):
             ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
         record.pop("canonical_tar")
+        record.update(git_snapshot=True, git_archive_prefix="codec")
+        self.assertEqual(ffmpeg_source_records(lock, [{"sha256": "a" * 64}]), [record])
+        for changes in [dict(git_snapshot="true"), dict(git_archive_prefix="../escape"), dict(canonical_tar=True)]:
+            previous = record.copy(); record.update(changes)
+            with self.assertRaisesRegex(ValueError, "Incomplete FFmpeg"):
+                ffmpeg_source_records(lock, [{"sha256": "a" * 64}])
+            record.clear(); record.update(previous)
+        record.pop("git_snapshot"); record.pop("git_archive_prefix")
         with self.assertRaisesRegex(ValueError, "FFmpeg.*pinned binary"):
             ffmpeg_source_records(lock, [{"sha256": "d" * 64}])
         record["for_binary_sha256"] = ["d" * 64]

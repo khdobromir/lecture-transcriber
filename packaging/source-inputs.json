@@ -2320,9 +2320,9 @@
         "name": "ffmpeg-libiconv-source",
         "kind": "ffmpeg-dependency-source",
         "revision": "1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0",
-        "url": "https://gitweb.git.savannah.gnu.org/gitweb/?p=libiconv.git&a=snapshot&h=1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0&sf=tgz",
-        "filename": "ffmpeg-libiconv-1df3087ba811.tar.gz",
-        "sha256": "55fa6f18d5e4da730820c7fe38ce97de2db881606f345b62e4de5dce8816b4fa",
+        "url": "https://https.git.savannah.gnu.org/git/libiconv.git",
+        "filename": "ffmpeg-libiconv-1df3087ba811.tar",
+        "sha256": "e34d8677c5dbff5cde6fbc8c31858e7b7288315c3cc10c86682d985b9cbc8778",
         "recipe": "scripts.d/20-libiconv.sh",
         "recipe_slot": "",
         "repository": "https://git.savannah.gnu.org/git/libiconv.git",
@@ -2340,7 +2340,61 @@
         ],
         "configure_flags": [
           "--enable-iconv"
-        ]
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "libiconv-1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0"
+      },
+      {
+        "name": "ffmpeg-soxr-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "945b592b70470e29f917f4de89b4281fbbd540c0",
+        "url": "https://git.code.sf.net/p/soxr/code",
+        "filename": "ffmpeg-soxr-945b592b7047.tar",
+        "sha256": "f92241dec2243a4018a4aac3a601654a699f6a44c76ef2eead3ca62d169b3ec5",
+        "recipe": "scripts.d/50-soxr.sh",
+        "recipe_slot": "",
+        "repository": "https://git.code.sf.net/p/soxr/code",
+        "required_notices": [
+          "LICENCE",
+          "COPYING.LGPL",
+          "AUTHORS",
+          "README"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libsoxr"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "soxr-945b592b70470e29f917f4de89b4281fbbd540c0"
+      },
+      {
+        "name": "ffmpeg-opencore-amr-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "7dba8c32238418ce0b316a852b2224df586ca896",
+        "url": "https://git.code.sf.net/p/opencore-amr/code",
+        "filename": "ffmpeg-opencore-amr-7dba8c322384.tar",
+        "sha256": "8ff33b12f204c82e67ec3600473b64d7e09d77bb88e5c61da1b30fb10fcf8950",
+        "recipe": "scripts.d/50-opencore-amr.sh",
+        "recipe_slot": "",
+        "repository": "https://git.code.sf.net/p/opencore-amr/code",
+        "required_notices": [
+          "LICENSE",
+          "README",
+          "opencore/README"
+        ],
+        "for_binary_sha256": [
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4",
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560"
+        ],
+        "configure_flags": [
+          "--enable-libopencore-amrnb",
+          "--enable-libopencore-amrwb"
+        ],
+        "git_snapshot": true,
+        "git_archive_prefix": "opencore-amr-7dba8c32238418ce0b316a852b2224df586ca896"
       }
     ]
   }

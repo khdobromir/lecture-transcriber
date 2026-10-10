@@ -10,6 +10,8 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
 from package_source import validate_identity
 from package_inputs import archive_inputs, source_records
@@ -20,6 +22,7 @@ from package_sdk_sources import sdk_source_records, collect_sdk_notices
 from package_runtime_sources import runtime_source_records, collect_runtime_notices
 from package_ffmpeg_sources import collect_ffmpeg_notices
 from package_canonical_sources import canonicalize_verified_tar
+from package_git_sources import fetch_git_source
 from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -57,15 +60,29 @@ def fetch(record, cache):
         if digest(target) != record["sha256"]:
             raise ValueError("Dependency cache checksum mismatch: " + target.name)
         return target
+    if record.get("git_snapshot") is True:
+        return fetch_git_source(record, target)
     # Unique partials also allow two builds to use the same cache safely.
     with tempfile.NamedTemporaryFile(dir=cache, prefix="download-", delete=False) as stream:
         partial = Path(stream.name)
         try:
             request = urllib.request.Request(record["url"], headers={"User-Agent": "Transcribe-package/1"})
-            with urllib.request.urlopen(request, timeout=120) as response:
-                if response.geturl().split(":", 1)[0] != "https":
-                    raise ValueError("Dependency redirect must use HTTPS")
-                shutil.copyfileobj(response, stream, 1024 * 1024)
+            for attempt in range(3):
+                stream.seek(0)
+                stream.truncate()
+                try:
+                    with urllib.request.urlopen(request, timeout=120) as response:
+                        if response.geturl().split(":", 1)[0] != "https":
+                            raise ValueError("Dependency redirect must use HTTPS")
+                        shutil.copyfileobj(response, stream, 1024 * 1024)
+                    break
+                except urllib.error.HTTPError as error:
+                    status = error.code
+                    error.close()
+                    if status not in {502, 503, 504} or attempt == 2:
+                        raise RuntimeError(f"Download failed for {target.name}: HTTP {status} (attempt {attempt + 1}/3)") from error
+                    print(f"Retry download {target.name}: HTTP {status} (attempt {attempt + 2}/3)", flush=True)
+                    time.sleep(attempt + 1)
             stream.close()
             if record.get("canonical_tar") is True:
                 canonicalize_verified_tar(partial, target, record["sha256"])
@@ -392,7 +409,9 @@ def main():
     inputs_archive = stage / "build-inputs.tar.gz"
     archive_inputs(list(lock["downloads"].values()) + sources + system_sources["downloads"], cache, inputs_archive,
                    [PROJECT / "packaging/linux/dependencies.json", PROJECT / "packaging/source-inputs.json",
-                    appdir / "package-manifest.json", library_provenance, source_provenance])
+                    appdir / "package-manifest.json", library_provenance, source_provenance,
+                    PROJECT / "scripts/package_git_sources.py", PROJECT / "scripts/package_canonical_sources.py",
+                    PROJECT / "scripts/package_source.py"])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.

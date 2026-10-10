@@ -36,6 +36,11 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 }
 function Get-Verified($Dependency) {
     $Target = Join-Path $Stage $Dependency.filename
+    if (($Dependency.PSObject.Properties.Name -contains 'git_snapshot') -and $Dependency.git_snapshot -eq $true) {
+        Invoke-Checked python @("$Project\scripts\package_git_sources.py", $Dependency.url, $Dependency.revision,
+            $Dependency.git_archive_prefix, $Target, $Dependency.sha256)
+        return $Target
+    }
     Invoke-WebRequest -Uri $Dependency.url -UserAgent 'Transcribe-package/1' -OutFile ($Target + '.part')
     if (($Dependency.PSObject.Properties.Name -contains 'canonical_tar') -and $Dependency.canonical_tar -eq $true) {
         Invoke-Checked python @("$Project\scripts\package_canonical_sources.py", ($Target + '.part'), $Target, $Dependency.sha256)
@@ -182,7 +187,8 @@ $InputsArchive = $Zip + '.build-inputs.tar.gz'
 Invoke-Checked python @("$Project\scripts\package_inputs.py", 'archive', $InputsFile, $Stage, $InputsArchive,
     '--material', "$Project\packaging\windows\dependencies.json", '--material', "$Project\scripts\patch-whisper-windows.py",
     '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
-    '--material', "$Project\packaging\source-inputs.json")
+    '--material', "$Project\packaging\source-inputs.json", '--material', "$Project\scripts\package_git_sources.py",
+    '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py")
 $null = Get-SourceIdentity $IdentityFile
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
     Set-Content ($Zip + '.sha256') -Encoding ascii

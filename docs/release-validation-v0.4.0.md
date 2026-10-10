@@ -514,6 +514,62 @@ nested/generated inputs, Rust crates и toolchain/SDK build materials ещё
 Read-only SVN snapshot LAME revision 6835 доступен, но его retention ещё не
 реализован. `corresponding_sources_complete=false` и manual gates сохраняются.
 
+## Direct Git source snapshots и устойчивость загрузок
+
+Для `41f98e328b33b170147c293311608626c0bb80cd`
+[CI](https://github.com/khdobromir/lecture-transcriber/actions/runs/38061108147)
+прошёл 10/10, включая Windows GUI/ZIP с 79 source inputs;
+[Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38061114130)
+также прошёл. [Linux portable](https://github.com/khdobromir/lecture-transcriber/actions/runs/38061110905)
+дважды отказал во время загрузок на HTTP 502; clean containers не выполнялись.
+Тогдашний журнал не называл failing input. Локальный повтор исправленного
+downloader воспроизвёл три HTTP 502 подряд именно у GNU Gitweb libiconv.
+Смена query separators иногда возвращала прежние bytes, но не устраняла
+нестабильность CGI; это не принято как достаточное исправление.
+
+libiconv теперь получается из primary GNU HTTPS Git transport на прежнем
+`1df3087ba8110c7f3ed3eb5f8869b814dbbe00b0`. Все 726 original source files
+совпали по SHA-256 с прежним Gitweb archive; six original notices не изменились.
+Source TAR имеет новый pin, поскольку изменён способ архивирования и prefix,
+а исходная revision и код сохранены. soxr и opencore-amr получены прямо из
+SourceForge Git на прежних pinned recipe commits. Для soxr проверены все 138
+Git blobs, включая одну source symlink внутри archive root; для opencore — 441.
+Отсутствующие ZIP snapshots не используются.
+
+Shared helper проверяет full commit и final TAR SHA до атомарной публикации,
+не выполняет checkout/hooks/source code и изолирует Git configuration.
+Реальный helper скачал и проверил все три inputs из пустого cache.
+Полный набор вырос до 81 input: 79 Linux и 77 Windows. Collector с исходными
+FFmpeg binary archives/recipes/configurations прошёл для обоих: 343 Linux
+notices и 316 Windows notices. Все hashes прежних notice files сохранились;
+soxr добавил пять originals, opencore-amr — четыре. Три source TAR и три
+самостоятельных helper materials упакованы и перечитаны с проверкой всех
+шести retained hashes.
+
+Local shared source tests прошли 11/11, Linux packaging tests — 14/14,
+packaging CTest — 6/6. Новые tests сначала падали до реализации. Проверены
+wrong commit/pin, unsafe Git mapping, отключение inherited Git configuration,
+отказ сетевой команды, сохранность прежнего/concurrent cache input и уборка
+temporary bare repositories. Для HTTP 502/503/504 подтверждён bounded retry;
+после трёх отказов ошибка называет input, failed partials удалены. HTTP 404,
+checksum mismatch и HTTPS downgrade не повторяются.
+
+Независимо скачан Windows ZIP `6698ef8`: SHA-256
+`0a0f6e58315c316bc8c3877063f73a8e2ff51f3d1339ccf78efcc930a3485924`,
+139 802 051 bytes. Проверены все 783 payload files, source/manifest identity,
+все 106 retained input/material entries и прежние 271 notice hashes.
+Build-inputs SHA-256:
+`2219ead8e6aeeed79725fd48930f1ed622a7e953296d18ce7cde5d3a36ce594e`.
+Hosted `real_gui_cli_speech=true` не заменяет unverified clean Windows 11.
+Это evidence относится к `6698ef8`, не к новому source snapshot helper.
+
+Отдельно сохранён SVN snapshot LAME 6835: 435 files, 31 directories,
+43 executable files, 8 071 505 source bytes. Все file hashes и modes проверены;
+integration SVN retrieval в packagers ещё не выполнена. AMF headers,
+nested/generated inputs, Rust crates и toolchain/SDK materials также остаются
+в F7. Новый exact-SHA hosted прогон необходим; final manual gates открыты,
+`corresponding_sources_complete=false` сохраняется.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -521,10 +577,10 @@ Read-only SVN snapshot LAME revision 6835 доступен, но его retentio
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation, portable identity и canonical Gitiles downloads дополнены 79 FFmpeg source inputs, включая libdrm, MinGW/winpthreads, libiconv и gnulib |
+| Summary | Windows isolation, portable identity и canonical Gitiles downloads дополнены 81 FFmpeg source input, direct Git snapshots и bounded HTTP gateway retries |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
-| Minor issues | CI 10/10 и Linux portable прошли на 6698ef8; четыре дополнительных source inputs требуют нового exact-SHA CI |
+| Minor issues | CI 10/10 прошёл на 41f98e3; его Linux portable отказал на HTTP 502; direct Git source fix требует нового exact-SHA CI |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Доступность Windows 11/Ubuntu desktop уточнена: сейчас сред нет |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |

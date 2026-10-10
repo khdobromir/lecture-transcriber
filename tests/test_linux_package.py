@@ -20,6 +20,43 @@ spec.loader.exec_module(builder)
 
 
 class LinuxPackageTests(unittest.TestCase):
+    def test_gateway_download_retries_are_bounded_and_keep_strict_hashes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            data = b"Verified source input"
+            record = dict(filename="retry-source.tar", url="https://example.invalid/source.tar",
+                          sha256=builder.hashlib.sha256(data).hexdigest())
+            def response(content):
+                stream = io.BytesIO(content); stream.geturl = lambda: record["url"]
+                return stream
+            def failure(status):
+                return builder.urllib.error.HTTPError(record["url"], status, "Upstream failure", {}, io.BytesIO())
+            with patch.object(builder.urllib.request, "urlopen", side_effect=[failure(502), failure(503), response(data)]) as request, patch("time.sleep"):
+                target = builder.fetch(record, root)
+            self.assertEqual(request.call_count, 3)
+            self.assertEqual(target.read_bytes(), data)
+            self.assertEqual(list(root.iterdir()), [target])
+            target.unlink()
+            for statuses in [[502, 502, 502], [404]]:
+                with patch.object(builder.urllib.request, "urlopen", side_effect=[failure(s) for s in statuses]) as request, patch("time.sleep"):
+                    with self.assertRaisesRegex(RuntimeError, r"retry-source\.tar.*HTTP " + str(statuses[-1])):
+                        builder.fetch(record, root)
+                self.assertEqual(request.call_count, len(statuses))
+                self.assertEqual(list(root.iterdir()), [])
+            with patch.object(builder.urllib.request, "urlopen", return_value=response(b"Changed bytes")) as request, patch("time.sleep") as sleep:
+                with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                    builder.fetch(record, root)
+            self.assertEqual(request.call_count, 1)
+            sleep.assert_not_called()
+            self.assertEqual(list(root.iterdir()), [])
+            redirect = response(data); redirect.geturl = lambda: "http://example.invalid/source.tar"
+            with patch.object(builder.urllib.request, "urlopen", return_value=redirect) as request, patch("time.sleep") as sleep:
+                with self.assertRaisesRegex(ValueError, "HTTPS"):
+                    builder.fetch(record, root)
+            self.assertEqual(request.call_count, 1)
+            sleep.assert_not_called()
+            self.assertEqual(list(root.iterdir()), [])
+
     def test_download_verifies_canonical_content_and_discards_failed_partials(self):
         from package_canonical_sources import canonicalize_tar
         with tempfile.TemporaryDirectory() as temporary:
