@@ -139,6 +139,38 @@ class SourceIdentityTests(unittest.TestCase):
                     collect_notices(binary, checksum, root / "unsafe")
                 self.assertFalse((root / "unsafe").exists())
 
+    def test_flat_source_notices_preserve_paths_and_reject_unsafe_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def fixture(files):
+                source = root / "flat-source.tar"
+                with tarfile.open(source, "w") as archive:
+                    for name, content in files.items():
+                        entry = tarfile.TarInfo(name); entry.size = len(content)
+                        archive.addfile(entry, io.BytesIO(content))
+                return [dict(name="codec", filename=source.name, sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+                             strip_components=0, required_notices=["LICENSE", "README"])]
+            records = fixture({"LICENSE": b"Original terms", "README": b"Additional terms",
+                               "src/licenses/TERMS": b"Nested terms", "src/code.c": b"Never execute"})
+            collect_qt_notices(records, root, root / "notices")
+            self.assertEqual((root / "notices/codec/LICENSE").read_bytes(), b"Original terms")
+            self.assertEqual((root / "notices/codec/README").read_bytes(), b"Additional terms")
+            self.assertEqual((root / "notices/codec/src/licenses/TERMS").read_bytes(), b"Nested terms")
+            self.assertFalse((root / "notices/codec/src/code.c").exists())
+            for prefix in [-1, 2, True, "0"]:
+                records[0]["strip_components"] = prefix
+                with self.assertRaisesRegex(ValueError, "Invalid source archive prefix"):
+                    collect_qt_notices(records, root, root / "invalid-prefix")
+            records[0]["strip_components"] = 0
+            records[0]["required_notices"].append("../outside")
+            with self.assertRaisesRegex(ValueError, "Unsafe source notice path"):
+                collect_qt_notices(records, root, root / "unsafe-required")
+            for name in ["../LICENSE", "/LICENSE", "C:/LICENSE", "dir\\LICENSE"]:
+                records = fixture({name: b"Escape"})
+                with self.assertRaises(ValueError):
+                    collect_qt_notices(records, root, root / "unsafe-member")
+                self.assertFalse((root / "unsafe-member").exists())
+
     def test_qt_notices_include_referenced_files_and_reject_incomplete_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

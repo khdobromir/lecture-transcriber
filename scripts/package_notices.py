@@ -17,6 +17,14 @@ def safe_path(name):
 def collect_qt_notices(records, cache, destination):
     inventory = []
     for record in records:
+        strip_components = record.get("strip_components", 1)
+        if type(strip_components) is not int or strip_components not in (0, 1):
+            raise ValueError("Invalid source archive prefix")
+        def validate_notice_path(name):
+            # Googlesource archives have no enclosing directory; retain their paths intact.
+            if PurePosixPath(name).is_absolute():
+                raise ValueError("Unsafe source notice path: " + name)
+            safe_path(name if strip_components else "source/" + name)
         if Path(record["name"]).name != record["name"] or Path(record["filename"]).name != record["filename"]:
             raise ValueError("Invalid source input basename")
         source = cache / record["filename"]
@@ -35,7 +43,7 @@ def collect_qt_notices(records, cache, destination):
                 basename = PurePosixPath(name).name.lower()
                 if (basename.startswith(("license", "copying", "copyright", "notice")) or basename == "qt_attribution.json"
                         or "licenses" in [part.lower() for part in PurePosixPath(name).parts[:-1]]):
-                    safe_path(name)
+                    validate_notice_path(name)
                     selected.add(name)
                 if basename == "qt_attribution.json":
                     # Qt 6.8.3 contains literal newlines in attribution strings.
@@ -49,7 +57,7 @@ def collect_qt_notices(records, cache, destination):
                                 if not reference:
                                     continue
                                 resolved = posixpath.normpath(posixpath.join(posixpath.dirname(name), reference))
-                                safe_path(resolved)
+                                validate_notice_path(resolved)
                                 if resolved not in members or not members[resolved].isfile():
                                     raise ValueError("Missing source notice reference: " + resolved)
                                 selected.add(resolved)
@@ -58,10 +66,10 @@ def collect_qt_notices(records, cache, destination):
             for relative in record.get("required_notices", []):
                 safe_path("source/" + relative)
                 matches = [name for name, member in members.items() if member.isfile()
-                           and PurePosixPath(name).parts[1:] == PurePosixPath(relative).parts]
+                           and PurePosixPath(name).parts[strip_components:] == PurePosixPath(relative).parts]
                 if len(matches) != 1:
                     raise ValueError("Missing/ambiguous required source notice: " + relative)
-                safe_path(matches[0])
+                validate_notice_path(matches[0])
                 selected.add(matches[0])
             if not selected:
                 raise ValueError("Qt source archive contains no notices")
@@ -69,7 +77,8 @@ def collect_qt_notices(records, cache, destination):
             module.mkdir(parents=True, exist_ok=False)
             hashes = {}
             for name in sorted(selected):
-                relative = Path(*safe_path(name).parts[1:])
+                validate_notice_path(name)
+                relative = Path(*PurePosixPath(name).parts[strip_components:])
                 target = module / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with archive.extractfile(members[name]) as stream, target.open("xb") as output:

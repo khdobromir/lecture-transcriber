@@ -401,6 +401,33 @@ toolchain/runtime details и Qt SDK build configuration также требую�
 что clean Windows 11 без SDK и Ubuntu 24.04 desktop сейчас недоступны;
 соответствующие manual gates остаются открытыми.
 
+## FFmpeg sources из архивов без корневого каталога
+
+После набора `47d9ca326cd42458620240b785b276c6048afe0c` добавлены официальные
+Googlesource snapshots AOM, libvpx и libwebp по полным recipe commit SHA.
+Новый набор содержит 75 archives: 74 для Linux, 72 для Windows. Его collector
+проверен на обоих original FFmpeg input archives и их ранее прочитанных
+configuration: сохранено 274 original notices для Linux и 271 для Windows.
+Три новых архива сохранены и перечитаны с SHA-256 проверкой; 72 предыдущих
+были упакованы и проверены в предыдущем этапе. Upstream code не исполнялся.
+
+`package_notices.py` теперь принимает явный `strip_components=0` для архивов
+без enclosing directory. Root LICENSE/COPYING, AUTHORS, PATENTS и nested
+notices сохраняются без изменения путей; default prefix для Qt/остальных
+архивов остаётся один. Другие prefix values, включая bool/string, отвергаются.
+Тесты проверяют сохранение root/nested notices, отказ на absolute, traversal
+и Windows-style paths, а также отсутствие копирования обычного source code.
+Новый test сначала падал на root LICENSE, затем прошёл. Shared source tests
+прошли 9/9; fresh packaging CTest — 6/6.
+
+Для предыдущего `47d9ca3` запущены
+[CI с real_smoke=true](https://github.com/khdobromir/lecture-transcriber/actions/runs/38057481814)
+и [Linux portable с real_smoke=true](https://github.com/khdobromir/lecture-transcriber/actions/runs/38057483645);
+на момент подготовки этой записи они ещё выполнялись, а
+[Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38057485342)
+уже прошёл. Для нового source SHA необходим отдельный hosted прогон.
+Полнота F7 и final manual gates по-прежнему не подтверждены.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -408,7 +435,7 @@ toolchain/runtime details и Qt SDK build configuration также требую�
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation, portable identity и provenance дополнены 72 pinned FFmpeg source archives и проверкой recipe tags |
+| Summary | Windows isolation, portable identity и provenance дополнены 75 pinned FFmpeg source archives, recipe tags и сбором notices из архивов без корневого каталога |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
 | Major issues | P1: нет чистой Windows 11/Ubuntu desktop приёмки и полных corresponding sources; публикация заблокирована этими gates |
 | Minor issues | Static analysis и pinned Qt matrix прошли на 8bd77f8; после расширения materials необходим новый exact-SHA CI |

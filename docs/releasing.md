@@ -115,8 +115,8 @@ toolchain/runtime details и build configuration Qt/SDK libraries собираю
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 
-`ffmpeg_dependencies` сохраняет частичный набор 72 pinned dependency source archives:
-71 для Linux и 69 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
+`ffmpeg_dependencies` сохраняет частичный набор 75 pinned dependency source archives:
+74 для Linux и 72 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
 archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
 каждой библиотеки, включая нумерованные recipe slots. Если recipe использует тег,
 `recipe_revision` сохраняет его имя, а `revision` и URL архива закрепляют полный
@@ -124,6 +124,9 @@ resolved commit; `recipe_tag_object_url` указывает на провере�
 object. При обновлении такого input нужно заново проверить разрешение тега
 в commit. Например, Windows FFmpeg использует Schannel, но его libssh/SRT всё
 равно требуют OpenSSL; соответствующие sources сохраняются на обеих платформах.
+Для официальных Googlesource archives без enclosing directory поле
+`strip_components=0` сохраняет пути notices целиком. По умолчанию снимается
+один корневой каталог; другие значения, absolute paths и traversal отвергаются.
 Проверяются также enable
 flags настоящего bundled FFmpeg; notices из verified sources сохраняются в
 `licenses/FFmpeg-dependency-source-notices`, а связи — в
