@@ -381,5 +381,200 @@
         }
       }
     ]
+  },
+  "linux_appimage_runtime": {
+    "for_binary_sha256": "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074",
+    "corresponding_sources_complete": false,
+    "build_evidence": {
+      "run_url": "https://github.com/AppImage/type2-runtime/actions/runs/36463736478",
+      "job": 109068477114,
+      "log_sha256": "0184607c3aa5b5ed870e0e2c1a4a5dfca3462174e9ac28aeee193e10242911a8",
+      "debug_url": "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64.debug",
+      "debug_sha256": "3313d9de576c0772e1054877fd2f9566cd38d16c5e55ee3015005331c3754074",
+      "debuglink_crc32": "09c79829",
+      "static_versions": {
+        "zstd": "1.5.6",
+        "zlib": "1.3.2",
+        "mimalloc_mi_version": 217,
+        "musl_dwarf_source": "1.2.5"
+      },
+      "alpine_packages": [
+        {
+          "name": "musl-dev",
+          "version": "1.2.5-r11",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/musl-dev-1.2.5-r11.apk",
+          "filename": "musl-dev-1.2.5-r11.apk",
+          "sha256": "d3b5ab01046a92b9a168b790f516606e320f015cbd4deeb584c5e115a02124ba",
+          "origin": "musl",
+          "commit": "21cafa1183cf7501d3f1744994d221c038436e45",
+          "recipe_input": "runtime-aports-21cafa1183cf.tar.gz",
+          "recipe_directory": "main/musl"
+        },
+        {
+          "name": "mimalloc2-dev",
+          "version": "2.1.7-r0",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/mimalloc2-dev-2.1.7-r0.apk",
+          "filename": "mimalloc2-dev-2.1.7-r0.apk",
+          "sha256": "9b140b549613492ad23a8c0749c17e38d9ad737d7b22b7927e035b03f8c4ac3f",
+          "origin": "mimalloc2",
+          "commit": "5a1a5dc3216a69e3cd66a57ee07cb5ef01b8be39",
+          "recipe_input": "runtime-aports-2b38f55109ad.tar.gz",
+          "recipe_directory": "community/mimalloc2"
+        },
+        {
+          "name": "zstd-static",
+          "version": "1.5.6-r2",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/zstd-static-1.5.6-r2.apk",
+          "filename": "zstd-static-1.5.6-r2.apk",
+          "sha256": "c82da00816b8dfec70f91d0f1d979aa9558bf5c4e1a15ab354f05c6dba5e7ca1",
+          "origin": "zstd",
+          "commit": "5c2ddf18f193dafdd25ae7391d96c7e30766eecd",
+          "recipe_input": "runtime-aports-2b38f55109ad.tar.gz",
+          "recipe_directory": "main/zstd"
+        },
+        {
+          "name": "zlib-static",
+          "version": "1.3.2-r0",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/zlib-static-1.3.2-r0.apk",
+          "filename": "zlib-static-1.3.2-r0.apk",
+          "sha256": "25ddc9ad82e822afda4cb90cf1081e7530f38ec2c8d53dcc2898f08dae82cb88",
+          "origin": "zlib",
+          "commit": "2b38f55109add14f4f99a974c2fdf421b6b9e9e9",
+          "recipe_input": "runtime-aports-2b38f55109ad.tar.gz",
+          "recipe_directory": "main/zlib"
+        }
+      ]
+    },
+    "downloads": [
+      {
+        "name": "appimage-type2-runtime-source",
+        "revision": "8f39b89e2ac31e1640b3d3f7e9a5108e6ce805fa",
+        "filename": "type2-runtime-source-8f39b89e2ac3.tar.gz",
+        "url": "https://codeload.github.com/AppImage/type2-runtime/tar.gz/8f39b89e2ac31e1640b3d3f7e9a5108e6ce805fa",
+        "sha256": "c449eb42c2190820872631f5e22f8e15b1e985a36dc4a9e2de3585bb7536c785",
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ],
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ]
+      },
+      {
+        "name": "appimage-runtime-musl-source",
+        "revision": "1.2.5",
+        "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+        "filename": "musl-1.2.5.tar.gz",
+        "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+        "upstream_sha512": "7bb7f7833923cd69c7a1a9b8a5f1784bfd5289663eb6061dcd43d583e45987df8a68a1be05d75cc1c88a3f5b610653d1a70f4a9cff4d8f7fd41ae73ee058c17c",
+        "kind": "runtime-source",
+        "required_notices": [
+          "COPYRIGHT"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-mimalloc-source",
+        "revision": "2.1.7",
+        "url": "https://github.com/microsoft/mimalloc/archive/v2.1.7/mimalloc-2.1.7.tar.gz",
+        "filename": "mimalloc-2.1.7.tar.gz",
+        "sha256": "0eed39319f139afde8515010ff59baf24de9e47ea316a315398e8027d198202d",
+        "upstream_sha512": "4e30976758015c76a146acc1bfc8501e2e5c61b81db77d253de0d58a8edef987669243f232210667b32ef8da3a33286642acb56ba526fd24c4ba925b44403730",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-zstd-source",
+        "revision": "1.5.6",
+        "url": "https://github.com/facebook/zstd/archive/v1.5.6.tar.gz",
+        "filename": "zstd-1.5.6.tar.gz",
+        "sha256": "30f35f71c1203369dc979ecde0400ffea93c27391bfd2ac5a9715d2173d92ff7",
+        "upstream_sha512": "ca12dffd86618ca008e1ecc79056c1129cb4e61668bf13a3cd5b2fa5c93bc9c92c80f64c1870c68b9c20009d9b3a834eac70db72242d5106125a1c53cccf8de8",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE",
+          "COPYING"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-zlib-source",
+        "revision": "1.3.2",
+        "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz",
+        "filename": "zlib-1.3.2.tar.gz",
+        "sha256": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+        "upstream_sha512": "70963771ea5d763614278a69b474f09b7d237ef8f53b675a10fe31d9923aeef601504b35d7ebd1b1e7f347e9ebb048e6b3b47fffdf137e7bdc7e8d5eb4ec4692",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE",
+          "README",
+          "zlib.h"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-libfuse-source",
+        "revision": "3.15.0",
+        "url": "https://github.com/libfuse/libfuse/releases/download/fuse-3.15.0/fuse-3.15.0.tar.xz",
+        "filename": "fuse-3.15.0.tar.xz",
+        "sha256": "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+        "upstream_sha256": "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-squashfuse-source",
+        "revision": "0.5.2",
+        "url": "https://github.com/vasi/squashfuse/archive/0.5.2.tar.gz",
+        "filename": "squashfuse-0.5.2.tar.gz",
+        "sha256": "db0238c5981dabbd80ee09ae15387f390091668ca060a7bc38047912491443d3",
+        "upstream_sha256": "db0238c5981dabbd80ee09ae15387f390091668ca060a7bc38047912491443d3",
+        "kind": "runtime-source",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-alpine-recipes-21cafa1183cf",
+        "revision": "21cafa1183cf7501d3f1744994d221c038436e45",
+        "url": "https://codeload.github.com/alpinelinux/aports/tar.gz/21cafa1183cf7501d3f1744994d221c038436e45",
+        "filename": "runtime-aports-21cafa1183cf.tar.gz",
+        "sha256": "611ec6addf20348e89ffcbe583a52420fce72efcca972c61696c91c6d565e53d",
+        "kind": "runtime-build-recipes",
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      },
+      {
+        "name": "appimage-runtime-alpine-recipes-2b38f55109ad",
+        "revision": "2b38f55109add14f4f99a974c2fdf421b6b9e9e9",
+        "url": "https://codeload.github.com/alpinelinux/aports/tar.gz/2b38f55109add14f4f99a974c2fdf421b6b9e9e9",
+        "filename": "runtime-aports-2b38f55109ad.tar.gz",
+        "sha256": "2f5471fedccb753af28e9287a11f1b0f034f8590df27fea16de0af9d4a23ca68",
+        "kind": "runtime-build-recipes",
+        "for_binary_sha256": [
+          "156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074"
+        ]
+      }
+    ]
   }
 }

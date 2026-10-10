@@ -20,6 +20,63 @@ spec.loader.exec_module(builder)
 
 
 class LinuxPackageTests(unittest.TestCase):
+    def test_runtime_sources_bind_original_notices_and_recipes_to_exact_binary(self):
+        from package_runtime_sources import runtime_source_records, collect_runtime_notices
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "runtime"; binary.write_bytes(b"pinned runtime bytes")
+            runtime = dict(sha256=builder.digest(binary))
+            source = root / "runtime-source.tar"
+            with tarfile.open(source, "w") as archive:
+                for name, data in [("src/LICENSE", b"License"), ("src/README", b"Additional terms")]:
+                    member = tarfile.TarInfo(name); member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+            record = dict(name="runtime-source", filename=source.name, sha256=builder.digest(source),
+                          kind="runtime-source", required_notices=["LICENSE", "README"],
+                          for_binary_sha256=[runtime["sha256"]])
+            recipes = dict(name="recipes", kind="runtime-build-recipes", for_binary_sha256=[runtime["sha256"]])
+            lock = dict(linux_appimage_runtime=dict(for_binary_sha256=runtime["sha256"], downloads=[record, recipes]))
+            self.assertEqual(runtime_source_records(lock, runtime), [record, recipes])
+            collect_runtime_notices(lock, runtime, binary, root, root / "licenses")
+            self.assertEqual((root / "licenses/AppImage-runtime-source-notices/runtime-source/README").read_bytes(),
+                             b"Additional terms")
+            evidence = json.loads((root / "licenses/appimage-runtime-provenance.json").read_text())
+            self.assertEqual(evidence["binary_sha256"], runtime["sha256"])
+            self.assertEqual(evidence["source_inputs"]["downloads"], [record, recipes])
+            self.assertFalse(evidence["corresponding_sources_complete"])
+            with self.assertRaisesRegex(ValueError, "do not match pinned binary"):
+                runtime_source_records(lock, dict(sha256="0" * 64))
+            recipes["for_binary_sha256"] = ["0" * 64]
+            with self.assertRaisesRegex(ValueError, "inconsistent binary mapping"):
+                runtime_source_records(lock, runtime)
+            recipes["for_binary_sha256"] = [runtime["sha256"]]
+            binary.write_bytes(b"corrupt")
+            with self.assertRaisesRegex(ValueError, "binary checksum mismatch"):
+                collect_runtime_notices(lock, runtime, binary, root, root / "bad-binary")
+            self.assertFalse((root / "bad-binary").exists())
+            binary.write_bytes(b"pinned runtime bytes"); record["required_notices"].append("missing.txt")
+            with self.assertRaisesRegex(ValueError, "required source notice"):
+                collect_runtime_notices(lock, runtime, binary, root, root / "missing-notice")
+            self.assertFalse((root / "missing-notice").exists())
+            record["required_notices"] = ["../outside"]
+            with self.assertRaisesRegex(ValueError, "Unsafe source notice path"):
+                collect_runtime_notices(lock, runtime, binary, root, root / "unsafe-notice")
+
+    def test_runtime_lock_retains_separate_platform_inputs_and_exact_alpine_recipes(self):
+        from package_runtime_sources import runtime_source_records
+        lock = json.loads((builder.PROJECT / "packaging/source-inputs.json").read_text())
+        dependencies = json.loads((builder.PROJECT / "packaging/linux/dependencies.json").read_text())
+        records = runtime_source_records(lock, dependencies["downloads"]["runtime"])
+        self.assertEqual(len([r for r in records if r["kind"] == "runtime-source"]), 7)
+        recipe_names = {r["filename"] for r in records if r["kind"] == "runtime-build-recipes"}
+        self.assertEqual(len(recipe_names), 2)
+        group = lock["linux_appimage_runtime"]
+        self.assertFalse(group["corresponding_sources_complete"])
+        for package in group["build_evidence"]["alpine_packages"]:
+            self.assertIn(package["recipe_input"], recipe_names)
+        common = builder.source_records(lock, dependencies["downloads"].values(), dependencies["qt"])
+        self.assertFalse({r["name"] for r in common}.intersection(r["name"] for r in records))
+
     def test_sdk_sources_require_exact_qt_and_library_hashes_before_copying_notices(self):
         from package_sdk_sources import sdk_source_records, collect_sdk_notices
         import copy
@@ -78,7 +135,7 @@ class LinuxPackageTests(unittest.TestCase):
                           required_notices=["LICENSE"])
             provenance = dict(libraries=[dict(payload="usr/lib/libicuuc.so.73", provider="sdk-third-party",
                                              original_sha256="a" * 64)], unresolved=["usr/lib/libicuuc.so.73"])
-            with self.assertRaisesRegex(ValueError, "Missing required SDK notice"):
+            with self.assertRaisesRegex(ValueError, "required source notice"):
                 collect_sdk_notices(provenance, [record], root, root / "missing-notice")
             with self.assertRaisesRegex(ValueError, "Duplicate SDK library source mapping"):
                 collect_sdk_notices(provenance, [record, record], root, root / "duplicates")

@@ -53,6 +53,16 @@ def collect_qt_notices(records, cache, destination):
                                 if resolved not in members or not members[resolved].isfile():
                                     raise ValueError("Missing source notice reference: " + resolved)
                                 selected.add(resolved)
+            # Some upstream notices live in README or source headers (e.g. zlib).
+            # Retain the explicitly declared originals without running any code.
+            for relative in record.get("required_notices", []):
+                safe_path("source/" + relative)
+                matches = [name for name, member in members.items() if member.isfile()
+                           and PurePosixPath(name).parts[1:] == PurePosixPath(relative).parts]
+                if len(matches) != 1:
+                    raise ValueError("Missing/ambiguous required source notice: " + relative)
+                safe_path(matches[0])
+                selected.add(matches[0])
             if not selected:
                 raise ValueError("Qt source archive contains no notices")
             module = destination / record["name"]

@@ -103,8 +103,15 @@ versions из authenticated APT indexes, сохраняет `.dsc`/upstream/Debi
 по `linux_sdk_dependencies` в source lock. Проверенные ICU 73.2 sources входят
 в Linux build inputs, notices — в `licenses/Qt-sdk-source-notices`. Обновление
 SDK binaries без проверенного mapping отклоняется даже при прежней версии Qt.
+`package_runtime_sources.py` отдельно проверяет AppImage runtime SHA и
+`linux_appimage_runtime` в source lock. Linux архив включает sources runtime,
+musl, mimalloc, zstd, zlib, libfuse, squashfuse и два exact Alpine recipe snapshots
+с патчами. Оригинальные notices включаются в
+`licenses/AppImage-runtime-source-notices`; `appimage-runtime-provenance.json`
+связывает их с binary pin и upstream build evidence. Обязательные notices,
+включая terms из README/header, должны присутствовать в verified source archive.
 Это ещё не полный corresponding-source комплект: зависимости FFmpeg/yt-dlp,
-AppImage runtime и build configuration Qt/SDK libraries собираются
+toolchain/runtime details и build configuration Qt/SDK libraries собираются
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 

@@ -20,6 +20,15 @@ package/source versions, payload hashes and the package-owned CA generator hash.
 archive. The source mapping requires exact original hashes for all three ICU
 libraries from Qt 6.8.3; a different SDK payload stops packaging. This establishes
 source/notice attribution; the full SDK build configuration is still required.
+`licenses/AppImage-runtime-source-notices` retains notices for the pinned type-2
+runtime and its musl, mimalloc, zstd, zlib, libfuse and squashfuse sources.
+`licenses/appimage-runtime-provenance.json` ties those sources and Alpine recipe
+snapshots to the runtime binary SHA-256. The adjacent build-inputs archive
+retains all nine source/recipe archives, including the runtime's libfuse patch
+and exact Alpine package patches. Updating the runtime without an updated
+source mapping stops packaging. This remains a partial corresponding-source
+deliverable; toolchain/runtime details and other bundled components still need
+their complete build materials.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.
 

@@ -265,6 +265,53 @@ DejaVu font и generated CA bundle также добавлены в exact Ubuntu
 остаётся false: native/FFmpeg dependencies, SDK build materials и AppImage runtime
 ещё требуют работы. Ручная матрица и final-SHA gates остаются открытыми.
 
+## Проверенный комплект 6322ad9
+
+Коммит `6322ad940cf04d3a50ec274993bbbe5177755da3` прошёл
+[CI 10/10](https://github.com/khdobromir/lecture-transcriber/actions/runs/38042791488),
+[Linux portable с real ASR](https://github.com/khdobromir/lecture-transcriber/actions/runs/38042793593)
+и [Real Whisper](https://github.com/khdobromir/lecture-transcriber/actions/runs/38042795963).
+Скачанный AppImage SHA-256: `ac6127c8063c0491a01b3df92c68309c9cecaa1d2c27c532b9cc476b1c93f405`;
+build inputs: `4b1cffe7a8a6b347f9aac82327b3eb3003451981df5de92db4621db7ef73e89c`.
+Тот же image hash записан в успешных offline Ubuntu/Debian evidence.
+Скачанный AppImage распакован локально; все 2 107 payload entries
+совпали с полным manifest, включая notices и symlinks.
+
+Перечитаны и сверены все 185 retained entries, включая 144 source archives
+43 exact Ubuntu packages, сопоставленные с 68 libraries и двумя data files.
+ICU mapping подтверждён для трёх SDK libraries; два original notices включены
+в manifest. Font связан с `fonts-dejavu=2.37-8`, CA bundle — с
+`ca-certificates=20260601~24.04.1`. В unresolved library inventory остались только
+три собственные Whisper/ggml libraries, для которых pinned source уже сохраняется
+отдельно. Это не означает полноту F7: native/FFmpeg dependencies и SDK build
+configuration всё ещё открыты. Следующее изменение runtime требует нового
+hosted run и новых artifacts; результаты 6322ad9 на него не переносятся.
+
+## Источники AppImage runtime после 6322ad9
+
+Для pinned runtime SHA-256 `156f4bdbde9c52d01814600013e0a273f0118dc2de98975f3c8c63427ec79074`
+исследован [официальный x86_64 build](https://github.com/AppImage/type2-runtime/actions/runs/36463736478)
+коммита `8f39b89e2ac31e1640b3d3f7e9a5108e6ce805fa`. Debug companion связан с
+runtime через `.gnu_debuglink` CRC32 `09c79829`, его опубликованный SHA-256
+также сверён. Статически прочитаны zlib 1.3.2, zstd 1.5.6, mimalloc `mi_version=217`
+и musl 1.2.5; библиотеки/debug code не исполнялись.
+
+У upstream build log и APK metadata совпали версии musl 1.2.5-r11,
+mimalloc2 2.1.7-r0, zstd 1.5.6-r2 и zlib 1.3.2-r0. Исходники проверены по
+SHA-512 соответствующих APKBUILD; libfuse 3.15.0 и squashfuse 0.5.2 — по
+SHA-256 upstream runtime recipe. Содержимое 20 recipe/patch files в двух
+retained Alpine snapshots сверено по Git blob hashes с точными source commits.
+APK читались только как данные; криптографическая проверка APK signature
+и пересборка runtime этим исследованием не заявляются.
+
+Локально actual collector сохранил 13 notices для семи source components;
+девять source/recipe archives упакованы и перечитаны с проверкой hashes.
+Изменённый runtime pin, несовместимый dependency mapping, повреждённый runtime,
+missing notice и unsafe notice path отклоняются тестами. Все 12 Linux packaging
+tests проходят. Новая hosted сборка после этого изменения ещё обязательна.
+Полнота F7 остаётся false, включая оставшиеся runtime/toolchain details,
+native FFmpeg/standalone dependencies и Qt SDK build configuration.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и

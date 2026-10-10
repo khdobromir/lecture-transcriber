@@ -17,6 +17,7 @@ from package_notices import collect_qt_notices
 from package_linux_notices import collect_system_notices, collect_data_notices, write_provenance
 from package_linux_sources import collect_sources
 from package_sdk_sources import sdk_source_records, collect_sdk_notices
+from package_runtime_sources import runtime_source_records, collect_runtime_notices
 from package_standalone_notices import collect_notices as collect_standalone_notices
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -179,6 +180,7 @@ def main():
     sources = source_records(source_lock, lock["downloads"].values(), lock["qt"])
     sdk_sources = sdk_source_records(source_lock, lock["qt"])
     sources += sdk_sources
+    sources += runtime_source_records(source_lock, lock["downloads"]["runtime"])
     for name in ["cmake", "c++", "git", "readelf", "patchelf", "desktop-file-validate", "dpkg-query", "ldconfig", "apt-cache", "apt-get"]:
         if not shutil.which(name):
             parser.error("Missing build tool " + name + "; use bash scripts/package-linux.sh --container")
@@ -226,6 +228,7 @@ def main():
     tools = appdir / "usr/bin/tools"; tools.mkdir()
     licenses = appdir / "usr/share/transcribe/licenses"; licenses.mkdir(parents=True)
     collect_qt_notices(source_lock["qt"]["downloads"], cache, licenses / "Qt-source-notices")
+    collect_runtime_notices(source_lock, lock["downloads"]["runtime"], dependencies["runtime"], cache, licenses)
     collect_standalone_notices(dependencies["yt-dlp"], lock["downloads"]["yt-dlp"]["sha256"],
                               licenses / "yt-dlp-embedded-notices")
     source = stage / "whisper-source"; extract_sources(dependencies["whisper"], source)
