@@ -62,4 +62,4 @@ SDK; the independent deployed startup and clean desktop check are distinct.
 Tests preserve diagnostics on failure; private recordings/models are not public
 artifacts. Read [candidate validation](../testing/candidate-validation.md),
 [notices](../../packaging/windows/THIRD-PARTY.md) and
-[release gates](releasing.md) before distribution.
+[release procedure](releasing.md) before distribution.

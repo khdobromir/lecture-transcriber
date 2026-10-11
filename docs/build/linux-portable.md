@@ -1,7 +1,7 @@
 # Linux portable package
 
 [User installation](../user/quick-start.md) · [Source build](from-source.md)
-· [Release gates](releasing.md)
+· [Release procedure](releasing.md)
 
 The packager builds one self-contained AppImage: Qt/QML/plugins, native GUI/CLI,
 CPU Whisper, FFmpeg/ffprobe, standalone yt-dlp (including its embedded Python),

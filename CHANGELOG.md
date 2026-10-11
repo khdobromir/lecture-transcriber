@@ -5,7 +5,7 @@
 ## 0.4.1 — release candidate
 
 Not published. See [release notes](docs/releases/v0.4.1/notes.md) and
-[validation requirements](docs/releases/v0.4.1/validation.md).
+[verification coverage](docs/releases/v0.4.1/validation.md).
 
 - Use the maintainer-supplied application icon in README, Linux desktop/AppImage,
   Qt windows and Windows executable resources.

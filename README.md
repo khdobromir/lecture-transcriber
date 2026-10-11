@@ -15,7 +15,7 @@ conversion uses FFmpeg. The application interface and recognition language are R
 
 Current source is the **0.4.1 release candidate**, not yet published.
 See [candidate notes](docs/releases/v0.4.1/notes.md) and
-[validation gates](docs/releases/v0.4.1/validation.md). Published v0.4.0 is unchanged.
+[verification record](docs/releases/v0.4.1/validation.md). Published v0.4.0 is unchanged.
 
 ## Demo
 

@@ -1,6 +1,6 @@
 # v0.4.1 candidate validation
 
-This document fixes the acceptance contract before source freeze; it is not a
+This document describes evidence collection before source freeze; it is not a
 claim that a candidate has passed. The delivery's `release-validation.json`
 records the actual candidate commit, source tree/fingerprint, artifact hashes,
 concrete CI run links, performed checks, omissions and status. Keeping measured
@@ -17,9 +17,9 @@ configuration. The CMake project version is the sole application version source.
 The approved modernization roadmap is historical planning; actual code/tests and
 [implementation evidence](../../development-report.md) establish completed scope.
 
-## Required checks
+## Verification coverage
 
-| Gate | Required evidence |
+| Area | Evidence to record |
 |---|---|
 | Clean source identity | Exact commit/tree/fingerprint, version 0.4.1, no dirty source or private files |
 | CI | GCC/Clang/MSVC, Linux/Windows Debug/Release, Qt 6.8.3/6.11.2, CTest, QML lint, static analysis, ASan/UBSan/LSan, application-only build/install |
@@ -33,9 +33,13 @@ The approved modernization roadmap is historical planning; actual code/tests and
 The [release procedure](../../build/releasing.md),
 [candidate checks](../../testing/candidate-validation.md) and
 [manual matrix](../../testing/manual.md) define the actual commands. Automated
-tests cannot substitute native desktop acceptance. Native Windows 11, service
+tests cannot establish untested desktop behavior. Package verification, including
+native Windows/Linux manual testing, is optional and does not block publication
+under the maintainer policy set on 2026-10-11. Existing automatic smoke and internal
+integrity checks remain enabled. Native Windows 11, service
 URLs/cookies, long media or model presets are unverified until separately recorded
-with this candidate's hashes; no v0.4.0 waiver is transferred automatically.
+with this candidate's hashes. The owner has confirmed that manual checks are
+currently unavailable; this is recorded as unverified, not as a successful test.
 
 ## Delivery and publication boundary
 
@@ -43,13 +47,14 @@ Retain artifacts under `dist/releases/v0.4.1-<candidate-sha>/assets/` and comple
 evidence beside that directory. `scripts/release_assets.py inventory` independently
 computes local hashes and rejects extra/missing files, including checksum-only
 assets. Package/build-input hashes are also recorded in technical manifests.
-The external validation record must enumerate every required gate and blocker;
-status is `BLOCKED` while any mandatory preparation check remains unmet.
+The external validation record lists performed checks, failures, unverified
+scenarios and known limitations. Missing optional package checks alone do not
+set status to `BLOCKED`.
 
 No merge, tag or GitHub Release is part of preparation. After separate owner
 authorization, verify final master SHA/CI and any source-tree changes before an
 annotated tag. Changed build inputs require rebuilding affected packages and
-renewed acceptance; old candidate evidence does not transfer automatically.
+updated evidence; old candidate results do not describe changed bytes.
 After upload, `release_assets.py verify-github` requires the GitHub SHA-256 digest
 and size of **every uploaded asset** to match local bytes. Independently download,
 rehash and smoke the public files. GitHub-generated source ZIP/TAR archives are

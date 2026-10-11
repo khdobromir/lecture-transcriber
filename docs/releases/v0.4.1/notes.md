@@ -4,8 +4,8 @@
 - **Linux x86_64, glibc 2.39+:** `Transcribe-0.4.1-linux-x86_64.AppImage`
 
 Release candidate; not published. These are the intended final asset names.
-Publication requires the maintainer's separate approval and the
-[validation gates](validation.md).
+Publication is a separate maintainer action. See the
+[verification record](validation.md).
 
 This maintenance release improves application identity, downloader isolation,
 cross-platform regression coverage and documentation. It keeps the independent
@@ -39,7 +39,7 @@ Windows targets Windows 11 x64; Linux targets x86_64/glibc 2.39+ (Ubuntu 24.04+,
 Debian 13, Arch/Omarchy). No GPU, ARM, macOS or musl package is provided. Medium
 can run slower than real time; partial previews/ETA are not completed exports or
 accuracy measurements. Live-service behavior depends on upstream extractors and
-access rights. Previous release's manual waivers do not validate this candidate.
+access rights. Native desktop and live-service scenarios are reported only when actually tested.
 
 ## Installation and integrity
 
@@ -75,7 +75,7 @@ Developers rebuilding or reviewing the packages need the combined deliverable:
 - Adjacent `.zip.manifest.json`, `.zip.validation.json`, `.AppImage.json`,
   `linux-ci-artifact.json`, `windows-ci-artifact.json`,
   `source-offer-verification.json` and `release-validation.json`: source mapping,
-  exact hashes, automated evidence, manual scope and unresolved gates.
+  exact hashes, automated evidence, testing scope and known limitations.
 
 Original GPL/LGPL and other dependency terms remain applicable; Transcribe's MIT
 license does not replace them. Qt stays dynamically linked with replacement/
@@ -86,4 +86,6 @@ not establish byte-identical reproduction of upstream binaries; rav1e's recipe-t
 
 Read [validation](validation.md) and the candidate's `release-validation.json`
 for concrete source/package SHAs, CI runs, platform acceptance and known limits.
-An unmet mandatory gate blocks stable publication.
+Package checks, including manual desktop testing, are optional under the
+maintainer policy set on 2026-10-11. Untested scenarios remain explicitly recorded;
+existing automatic smoke and internal integrity checks stay enabled.

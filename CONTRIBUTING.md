@@ -23,7 +23,7 @@ ctest --preset linux-cli-debug
 
 GUI changes use a GUI preset, QML lint and appropriate controller/integration
 checks. [Testing](docs/testing/README.md) explains units, native processes,
-static analysis, sanitizers, real ASR and final package gates. Run installers only
+static analysis, sanitizers, real ASR and final package checks. Run installers only
 with isolated temporary data/bin paths, without sudo. Ordinary CTest needs no
 models or account credentials. Report tests not run and platform limitations.
 
@@ -62,5 +62,5 @@ Keep style-only edits separate from logic and avoid full-tree formatting.
   dependency and version changes in CHANGELOG.
 
 [Release preparation](docs/build/releasing.md) has separate exact-SHA, manual and
-artifact/source gates. A successful PR/build is not authorization to merge,
+artifact/source evidence. A successful PR/build is not authorization to merge,
 move a tag or publish assets.

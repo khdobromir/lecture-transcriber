@@ -21,10 +21,10 @@ and limitations. Earlier results do not validate a future release.
 3. Create small Conventional Commits and a clean candidate branch/PR. Record
    source SHA, tree/fingerprint and dirty flag. An RC name is not a readiness claim.
 
-## One checked artifact set
+## Automated package evidence
 
-Dispatch **CI** and **Linux portable GUI** on the exact candidate source with
-`real_smoke=true`, plus **Real Whisper smoke**. Inspect all required jobs and
+For automated evidence, dispatch **CI** and **Linux portable GUI** on the exact candidate source with
+`real_smoke=true`, plus **Real Whisper smoke**. Inspect the jobs and
 actual real steps; a skipped step does not establish a pass. The CI matrix is
 [defined here](../../.github/workflows/ci.yml); do not freeze a job-count claim
 that can drift. Record source SHA and concrete run links.
@@ -47,12 +47,12 @@ for local ASR there. No post-acceptance repacking or opportunistic glob selectio
 
 Retain application/source/dependency/input/model/package hashes, toolchain,
 manifest, test logs and verified build-input bytes. Moving continuous URLs are
-not immutable sources. Any payload/source change needs a new candidate and
-revalidation of affected gates.
+not immutable sources. After a payload/source change, use a new candidate identity and refresh affected
+evidence rather than assigning old test results to changed bytes.
 
 ## Manual scope and privacy
 
-Check final ZIP/AppImage hashes on clean Windows 11 and native Linux desktop:
+Optional desktop checks cover final ZIP/AppImage hashes on clean Windows 11 and native Linux:
 Unicode unpack, first model import/download, local ASR, cancel/close/retry/history,
 TXT/SRT/VTT, keyboard, dialogs, clipboard and display scales. Record small,
 medium+VAD and turbo/chunks as actually exercised. Service URL/cache/network
@@ -62,12 +62,16 @@ The v0.4.0 maintainer decisions waived Ubuntu desktop, cookies and 10–15 minut
 recording requirements while keeping clean-container checks and native acceptance.
 The user confirmed VK/cache and a five-minute Windows 11 24H2 recording. Preserve
 these dated decisions; do not claim waived cases passed or silently extend their
-scope to later releases. Record a future release's own required scope explicitly.
+scope to later releases. Record each release's actual testing scope explicitly.
 
 Every result names OS/build and source/package/input/model hashes. Private media,
 URLs/cookies/transcripts remain local; CI uses pinned public fixtures. Server
 2022 with SDK is not a clean Windows 11 desktop; offscreen is not native portal
-acceptance; short ASR smoke is not WER. An unmet required gate blocks publication.
+testing; short ASR smoke is not WER. Package verification, including manual
+desktop testing, is optional and is not a prerequisite for release publication.
+This policy was set by the maintainer on 2026-10-11. Keep existing automated smoke
+and internal integrity checks enabled; record missing checks and known limitations
+without presenting them as passed.
 
 ## Binary source and notice materials
 
@@ -135,19 +139,20 @@ gh api "repos/khdobromir/lecture-transcriber/releases/tags/v$version" > "$delive
 python3 scripts/release_assets.py verify-github "$delivery/assets" --version "$version" --github-json "$delivery/github-release.json"
 ```
 
-A missing digest, mismatch, extra/missing asset or incomplete upload blocks
-acceptance; do not silently use an old checksum file as fallback. This uses
+On a missing digest, mismatch, extra/missing asset or incomplete upload, the
+verification command fails; do not silently use an old checksum file as fallback. This uses
 [GitHub's release-asset digest API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset).
 GitHub's automatically generated `Source code (zip/tar.gz)` links are not uploaded
 assets; independently compare those archives with the checked tagged tree.
 Preserve historical release checksum files and their dated instructions.
 
-### Owner actions after acceptance
+### Authorized owner actions
 
-1. After maintainer authorization and acceptance, merge the candidate into master
+1. After maintainer authorization, merge the candidate into master
    with a Conventional Commit, e.g. `chore(release): merge vX.Y.Z into master`.
-2. Verify final master SHA and required CI. If the code/payload tree changed,
-   rebuild and revalidate; old candidate evidence does not transfer automatically.
+2. Record final master SHA and CI results. If the code/payload tree changed,
+   rebuild affected artifacts and refresh evidence; old candidate results do not
+   describe changed bytes.
 3. Match exact-SHA manifests, checksums, manual scope and complete material set.
 4. Confirm the tag is absent. Create an annotated `vX.Y.Z` on checked master;
    compare `git rev-parse vX.Y.Z^{commit}` and the remote peeled tag.
@@ -157,5 +162,5 @@ Preserve historical release checksum files and their dated instructions.
 6. Independently download/rehash public assets to a new directory and smoke them.
    Check the GitHub source archive and its tagged tree separately.
 7. Record final-SHA runs, tag, release and hashes in validation. Clean only
-   provenance-checked task-owned temporary outputs, preserving required evidence,
+   provenance-checked task-owned temporary outputs, preserving retained evidence,
    build inputs and all user data. Do not remove unrelated branches or files.

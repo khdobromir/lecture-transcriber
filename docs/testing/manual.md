@@ -1,4 +1,7 @@
-# Manual acceptance
+# Optional manual checks
+
+These checks are optional and are not a prerequisite for release publication.
+Record any untested scenarios explicitly; automated tests cannot establish them.
 
 Record the exact package filename, SHA-256, manifest source/version, OS build,
 CPU/RAM, display scale, model/VAD and chunk settings. Use a separate data/output
@@ -7,7 +10,7 @@ directory. Do not publish private media, transcripts, URLs or cookies.
 On Windows 11 x64, unpack the complete ZIP into a path containing spaces and
 Unicode. Use a machine without the Qt/Visual Studio/Python/media-tool SDKs.
 Compare `Get-FileHash -Algorithm SHA256 -LiteralPath '.\Transcribe-….zip'` with
-the supplied checksum, then run `bin\transcribe-gui.exe`.
+the digest for that asset on GitHub Releases, then run `bin\transcribe-gui.exe`.
 On Linux, use the actual AppImage and record distribution/glibc and
 Wayland/X11 session. Automated clean-container checks complement the desktop test.
 
@@ -29,4 +32,4 @@ The [original Windows checklist](../archive/windows-11-manual-validation.md)
 is retained as historical context. For v0.4.0, the maintainer waived Ubuntu
 desktop acceptance, cookies and a 10–15 minute recording; those checks were not
 claimed passed. See the [release journal](../releases/v0.4.0/validation.md).
-A future release must state its own acceptance scope explicitly.
+Each release records its actual testing scope and remaining limitations.

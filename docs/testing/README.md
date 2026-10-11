@@ -1,7 +1,7 @@
 # Testing
 
 [Developer guide](../developer/getting-started.md) · [Integration matrix](integration-coverage.md)
-· [Candidate gates](candidate-validation.md) · [Manual checks](manual.md)
+· [Candidate checks](candidate-validation.md) · [Manual checks](manual.md)
 
 Use a build preset from [source instructions](../build/from-source.md). Run
 `ctest --preset linux-gui-debug -N` to see the actual suite inventory: platform,

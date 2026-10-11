@@ -20,7 +20,9 @@ Linux Qt 6.8.3 installs GUI/CLI to an isolated Unicode prefix and runs installed
 startup plus real GUI/CLI/Whisper. Windows validates the extracted final ZIP with
 minimal PATH before invoking the candidate-only real harness against its CLI.
 The harness uses SDK Qt; independent deployed startup and a clean Windows 11
-manual test remain distinct requirements.
+manual test provide distinct evidence. Package checks, including manual desktop
+testing, are optional and do not block a release; this is the maintainer policy
+from 2026-10-11. Existing automated smoke and internal integrity checks stay enabled.
 
 Retain QtTest/CTest logs, CMake configuration, prerequisites/validation JSON,
 sanitized screenshot, manifest and package checksums. Do not upload models,
@@ -30,7 +32,7 @@ license/attribution and the 30–60 second interval. Verify model/input hashes
 before use; record decoded WAV hashes per OS. ASR text need not match byte-for-byte
 across CPUs. This is integration evidence, not WER measurement.
 
-## Required boundaries
+## Coverage boundaries
 
 | Boundary | Evidence |
 |---|---|
@@ -41,7 +43,7 @@ across CPUs. This is integration evidence, not WER measurement.
 | Final ZIP/AppImage | Hash/inventory/source policy, clean startup and bundled-tool smoke |
 | Linux installed prefix | Separate prefix/cwd, runtime environment, desktop entry/icon, isolated legacy upgrade |
 | Native desktop | User OS, DPI, dialogs, clipboard, open exports and keyboard checks |
-| Final CI | All required jobs/real steps on exact final candidate source |
+| Final CI | Actual jobs/real steps on exact final candidate source |
 
 Sample/export checks allow Whisper timestamp-token quantization (20 ms) and
 clip a segment crossing the audio end with contextual warning. Entirely external
