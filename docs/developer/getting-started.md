@@ -46,6 +46,6 @@ to test itself. State platform exclusions and distinguish mocks from real ASR.
 
 Compile with warnings-as-errors, run affected CTest suites, then the appropriate
 broader platform/GUI checks. [Testing](../testing/README.md) explains static
-analysis, sanitizers, QML lint and expensive real/package gates. Record the exact
+analysis, sanitizers, QML lint and real/package checks. Record the exact
 commit/configuration and any tests not run. Use Conventional Commits and small
 reviewable changes; update user-facing docs/changelog for behavior changes.

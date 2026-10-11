@@ -162,7 +162,9 @@ the multi-gigabyte artifact sets were not downloaded to this workstation.
   `master` only after a separately authorized merge.
 - No merge, PR, tag movement, release publication or replacement of v0.4.0
   assets was performed. Branch artifacts are test candidates, not a new release.
-  A later release still requires the complete exact-final-SHA/manual release gates.
+  Later releases record their exact source identity and actual verification scope
+  under the [current release procedure](build/releasing.md). Package checks,
+  including manual desktop testing, are optional and do not block publication.
 
 ## Local cleanup
 
