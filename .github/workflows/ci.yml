@@ -289,21 +289,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Configure and build
+      - name: Build and test both CLI development presets
         shell: pwsh
         run: |
-          cmake -S . -B "$env:RUNNER_TEMP/transcribe-build" -A x64 -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cmake --build "$env:RUNNER_TEMP/transcribe-build" --config Release --parallel 4
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-      - name: Native process, Unicode, cache and machine protocol tests
-        run: ctest --test-dir "$env:RUNNER_TEMP/transcribe-build" -C Release --output-on-failure
+          foreach ($Preset in @('windows-cli-debug', 'windows-cli-release')) {
+            cmake --preset $Preset
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            cmake --build --preset $Preset --parallel 4
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            ctest --preset $Preset
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
       - name: Retain test diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: logs-windows
-          path: ${{ runner.temp }}/transcribe-build/Testing/Temporary/*.log
+          path: out/build/windows-cli-*/Testing/Temporary/*.log
           if-no-files-found: warn
           retention-days: 14
 
@@ -322,6 +324,22 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build and test both GUI development presets
+        run: |
+          $QtRoot = "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64"
+          $env:PATH = "$QtRoot/bin;$env:PATH"
+          foreach ($Configuration in @('Debug', 'Release')) {
+            $Preset = "windows-gui-$($Configuration.ToLowerInvariant())"
+            cmake --preset $Preset "-DCMAKE_PREFIX_PATH=$QtRoot"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            cmake --build --preset $Preset --parallel 4
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            # Test DLL lookup excludes PATH, just like the packaged GUI.
+            & "$QtRoot/bin/windeployqt.exe" "--$($Configuration.ToLowerInvariant())" --qmldir gui "out/build/$Preset/gui/$Configuration/test_qml.exe"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            ctest --preset $Preset
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
       - name: Build, test, deploy and smoke package
         run: |
           $RealSmoke = ("${{ github.event_name }}" -eq 'workflow_dispatch') -and ("${{ inputs.real_smoke }}" -eq 'true')
@@ -339,6 +357,7 @@ jobs:
         with:
           name: logs-windows-package
           path: |
+            out/build/windows-gui-*/Testing/Temporary/*.log
             ${{ runner.temp }}/transcribe-package/**/Testing/Temporary/*.log
             ${{ runner.temp }}/transcribe-package/**/real-smoke/prerequisites.json
             ${{ runner.temp }}/transcribe-package/**/real-smoke/result/validation.json

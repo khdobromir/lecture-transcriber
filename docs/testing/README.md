@@ -96,7 +96,10 @@ results. Never use personal credentials/media in public CI artifacts.
 [CI](../../.github/workflows/ci.yml) covers Ubuntu GCC/Clang 18, Debian, Arch,
 native MSVC CLI, Windows Qt ZIP, Linux Qt 6.8.3/6.11.2, static analysis and
 ASan/UBSan/LSan. Reliability/cache repeats run on Ubuntu GCC. Test logs and
-configuration are retained even on failure.
+configuration are retained even on failure. Native Windows jobs exercise all four
+CLI/GUI Debug/Release development presets before the separate Release ZIP build.
+GUI tests deploy the matching Qt configuration beside their executables; adding
+the SDK to PATH alone does not satisfy their DLL loading policy.
 [Real Whisper smoke](../../.github/workflows/real-smoke.yml) runs explicitly and
 on its weekly schedule; [Linux portable](../../.github/workflows/linux-portable.yml)
 builds and tests a single final AppImage, including offline Ubuntu/Debian payloads.
