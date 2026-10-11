@@ -10,6 +10,7 @@ Branch: `chore/modernization-roadmap`, based on
 |---|---|---|
 | Roadmap | Saved approved scope, order, task criteria and icon requirement before product edits | Source SHA equals remote master; staged whitespace check |
 | D0.1 | Reconciled published 0.4.0 status; retained historical candidate evidence | Release API date/assets; exact-SHA run links; whitespace and wording review |
+| D1.1 | Updated source/binary/model dependency inventory and removed stale source-only publication claim | Compared vendored license, platform manifests, notices and source-material paths; whitespace check |
 
 ## Verification boundaries
 

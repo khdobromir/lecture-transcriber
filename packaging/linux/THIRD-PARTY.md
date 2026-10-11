@@ -76,7 +76,8 @@ provide the corresponding source and build materials for the **actual** bundled
 Qt, FFmpeg, yt-dlp and their dependencies as their licenses require, and include
 notices for the copied system libraries. This repository's source archive alone
 does not contain that material. The LGPL libraries can be replaced in an extracted
-AppDir. The current source-only release workflow does not publish AppImages.
+AppDir. Published binary releases include a separate build-inputs deliverable;
+see the release's manifests and coverage report for the actual retained materials.
 
 Model weights are not bundled. They are downloaded or imported by the GUI, checked
 against the pinned model manifest, and stored outside the read-only AppImage.
