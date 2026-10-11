@@ -1,456 +1,172 @@
+<p align="center"><img src="icon.png" alt="Transcribe application icon" width="112"></p>
+
 # Transcribe
 
-Для Linux доступна сборка одного переносимого GUI-файла со встроенными Qt,
-Whisper, FFmpeg и yt-dlp: `bash scripts/package-linux.sh --container`.
-На машине запуска зависимости приложения устанавливать не нужно; модели
-скачиваются или импортируются через GUI. [Сборка и запуск AppImage](docs/linux-portable.md).
+Local transcription of Russian lectures, audio and video on your **CPU**.
+Use the native desktop GUI or the independent CLI to produce TXT, SRT and VTT.
+Recognition runs locally through whisper.cpp; URL downloads use yt-dlp and media
+conversion uses FFmpeg. The application interface and recognition language are Russian.
 
-CLI поддерживает Linux и Windows 11 x64. Добавлен GUI на Qt Quick: одна задача,
-частичный текст, отмена, история и загрузка моделей. Linux `install.sh` по-прежнему
-устанавливает CLI; GUI включается через `-DTRANSCRIBE_BUILD_GUI=ON`.
-[Сборка GUI, Windows ZIP и архитектура](docs/windows-gui.md).
-Windows ZIP готовит `scripts/package-windows.ps1`; его runtime-проверка выполняется
-отдельным Windows CI workflow job. Модели скачиваются отдельно.
+**C++23 · Qt Quick / QML · CMake · Linux / Windows · CPU-only**
 
-Консольная утилита на C++23 для транскрипции русской речи на CPU.
-Принимает локальный видео/аудиофайл или URL, поддерживаемый yt-dlp,
-включая VK Video, и создаёт TXT, SRT и VTT. TXT дополняется во время
-распознавания; речь не выводится в терминал.
-Распознавание выполняет локальный whisper.cpp; загрузку видео — yt-dlp,
-подготовку аудио — FFmpeg. Команды запускаются через POSIX API на Linux и Win32 API на Windows, без shell.
+[Download v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0)
+· [Changelog](CHANGELOG.md) · [Documentation](docs/windows-gui.md)
+· [Contributing](CONTRIBUTING.md)
 
-Версия исходников: **0.4.0**; разработка ведётся в ветке **dev**.
-Изменения и переход с 0.3.0 — в [заметках к выпуску](docs/release-notes-v0.4.0.md).
-Целевые платформы — **Linux (включая Arch / Omarchy) и Windows 11 x64**.
-Интерфейс и язык распознавания — русский. Выпуск содержит исходники, Linux AppImage и Windows ZIP.
-Linux-установщик собирает движок под CPU пользователя; Windows ZIP использует
-переносимые CPU-бэкенды. Модели скачиваются отдельно.
+## Demo
 
-## Требования
+![Transcribe desktop interface](docs/assets/gui.png)
 
-- Windows ZIP: Windows 11 x64, распакуйте весь комплект и запустите
-  `bin/transcribe-gui.exe`. Установка Qt, Python, VS и FFmpeg для запуска не нужна.
-- Linux AppImage: x86_64, glibc 2.39+ (Ubuntu 24.04 / Debian 13 / Arch).
-  Запуск: `chmod +x Transcribe.AppImage`, затем `./Transcribe.AppImage`;
-  без FUSE: `./Transcribe.AppImage --appimage-extract-and-run`.
-  Проверки Windows 11 24H2 и native Omarchy/Hyprland описаны в
-  [отчёте приёмки](docs/release-validation-v0.4.0.md).
-- Модели не входят в ZIP/AppImage; перед первым офлайн запуском импортируйте
-  recognition model и VAD через GUI. GPU, ARM, macOS и musl не входят в scope.
+Actual Qt Quick interface, captured by the isolated QML startup test with empty
+models and temporary settings; this is not a recognition or performance result.
 
-Для сборки CLI из исходников:
-
-- Linux, Bash, GCC с поддержкой C++23, CMake ≥ 3.20.
-- Python 3.11+ для тестов (`BUILD_TESTING=ON` по умолчанию) и упаковки; это
-  зависимость разработчика, отдельный Python для запуска ZIP/AppImage не нужен.
-- Git, curl, FFmpeg, yt-dlp; `sha256sum` из coreutils и `flock` из util-linux.
-- Интернет для установки и загрузки видео. Локальные файлы после установки
-  распознаются без сети.
-- Свободное место для исходников, сборки, модели и рабочей записи.
-
-В Arch/Omarchy установите зависимости:
-
-```bash
-sudo pacman -S --needed base-devel cmake git curl ffmpeg yt-dlp coreutils util-linux
+```sh
+transcribe --version
+# transcribe 0.4.0
+transcribe --model small "lecture.wav"
+transcribe --chunks 10 --jobs 2 --threads 3 --out "results" "lecture.mp4"
 ```
 
-При устаревших зеркалах/ошибках 404 выполните полное обновление системы
-`sudo pacman -Syu` и повторите установку зависимостей; не используйте отдельный
-`pacman -Sy`.
+The last two examples require installed tools/models and your own media file.
+[Recorded CLI help session](docs/assets/cli-session.txt).
 
-## Установка
+## Features
 
-```bash
+- Local audio/video files and one URL supported by the installed yt-dlp.
+- Live partial text, progress and estimated remaining recognition time.
+- TXT, SRT and VTT exports with one result directory per run.
+- Cancellation, preserved partial results and per-tool diagnostic logs.
+- Model download/import with SHA-256 verification; small, medium and turbo presets.
+- Downloaded-media cache with a size limit; explicit CPU threads/chunks/jobs.
+- GUI history and separate model/data storage across application upgrades.
+
+## Quick Start
+
+1. Download the application and its checksum from [Releases](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0).
+2. Linux: make the AppImage executable and launch it. Windows: extract the **whole**
+   ZIP and launch `bin/transcribe-gui.exe`.
+3. Open **Модели** (Models), download or import a recognition model and Silero VAD.
+4. Select a local file on **Расшифровка** (Transcription), choose an output directory and start.
+5. Open the result directory; transcripts are under `transcripts/` and logs under `logs/`.
+
+```sh
+chmod +x Transcribe-0.4.0-linux-x86_64.AppImage
+./Transcribe-0.4.0-linux-x86_64.AppImage
+# If FUSE is unavailable:
+./Transcribe-0.4.0-linux-x86_64.AppImage --appimage-extract-and-run
+```
+
+Models are not bundled. For a fully offline first run, import them beforehand.
+URL downloads and downloading models need network access; local recognition does not.
+
+## Installation
+
+| Route | Supported target | Application dependencies |
+|---|---|---|
+| Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg and standalone yt-dlp included |
+| Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp and runtime included |
+| Linux source installer | C++23 toolchain and CLI prerequisites | Builds the CLI and CPU engine; uses system FFmpeg/yt-dlp |
+| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](docs/windows-gui.md) |
+
+No separate Python, Qt SDK or compiler is needed to run the binary packages.
+Models, settings and results are user data outside the packages. GPU acceleration,
+macOS, ARM and musl/Alpine are outside the current package support.
+
+For the Linux CLI source installer, after installing the prerequisites:
+
+```sh
 git clone https://github.com/khdobromir/lecture-transcriber.git
 cd lecture-transcriber
-bash install.sh medium
+bash install.sh small
 export PATH="$HOME/.local/bin:$PATH"
-transcribe --version
 transcribe --help
 ```
 
-Запускайте `install.sh` обычным пользователем, без sudo. По умолчанию сборка
-использует два параллельных задания. Например, `TRANSCRIBE_BUILD_JOBS=4 bash
-install.sh small` задаёт четыре задания и более лёгкую модель.
+Run the installer as a regular user. [Linux portable details](docs/linux-portable.md)
+and [GUI/Windows instructions](docs/windows-gui.md) explain the separate routes.
 
-Установщик закрепляет whisper.cpp v1.9.4, commit
-`927cfce34f31707e17f2bff35c349632fb9e2c3a`, и собирает CPU backend без
-CUDA/Vulkan/BLAS и динамических whisper/ggml. Модели Whisper и Silero VAD
-закреплены по ревизиям Hugging Face и SHA-256 в `scripts/models.tsv`.
+## Usage
 
-| Путь | Содержимое |
-|---|---|
-| `~/.local/bin/transcribe` | Команда |
-| `~/.local/share/transcribe/whisper.cpp` | Исходники движка и установленный `build/bin/whisper-cli` |
-| `~/.local/share/transcribe/models` | Whisper и Silero VAD |
-| `~/.local/share/transcribe/default-model` | Выбранная модель |
-
-Сборки выполняются во временном каталоге установки. Команда, движок и модель
-по умолчанию обновляются после успешной сборки и проверки моделей.
-Замены отдельных файлов атомарны, но все три пути не образуют единую транзакцию:
-при аварии непосредственно во время замен повторите установку.
-Незавершённая загрузка остаётся в `.part` для докачки. Файл с неверным хешем
-не становится готовой моделью; повреждённый `.part` удаляется. Существующая
-повреждённая модель сохраняется — переместите её в резервное место и повторите
-загрузку. Повторная установка проверяет модели, не скачивая исправные заново.
-Одновременные установки/загрузки в один каталог блокируются.
-
-Чтобы команда была доступна в новых терминалах, добавьте строку
-`export PATH="$HOME/.local/bin:$PATH"` в настройки своего shell; для Fish
-используйте `fish_add_path ~/.local/bin`. Без изменения PATH запускайте
-`~/.local/bin/transcribe`.
-
-## Первый запуск
-
-Локальная запись:
-
-```bash
-transcribe "$HOME/Downloads/Лекция 1.mp4"
+```sh
+transcribe --model medium --prompt "Tensor, covariant, basis" "lecture.wav"
+transcribe --no-progress --out "results" "https://example.org/your-video"
 ```
 
-Для VK подставьте обычный URL видео в кавычках:
+The URL is a placeholder; extractor availability depends on the site and yt-dlp.
+One chunk is the default. Increasing jobs starts more model-owning processes and
+uses more memory. Live TXT preserves recording order; final subtitles appear
+when export completes. Use GUI Cancel or CLI Ctrl+C rather than killing the process.
 
-```bash
-transcribe "https://vkvideo.ru/video-OWNER_ID_VIDEO_ID"
+Use `transcribe --help` for all flags. The GUI exposes task, history and model
+management; machine consumers use the [JSONL v1 contract](docs/protocol-v1.md).
+
+## How it works
+
+```mermaid
+flowchart LR
+    GUI[Qt Quick GUI] -->|QProcess / JSONL v1| CLI[Independent CLI]
+    CLI --> Core[Qt-free C++ core]
+    Core --> Media[yt-dlp / FFmpeg]
+    Core --> ASR[whisper-cli CPU]
+    Core --> Results[TXT / SRT / VTT / result.json]
 ```
 
-Это шаблон ссылки, а не существующее тестовое видео. Обрабатывается одно видео,
-даже если URL содержит параметр списка воспроизведения. Загрузка использует
-`bestaudio/best`: при отсутствии отдельного аудио скачивается видео со звуком.
+The GUI owns presentation and background model/history operations. A backend
+process runs one transcription task and supervises its external tools.
 
-**3 октября 2026 года подтверждён полный запуск на общедоступной лекции VK Video
-длительностью 93:30 без cookies и браузерной авторизации.** На Ryzen 5 7430U
-с medium-q5_0 и шестью потоками весь запуск занял 68:55; пик PSS дерева
-процессов — 1.98 ГиБ. TXT/SRT/VTT проверены, повторное получение аудио из кэша
-без сети подтверждено. [Отчёт с оборудованием, ресурсами и точностью ETA](docs/lecture-validation-2026-10-03.md)
-не содержит ссылки, названия или текста лекции.
+## Engineering Highlights
 
-Это один успешный источник; доступность других видео зависит от VK, yt-dlp,
-сети и авторизации. Ранее один запрос получил HTTP 405; причина не установлена.
-Локальное распознавание не зависит от доступности VK.
+- **Native process lifecycle:** [Linux supervisor](src/process_guard_linux.cpp)
+  and [Windows Job Objects / handle policy](src/process_windows.cpp).
+- **Checked completion:** [typed protocol validation](src/protocol.cpp) and
+  [GUI process/result confirmation](gui/backend.cpp), with [contract tests](tests/test_protocol.cpp).
+- **Owned asynchronous work:** [model verification, import and publication](gui/models.cpp)
+  use worker cancellation and locks, with [GUI regressions](tests/test_gui.cpp).
+- **Export correctness:** [audio pipeline](src/audio.cpp), [timestamp bounds](tests/test_export_bounds.cpp)
+  and [real FFmpeg split tests](tests/test_split.cpp).
+- **Distribution checks:** [Linux AppImage builder](scripts/package-linux.py),
+  [Windows ZIP builder](scripts/package-windows.ps1), exact input hashes,
+  retained source materials and clean-environment package smoke.
 
-## Параметры
+ASR and model development belong to upstream Whisper/whisper.cpp; Transcribe's
+contribution is native integration, lifecycle, validation and the application.
 
-```text
-transcribe [параметры] "URL или путь к файлу"
-```
+## Performance and limitations
 
-| Параметр | Назначение |
-|---|---|
-| `--model small\|medium\|turbo\|ПУТЬ.bin` | Модель; по умолчанию выбранная при установке |
-| `--threads N` | 1–256 потоков каждого whisper-cli; по умолчанию доступные физические ядра / число работников, минимум 1 |
-| `--chunks N` | 1–256 частей; по умолчанию 1, обработка цельного файла |
-| `--jobs N` | Одновременно распознаваемые части; не больше `--chunks`. По умолчанию до двух, с ограничением физическими ядрами |
-| `--out КАТАЛОГ` | Каталог результатов; по умолчанию `$HOME/Transcriptions` |
-| `--cache-dir КАТАЛОГ` | Кэш скачанного аудио; по умолчанию `${XDG_CACHE_HOME}/transcribe/media` или `$HOME/.cache/transcribe/media` |
-| `--cache-limit-gib N` | Положительный целочисленный лимит кэша в ГиБ; по умолчанию 10 |
-| `--no-cache` | Не читать и не сохранять кэш |
-| `--refresh-cache` | Скачать заново и заменить кэш после проверки аудио; несовместим с `--no-cache` |
-| `--no-progress` | Не выводить промежуточный прогресс |
-| `--cookies-from-browser СПЕЦ` | Например `firefox` или `chromium:ПРОФИЛЬ` |
-| `--cookies ФАЙЛ` | Cookies в формате Netscape; несовместимо с предыдущим параметром |
-| `--prompt ТЕКСТ` | Краткая подсказка с терминами |
-| `--no-vad` | Отключить определение участков речи |
-| `--keep-audio` | Сохранить рабочие аудио/видеофайлы |
-| `--help`, `--version` | Справка/версия; работают без установки моделей |
-| `--` | Конец параметров; полезен для имени файла, начинающегося с `-` |
+Speed and RAM depend on CPU, model, duration and parallelism. Medium may run slower
+than real time. ASR mistakes, especially terms, names and formulas, need review.
+ETA is approximate; partial text is not a completed result. Interrupted tasks
+can be retried but do not resume recognition at the previous position.
 
-Например:
+[One historical 0.3.0 lecture measurement](docs/lecture-validation-2026-10-03.md)
+is hardware/input specific; it is neither a current 0.4.0 benchmark nor a WER study.
+Do not publish cookies, private URLs, recordings or unredacted diagnostic logs.
 
-```bash
-transcribe --out "$HOME/Documents/Лекции" --threads 4 --keep-audio \
-  --prompt "Тензор, ковариантный, базис." "$HOME/Downloads/Лекция 1.mp4"
-```
+## Development and testing
 
-### Параллельная обработка частей
-
-Для длинной записи можно явно включить дробление:
-
-```bash
-transcribe --chunks 10 --jobs 2 --threads 3 "Лекция.mp4"
-```
-
-Десять частей обрабатываются очередью: одновременно работают два whisper-cli,
-по три потока у каждого. Без `--threads` число потоков определяется по доступным
-физическим ядрам с учётом CPU affinity, разделённым между работниками.
-Если сведения о физических ядрах недоступны, используются доступные логические CPU.
-Явные параметры не уменьшаются автоматически; превышение числа CPU сопровождается
-предупреждением. Число потоков сборки `TRANSCRIBE_BUILD_JOBS` к распознаванию не относится.
-
-Перед нарезкой FFmpeg ищет паузы длительностью от 0,5 с при пороге -35 dB.
-Границы сдвигаются к ближайшей паузе в пределах 10 с или четверти средней
-длительности части, если она меньше. При отсутствии паузы используется равномерный
-срез и выводится предупреждение. Аудио покрывается полностью, без перекрытия;
-контекст между частями не передаётся. Тихая речь может ошибочно считаться паузой,
-а слова возле срезов могут распознаваться хуже. Проверяйте границы вручную.
-
-Каждый процесс загружает собственную модель и буферы. Дробление повышает
-потребление RAM, а на коротких записях затраты на запуск и загрузку моделей могут
-перевесить выигрыш. Десять частей не означают необходимость десяти работников.
-Измерение скорости описано ниже; автоматическое переключение режима не выполняется.
-
-## Результаты и ошибки
-
-Каждый запуск создаёт уникальный каталог и печатает его полный путь:
-
-```text
-$HOME/Transcriptions/
-└── Название видео_2026-10-03_15-30-00/
-    ├── source.txt
-    ├── transcripts/
-    │   ├── transcript.txt
-    │   ├── transcript.srt
-    │   └── transcript.vtt
-    ├── logs/
-    │   ├── metadata.log
-    │   ├── download.log
-    │   ├── ffmpeg.log
-    │   └── whisper-1.log
-    └── audio/                  # рабочие файлы, включая parts/ и final/
-```
-
-Для URL название берётся из метаданных yt-dlp; для локальной записи — из имени
-файла без расширения. Кириллица и пробелы сохраняются, разделители путей и
-управляющие символы заменяются. Длинные имена сокращаются без разрыва UTF-8.
-Дата — локальная дата/время начала запуска; при совпадении добавляется `_2`,
-`_3` и т. д. До получения метаданных URL используется имя `video_ДАТА-ВРЕМЯ`;
-при ошибке этот временный каталог сохраняет статус и логи. Переименование не
-перезаписывает существующие результаты. `--out` переопределяет родительский
-каталог, относительный путь считается от текущей директории. Без HOME нужно
-указать `--out`; справка и версия HOME не требуют. Старые результаты не переносятся.
-
-| Файл | Содержимое |
-|---|---|
-| `transcripts/transcript.txt` | Текст без временных меток; дополняется по готовым сегментам |
-| `transcripts/transcript.srt` | Субтитры SRT |
-| `transcripts/transcript.vtt` | Субтитры WebVTT |
-| `source.txt` | Источник, модель, параметры, границы частей в семплах, статус и код завершения |
-| `logs/*.log` | Диагностика метаданных, загрузки, подготовки и каждого whisper-cli |
-
-В терминале остаются этапы, сообщения об ошибках и путь результата. Прогресс
-распознавания обновляется в одной строке с учётом ширины окна:
-
-```text
-Распознавание [########------------] 42% | 2/6 | ETA ≈ 08:15
-```
-
-Прогресс учитывает длительность частей, включая ещё не запущенные. ETA —
-приблизительное оставшееся время распознавания, без скачивания и конвертации;
-первые пять секунд и до двух положительных обновлений показывается `расчёт…`.
-Оценка сглаживается и может увеличиваться при замедлении или загрузке моделей
-для новых частей. На короткой записи Whisper может сообщить только окончание:
-до него ETA остаётся в состоянии расчёта. Объединение экспортов показывается отдельным этапом; 100%
-распознавания ещё не означает статус `completed`. При перенаправлении stdout
-или `TERM=dumb` выводятся обычные строки без ANSI. `--no-progress` отключает
-промежуточные проценты и ETA, сохраняя сообщения этапов и итоговый путь.
-
-`transcripts/transcript.txt` доступен уже во время обработки; первая строка появляется после
-подготовки аудио, VAD и распознавания первого сегмента. При дроблении общий TXT
-сохраняет порядок записи: последующие части ждут предыдущую, но их текст уже
-сохраняется в `audio/parts/N/transcript.partial.txt`.
-После успеха общий TXT заменяется окончательным экспортом; SRT/VTT появляются
-после объединения всех частей с общей шкалой времени и нумерацией SRT.
-
-`source.txt` создаётся до запуска инструментов. Поле `Статус` принимает
-`processing`, `completed`, `interrupted` или `failed`; только `completed`
-подтверждает полный успех. Запись по сегментам сбрасывает буфер программы,
-но не гарантирует сохранность при отключении питания.
-
-На Linux Ctrl+C, SIGTERM и SIGHUP останавливают все активные группы процессов, включая
-whisper-cli и дочерние процессы инструментов. Через две секунды оставшиеся
-процессы получают SIGKILL; повторная отмена ускоряет принудительную остановку.
-Гарантия распространяется на потомков в управляемых группах: процессы,
-самостоятельно создающие другую сессию/группу, в неё не входят.
-При `kill -9` самого CLI отдельный Linux supervisor завершает управляемые
-группы работников, но не может записать итоговый статус или сохранить новые
-буферы CLI. Прерывание питания или убийство также supervisor этой гарантии не даёт.
-Ctrl+Z приостанавливает программу и не является отменой.
-На Windows Ctrl+C/Ctrl+Break и кнопка отмены GUI завершают Job Object с работниками.
-Закрытие консольного окна ограничено системным deadline; гарантии сохранения
-частичного текста при таком закрытии слабее, чем при явной отмене.
-
-## Кэш скачанного аудио
-
-Для повторного URL скачанное аудио используется без сети, даже если yt-dlp
-сейчас недоступен. Для нового URL выполняется запрос метаданных; совпадение
-extractor/ID позволяет использовать уже скачанное видео. WAV и распознавание
-выполняются заново. Локальные файлы и live-потоки не кэшируются.
-
-Кэш отделён от выходной папки и моделей. По умолчанию используются абсолютный
-`XDG_CACHE_HOME` или `$HOME/.cache`; лимит медиа — 10 ГиБ. При переполнении
-вытесняются наименее недавно использованные записи; файл больше лимита
-обрабатывается без сохранения. Метаданные и рабочие копии не входят в этот лимит.
-Изменить путь и лимит можно через `--cache-dir` и `--cache-limit-gib`.
-
-Если видео по тому же URL изменилось, используйте `--refresh-cache`.
-Неудачная загрузка не заменяет предыдущую запись. `--no-cache` полностью
-обходит кэш. Контексты без cookies, с файлом cookies и с выбранным browser/profile
-разделены; изменение размера или времени изменения файла cookies создаёт новый
-контекст. Для изменения аккаунта внутри того же browser/profile нужен refresh.
-Cookies и полный JSON yt-dlp не сохраняются в кэш; минимальные метаданные содержат
-название, идентификатор, URL и контекст. Каталог кэша имеет права 0700;
-существующий каталог с другими правами или symlink отключает кэш с предупреждением.
-
-Общие блокировки предотвращают повторную загрузку одновременными запусками;
-ожидание блокировки отменяется Ctrl+C. Готовая запись публикуется атомарно после
-проверки аудио FFmpeg. В рабочую папку копируется медиа, поэтому вытеснение кэша
-не затрагивает активную обработку. Неполные записи, symlink и несовпадение размера
-не используются. Повреждение, обнаруженное при конвертации, инвалидирует запись
-и завершает запуск с сохранением рабочей копии; следующий запуск скачивает заново.
-Ошибка доступа к кэшу даёт предупреждение и обычную загрузку. Встроенный служебный
-кэш yt-dlp отключён — он не является кэшем скачанного аудио.
-
-## Графический интерфейс
-
-Qt Quick GUI запускает самостоятельный CLI, показывает прогресс и частичный
-текст, хранит историю и управляет моделями. Команды сборки и поведение отмены
-описаны в [руководстве GUI и Windows](docs/windows-gui.md).
-Предыдущая оценка вариантов сохранена в [архитектурной заметке](docs/interface-options.md).
-
-## Завершение и восстановление
-
-После успеха рабочая подпапка `audio` удаляется, если не задан `--keep-audio`.
-Успех фиксируется после экспорта, сброса финального вывода и записи статуса
-`completed`, перед очисткой. До этого момента ошибка или отмена сохраняет
-`audio` вместе с частичным текстом и результатами отдельных частей.
-После фиксации успеха SIGINT, SIGTERM, SIGHUP и SIGPIPE во время очистки уже
-не отменяют завершённую обработку: статус остаётся `completed`, код — `0`.
-Ошибка удаления рабочих файлов выводится как предупреждение и не меняет
-успешный результат; часть рабочих файлов может остаться.
-Локальный исходник никогда не удаляется.
-Для повторной обработки можно передать сохранённый `audio/lecture.wav`.
-Пустой текст допустим, если модель не обнаружила речи. Возобновление с места
-остановки не поддерживается. Журналы могут содержать приватные пути и сообщения
-инструментов; проверяйте их перед публикацией.
-
-Коды завершения: `0` — успех, `1` — ошибка утилиты, `2` — запуск без аргументов,
-`127` — не удалось запустить внешний процесс. Ошибки внешних процессов
-сохраняют их код; завершение сигналом даёт `128 + номер сигнала`.
-Отмена Ctrl+C возвращает 130, SIGTERM — 143, SIGHUP — 129.
-Закрытие читающей стороны pipe терминального вывода также отменяет обработку
-и завершает работников (код 141, SIGPIPE), в том числе при сбросе финального
-сообщения перед фиксацией успеха. После фиксации действует правило очистки выше.
-
-## Модели и ресурсы
-
-| Выбор | Файл модели | Размер загрузки, приблизительно |
-|---|---|---|
-| `small` | `ggml-small-q5_1.bin` | 190 МБ |
-| `medium` | `ggml-medium-q5_0.bin` | 539 МБ |
-| `turbo` | `ggml-large-v3-turbo-q5_0.bin` | 574 МБ |
-
-Silero VAD v6.2.0 занимает около 885 КБ и включён по умолчанию.
-Дополнительная модель не меняет выбранную при установке:
-
-```bash
-bash scripts/download-model.sh small
-transcribe --model small "$HOME/Downloads/Лекция 1.mp4"
-```
-
-Для смены модели по умолчанию повторите `bash install.sh small`.
-`--model` также принимает путь к совместимой многоязычной GGML-модели `.bin`.
-Модели `.en` предназначены для английского. Пользовательские модели не проверяются
-по манифесту поставщика.
-
-Для medium предусмотрите несколько ГБ RAM. WAV занимает около 110 МиБ на час,
-плюс скачанный исходник; whisper-cli загружает аудио в память. Скорость зависит
-от CPU и записи, medium может работать медленнее самой лекции. Проверка запуска
-не оценивает точность русской речи. Формулы, термины и фамилии проверяйте вручную.
-
-Сначала попробуйте короткий фрагмент:
-
-```bash
-ffmpeg -nostdin -i "Лекция 1.mp4" -t 300 -vn -ar 16000 -ac 1 \
-  -c:a pcm_s16le "test-5min.wav"
-transcribe --model small "test-5min.wav"
-```
-
-Если VAD пропускает тихие реплики, сравните с `--no-vad`.
-
-## Авторизация VK
-
-Убедитесь, что видео открывается в вашем браузере, затем используйте:
-
-```bash
-transcribe --cookies-from-browser firefox "https://vkvideo.ru/video-OWNER_ID_VIDEO_ID"
-transcribe --cookies-from-browser "chromium:$HOME/.config/chromium/Default" "URL"
-transcribe --cookies "$HOME/Downloads/vk-cookies.txt" "URL"
-```
-
-В последних двух командах замените `URL` адресом видео. Для Helium уточните путь
-профиля в `chrome://version`. Импорт cookies зависит от браузера и хранилища ключей.
-При ошибке экстрактора обновите yt-dlp вместе с системой и проверьте
-`yt-dlp --ignore-config --no-playlist -F "URL"` отдельно.
-
-Cookies предоставляют доступ к аккаунту. Не публикуйте их, приватные URL,
-записи и расшифровки. `source.txt` содержит исходный URL/путь и путь модели;
-перед передачей результатов другим людям проверьте этот файл.
-
-## Нестандартный каталог
-
-```bash
-export TRANSCRIBE_HOME="$HOME/Applications/transcribe-data"
-bash install.sh medium
-transcribe "Лекция 1.mp4"
-```
-
-Сохраняйте одинаковое значение `TRANSCRIBE_HOME` при установке, загрузке моделей
-и запуске. Команда по-прежнему устанавливается в `~/.local/bin`.
-
-## Разработка и проверка
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON
 cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
 ```
 
-Тесты и подмены написаны на C++23 и Python 3.11+; CMake требует Python Interpreter
-при включённом `BUILD_TESTING`. FFmpeg настоящий; yt-dlp, распознавание
-и сеть в автоматических тестах заменены собранными C++-процессами.
-Тесты установщика запускайте обычным пользователем; они работают в изолированном HOME.
-Зависимости самого yt-dlp определяются его поставщиком.
+CLI: CMake 3.20+ and C++23. GUI: CMake 3.24+, Qt 6.8+ and
+`-DTRANSCRIBE_BUILD_GUI=ON`. Tests need Python 3.11+ and Linux suites need FFmpeg.
+Use `-DBUILD_TESTING=OFF` for an application-only build.
 
-Техническая проверка установленного medium/VAD:
+[CI](.github/workflows/ci.yml) covers Linux GCC/Clang, Windows MSVC, Qt,
+static analysis and ASan/UBSan. [Real Whisper smoke](.github/workflows/real-smoke.yml)
+and [portable package checks](.github/workflows/linux-portable.yml) are separate.
+[Published 0.4.0 validation](docs/release-validation-v0.4.0.md) describes that release,
+not every later source revision. See [CONTRIBUTING](CONTRIBUTING.md) for developer checks.
 
-```bash
-build/smoke_real --binary build/transcribe
-```
+## Contributing
 
-Для сравнения скорости на локальной русской записи от 10 минут:
+Report the version, OS, installation route and a minimal reproducible example.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing process or packaging contracts.
+The [approved modernization roadmap](docs/development-roadmap.md) tracks current work.
 
-```bash
-build/benchmark --input "Лекция.mp4" --out benchmark-results
-```
+## License
 
-Проверка прогревает модель на пятисекундном фрагменте, затем выполняет по три
-запуска: цельный файл при 4/6/8/12 потоках и 10 частей при 2×3 и 3×2 потоках.
-По умолчанию используется medium с VAD; доступны `--model`, `--no-vad`,
-`--app-home` и `--binary`. Все варианты используют одинаковые настройки.
-Сравнение может занять значительно больше времени, чем один запуск.
-Ctrl+C прекращает текущую обработку; уже созданные результаты остаются.
-
-Отчёт `report.md`, измерения `measurements.csv` и расшифровки сохраняются в отдельном
-каталоге `run-*`. Измеряется полное локальное время и максимальная сумма RSS/Swap
-дерева процессов с выборкой каждые 10 мс. Общие страницы памяти могут учитываться
-повторно. Качество автоматически не оценивается: проверьте речь возле всех девяти
-границ по сохранённым субтитрам и `source.txt`. Рекомендовать дробление стоит при
-выигрыше более 15% относительно лучшего цельного запуска без заметного ухудшения
-качества. `--allow-short` разрешает технический эксперимент на коротком примере;
-его результат нельзя переносить на длинные лекции.
-
-Для сборки только команды используйте `-DBUILD_TESTING=OFF`;
-`cmake --install build --prefix "$HOME/.local"` установит только CLI.
-Движок и модели устанавливает `install.sh`.
-
-CI проверяет Ubuntu 24.04 с GCC/Clang 18, Debian 13 с GCC и Arch Linux,
-а также clang-tidy, cppcheck и ShellCheck. Реальный Whisper smoke запускается
-отдельно вручную и еженедельно. Suites и команды анализа описаны в
-[инструкции разработчика](CONTRIBUTING.md).
-Правила участия — [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Лицензия и зависимости
-
-Код проекта распространяется по [MIT](LICENSE). Внешние программы и модели
-имеют собственные лицензии; сведения и официальные ссылки —
-[THIRD_PARTY.md](THIRD_PARTY.md).
+Transcribe's own code is [MIT](LICENSE). Bundled libraries, tools and downloaded
+models retain their own terms; see [THIRD_PARTY.md](THIRD_PARTY.md).
