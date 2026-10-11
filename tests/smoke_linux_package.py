@@ -8,6 +8,7 @@ import signal
 import subprocess
 import tempfile
 from linux_package import digest, verify
+from check_ytdlp_plugins import check as check_plugins
 
 
 def clean_environment():
@@ -40,6 +41,12 @@ def main():
         with (work / "extract.log").open("wb") as log:
             subprocess.run([str(moved), "--appimage-extract"], cwd=work, env=env, stdout=log, stderr=log, check=True, timeout=180)
         root = work / "squashfs-root"; manifest = verify(root, args.source)
+        expected_icon = (Path(__file__).resolve().parents[1] / "packaging/linux/transcribe-gui.png").read_bytes()
+        for icon in [root / "transcribe-gui.png", root / "usr/share/icons/hicolor/512x512/apps/transcribe-gui.png"]:
+            if icon.read_bytes() != expected_icon:
+                raise RuntimeError("AppImage icon differs from supplied application artwork")
+        if (root / ".DirIcon").resolve() != (root / "transcribe-gui.png").resolve():
+            raise RuntimeError("AppImage .DirIcon does not select the application icon")
         version = subprocess.check_output([str(moved), "--appimage-extract-and-run", "--transcribe-cli", "--version"],
                                           cwd=work, env=env, text=True, timeout=120).strip()
         if version != "transcribe " + manifest["application_version"]:
@@ -48,6 +55,7 @@ def main():
             tool_env = dict(env, LD_LIBRARY_PATH=str(root / "usr/lib"))
             subprocess.run([str(root / "usr/bin/tools" / name), option], cwd=work, env=tool_env,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=120)
+        plugin_evidence = check_plugins(root / "usr/bin/tools/yt-dlp", tool_env)
         child = subprocess.Popen([str(moved), "--appimage-extract-and-run"], cwd=work, env=env,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
         try:
@@ -92,7 +100,8 @@ def main():
                     shutil.copy2(work / "real-result" / name, artifacts / name)
         summary = {"source": manifest["source"], "image_sha256": digest(image), "version": version,
             "qt": manifest["qt"], "different_unicode_cwd": True, "no_fuse_startup": True,
-            "gui_startup": True, "all_bundled_tools": True, "real_gui": bool(args.real_gui)}
+            "gui_startup": True, "all_bundled_tools": True, "application_icon": True,
+            "downloader_plugin_isolation": plugin_evidence, "real_gui": bool(args.real_gui)}
         if artifacts:
             (artifacts / "package-smoke.json").write_text(json.dumps(summary, indent=2) + "\n")
         print(json.dumps(summary))

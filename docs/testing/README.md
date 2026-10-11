@@ -87,7 +87,9 @@ this separate check. Installed GUI real smoke uses
 
 Run `python tests/check_ytdlp_plugins.py /absolute/path/to/yt-dlp` explicitly to
 check plugin isolation offline: an owned marker must load in the positive control
-and stay unloaded after `--no-plugin-dirs`. This is not a live extractor test.
+and stay unloaded after `--no-plugin-dirs`. Final AppImage/ZIP smoke runs the
+same positive/negative check against the extracted bundled executable and records
+its version. This is not a live extractor test.
 Live URLs, optional cookies, cache refresh and native UI acceptance have separate
 results. Never use personal credentials/media in public CI artifacts.
 
@@ -103,6 +105,8 @@ the SDK to PATH alone does not satisfy their DLL loading policy.
 [Real Whisper smoke](../../.github/workflows/real-smoke.yml) runs explicitly and
 on its weekly schedule; [Linux portable](../../.github/workflows/linux-portable.yml)
 builds and tests a single final AppImage, including offline Ubuntu/Debian payloads.
+Final package checks compare the Linux launcher icons and both Windows PE icon
+groups/images with the tracked derived artwork.
 
 PR runs normally test the merge tree. For candidate acceptance dispatch workflows
 on the exact final source SHA with real checks enabled and confirm actual steps

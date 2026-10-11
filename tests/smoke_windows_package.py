@@ -7,6 +7,7 @@ import ctypes
 import xml.etree.ElementTree as ET
 from package_archive import extract_verified, digest
 from pe_policy import dependent_load_flags
+from check_ytdlp_plugins import check as check_plugins
 import subprocess
 import sys
 import tempfile
@@ -110,6 +111,7 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
                     [copied / "tools/yt-dlp.exe", "--version"]]:
         subprocess.run(list(map(str, command)), cwd=root, env=environment, check=True, timeout=30,
                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    plugin_evidence = check_plugins(copied / "tools/yt-dlp.exe", environment)
     version = subprocess.check_output([str(copied / "transcribe.exe"), "--version"],
                                       cwd=root, env=environment, text=True, timeout=30).strip()
     if version != "transcribe " + manifest["application_version"]:
@@ -187,6 +189,7 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
 evidence = {"source": expected_source, "dirty": manifest["dirty"], "zip_sha256": digest(archive), "verified_files": len(manifest["files"]),
             "checks": ["final ZIP extraction and every file SHA-256", "app-local CRT in bin and tools", "embedded manifests, DPI and asInvoker", "CLI and GUI icon groups/images match source ICO", "minimal PATH",
                        "bundled tools and Whisper Unicode input preflight", "native backend probe positive control and cwd/env rejection", "Unicode paths and different cwd", "deployed native Windows Qt/QML startup"],
+            "downloader_plugin_isolation": plugin_evidence,
             "real_gui_cli_speech": bool(args.real_gui), "manual_clean_windows_11": "unverified"}
 archive.with_suffix(archive.suffix + ".validation.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
 print("Final ZIP smoke passed: file checksums, CRT, bundled tools, Unicode paths, deployed Qt/QML")

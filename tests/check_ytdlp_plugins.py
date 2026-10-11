@@ -11,7 +11,7 @@ import sys
 import tempfile
 
 
-def check(binary):
+def check(binary, environment=None):
     binary = Path(binary).resolve(strict=True)
     with tempfile.TemporaryDirectory(prefix="transcribe-plugin-smoke-") as temporary:
         root = Path(temporary)
@@ -26,7 +26,8 @@ def check(binary):
             encoding="utf-8",
         )
         marker = root / "marker"
-        environment = dict(os.environ, TRANSCRIBE_PLUGIN_MARKER=str(marker))
+        environment = dict(os.environ if environment is None else environment,
+                           TRANSCRIBE_PLUGIN_MARKER=str(marker))
         environment.pop("YTDLP_NO_PLUGINS", None)
         environment.pop("PYTHONPATH", None)
         common = [str(binary), "--ignore-config", "--no-cache-dir"]
