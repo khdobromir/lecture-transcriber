@@ -29,7 +29,7 @@ invoking user. Network is required for initial verified downloads; ordinary
 packaging does not download models.
 
 - `dist/Transcribe-<version>-linux-x86_64-*.AppImage`: verified application.
-- Adjacent `.sha256`/`.json`: checksum, inventory and provenance.
+- Adjacent `.json`: inventory, provenance and SHA-256 of the AppImage and build-input archive. No standalone checksum files are generated.
 - `.build-inputs.tar.gz` and checksum: retained upstream source/tool inputs.
 - `.cache/linux-package-container/`: downloads, staging and logs.
 

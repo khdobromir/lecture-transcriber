@@ -13,8 +13,9 @@ conversion uses FFmpeg. The application interface and recognition language are R
 · [Changelog](CHANGELOG.md) · [Documentation](docs/README.md)
 · [Contributing](CONTRIBUTING.md)
 
-Current source includes [Unreleased changes](CHANGELOG.md#unreleased).
-Published v0.4.0 packages have not been rebuilt with these changes.
+Current source is the **0.4.1 release candidate**, not yet published.
+See [candidate notes](docs/releases/v0.4.1/notes.md) and
+[validation gates](docs/releases/v0.4.1/validation.md). Published v0.4.0 is unchanged.
 
 ## Demo
 
@@ -25,7 +26,7 @@ models and temporary settings; this is not a recognition or performance result.
 
 ```sh
 transcribe --version
-# transcribe 0.4.0
+# transcribe 0.4.1 (current source)
 transcribe --model small "lecture.wav"
 transcribe --chunks 10 --jobs 2 --threads 3 --out "results" "lecture.mp4"
 ```
@@ -47,7 +48,7 @@ The last two examples require installed tools/models and your own media file.
 
 [English guide](docs/user/quick-start.md) · [Краткая инструкция на русском](docs/user/ru/quick-start.md)
 
-1. Download the application and its checksum from [Releases](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0).
+1. Download the application from [Releases](https://github.com/khdobromir/lecture-transcriber/releases/latest) and compare its SHA-256 with the digest shown for that asset.
 2. Linux: make the AppImage executable and launch it. Windows: extract the **whole**
    ZIP and launch `bin/transcribe-gui.exe`.
 3. Open **Модели** (Models), download or import a recognition model and Silero VAD.
@@ -55,11 +56,14 @@ The last two examples require installed tools/models and your own media file.
 5. Open the result directory; transcripts are under `transcripts/` and logs under `logs/`.
 
 ```sh
-chmod +x Transcribe-0.4.0-linux-x86_64.AppImage
-./Transcribe-0.4.0-linux-x86_64.AppImage
+chmod +x Transcribe-X.Y.Z-linux-x86_64.AppImage
+./Transcribe-X.Y.Z-linux-x86_64.AppImage
 # If FUSE is unavailable:
-./Transcribe-0.4.0-linux-x86_64.AppImage --appimage-extract-and-run
+./Transcribe-X.Y.Z-linux-x86_64.AppImage --appimage-extract-and-run
 ```
+
+Replace `X.Y.Z` with the downloaded version. From 0.4.1, separate `.sha256` files
+are no longer published; uploaded-file digests are available on GitHub Releases.
 
 Models are not bundled. For a fully offline first run, import them beforehand.
 URL downloads and downloading models need network access; local recognition does not.
@@ -99,7 +103,7 @@ transcribe --no-progress --out "results" "https://example.org/your-video"
 
 The URL is a placeholder; extractor availability depends on the site and yt-dlp.
 Downloads ignore yt-dlp configuration. Current source also disables plugin
-directories; this hardening is not in published v0.4.0 packages. Updated source
+directories starting with 0.4.1; published v0.4.0 is unchanged. Updated source
 installs need `--no-plugin-dirs` support (available in pinned 2026.08.19);
 custom extractor plugins are outside the supported configuration.
 One chunk is the default. Increasing jobs starts more model-owning processes and
@@ -178,7 +182,8 @@ and [testing guide](docs/testing/README.md) for the source map and verification 
 Report the version, OS, installation route and a minimal reproducible example.
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing process or packaging contracts.
 For vulnerabilities use the [private reporting route](SECURITY.md).
-The [approved modernization roadmap](docs/development-roadmap.md) tracks current work.
+The [approved modernization roadmap](docs/development-roadmap.md) and
+[implementation report](docs/development-report.md) record completed modernization work.
 
 ## License
 

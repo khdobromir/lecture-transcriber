@@ -82,7 +82,8 @@ uses Win32 IDN and needs no Linux libidn2 input.
 
 The complete source deliverable for a payload combines Transcribe's full source
 archive (application, packagers, tests and instructions), build-input/source
-archives, notices, manifests and checksums. Retained metadata's
+archives, notices and manifests with internal SHA-256 hashes. GitHub Releases
+provides digests for uploaded assets; separate checksum files are not required. Retained metadata's
 `corresponding_sources_complete=false` does not automatically describe the whole
 combined deliverable. Match actual inventory and preserve the
 [historical investigation](../archive/dependency-source-materials-before-modernization.md).

@@ -107,6 +107,43 @@ retains the detailed historical component/recipe investigation.
 
 ## Authorized merge and publication
 
+### Asset integrity without standalone checksum files
+
+Starting with 0.4.1, do not generate or upload `.sha256`, `SHA256SUMS`,
+`SHA256SUMS.txt` or other checksum-only assets. Package/build-input digests remain
+in the adjacent manifests/validation JSON. Clean-container smoke obtains expected
+AppImage/audio/model hashes from the checked candidate record and verifies the
+mounted bytes directly; it requires no checksum file.
+
+Stage the already-tested bytes under canonical versioned names without repacking.
+Keep the full application source archive and both platform build-input archives,
+notices, technical manifests and validation/source-offer evidence. The exact
+12-file set is defined by [release_assets.py](../../scripts/release_assets.py).
+Keep additional CI logs and local inventory outside `assets/`; never include
+private recordings, model weights or credentials in public evidence.
+
+```sh
+python3 scripts/release_assets.py inventory "$delivery/assets" --version "$version" > "$delivery/asset-inventory.json"
+```
+
+After **separate publication authorization**, upload only that checked set.
+Query GitHub's release JSON after upload and require every asset's `digest`
+(`sha256:<hex>`) and size to match the freshly recomputed local inventory:
+
+```sh
+gh api "repos/khdobromir/lecture-transcriber/releases/tags/v$version" > "$delivery/github-release.json"
+python3 scripts/release_assets.py verify-github "$delivery/assets" --version "$version" --github-json "$delivery/github-release.json"
+```
+
+A missing digest, mismatch, extra/missing asset or incomplete upload blocks
+acceptance; do not silently use an old checksum file as fallback. This uses
+[GitHub's release-asset digest API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset).
+GitHub's automatically generated `Source code (zip/tar.gz)` links are not uploaded
+assets; independently compare those archives with the checked tagged tree.
+Preserve historical release checksum files and their dated instructions.
+
+### Owner actions after acceptance
+
 1. After maintainer authorization and acceptance, merge the candidate into master
    with a Conventional Commit, e.g. `chore(release): merge vX.Y.Z into master`.
 2. Verify final master SHA and required CI. If the code/payload tree changed,

@@ -2,10 +2,12 @@
 
 [English](../quick-start.md) · [Руководство пользователя](guide.md)
 
-1. Скачайте приложение и `.sha256` из [v0.4.0 Releases](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0).
+1. Скачайте приложение из [GitHub Releases](https://github.com/khdobromir/lecture-transcriber/releases/latest).
    Linux: x86_64, glibc 2.39+. Windows: Windows 11 x64. Архивы исходников и
    build-inputs для обычного запуска не нужны; модели скачиваются отдельно.
-2. Сверьте SHA-256: Linux — `sha256sum ИМЯ.AppImage`, PowerShell —
+2. Сверьте SHA-256 с digest этого файла на странице GitHub Release
+   (раскройте сведения о файле). Начиная с 0.4.1 отдельные `.sha256`/`SHA256SUMS`
+   не публикуются; старые файлы v0.4.0 сохранены. Linux — `sha256sum ИМЯ.AppImage`, PowerShell —
    `Get-FileHash -Algorithm SHA256 -LiteralPath '.\ИМЯ.zip'`.
 3. Linux: `chmod +x ИМЯ.AppImage`, затем `./ИМЯ.AppImage`. При отсутствии FUSE:
    `./ИМЯ.AppImage --appimage-extract-and-run`; понадобится место для временной

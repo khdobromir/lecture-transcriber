@@ -91,8 +91,7 @@ saved in GUI settings; retry retains task parameters in memory. Tool logs and
 source metadata can still contain private URLs or paths: redact before sharing.
 
 Downloader calls ignore ambient config/cache directories and disable playlists.
-Current source also disables plugin directories; this is an
-[Unreleased change](../../CHANGELOG.md#unreleased), absent from published v0.4.0
-packages. Custom extractor plugins are unsupported in the updated source. It needs
+Version 0.4.1 also disables plugin directories; published v0.4.0 is unchanged.
+Custom extractor plugins are unsupported. Source installation needs
 a yt-dlp supporting `--no-plugin-dirs` (bundled version: 2026.08.19). An extractor
 failure is not proof of an ASR failure. See [troubleshooting](../troubleshooting.md).

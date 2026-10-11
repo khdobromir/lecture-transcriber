@@ -23,8 +23,9 @@ install an application globally or publish a Release. `-WorkDirectory` and
 `-Destination` select workspace/output. Diagnostic-only `-SkipTests` is recorded
 in the manifest; release mode rejects it and a dirty source tree.
 
-`dist` contains a uniquely named version/source/run ZIP, checksum, validation
-and retained `.build-inputs.tar.gz` plus checksum. Existing artifacts are not
+`dist` contains a uniquely named version/source/run ZIP, validation JSON with
+ZIP/build-input SHA-256 hashes, and retained `.build-inputs.tar.gz`. No standalone
+checksum files are generated. Existing artifacts are not
 overwritten. Identity is captured before configure and rechecked before packing
 and after smoke. A final release needs both the complete application source and
 the verified input/source-material set, not build inputs alone.

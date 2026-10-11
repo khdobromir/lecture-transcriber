@@ -5,20 +5,23 @@
 Transcribe recognizes Russian speech locally on CPU. The current application
 interface is Russian; the labels below match the actual interface.
 
-1. Download the application and checksum from [v0.4.0 Releases](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0).
+1. Download the application from [GitHub Releases](https://github.com/khdobromir/lecture-transcriber/releases/latest).
    Linux packages target x86_64/glibc 2.39+; Windows packages target Windows 11 x64.
    Models are separate downloads. Build-input/source archives are for developers.
-2. Verify the application's SHA-256 against its `.sha256` file. Linux:
-   `sha256sum Transcribe-0.4.0-linux-x86_64.AppImage`. Windows PowerShell:
-   `Get-FileHash -Algorithm SHA256 -LiteralPath '.\Transcribe-0.4.0-windows-x64.zip'`.
+2. Compare the application's SHA-256 with the digest displayed for that asset
+   on the GitHub Release page (expand its details). Starting with 0.4.1, separate
+   `.sha256`/`SHA256SUMS` files are no longer published. Existing v0.4.0 assets
+   are unchanged. Replace `X.Y.Z` below with your downloaded version. Linux:
+   `sha256sum Transcribe-X.Y.Z-linux-x86_64.AppImage`. Windows PowerShell:
+   `Get-FileHash -Algorithm SHA256 -LiteralPath '.\Transcribe-X.Y.Z-windows-x64.zip'`.
 3. Linux: make the AppImage executable and run it. If FUSE is unavailable, use
    the same file with `--appimage-extract-and-run` (needs temporary disk space):
 
    ```sh
-   chmod +x Transcribe-0.4.0-linux-x86_64.AppImage
-   ./Transcribe-0.4.0-linux-x86_64.AppImage
+   chmod +x Transcribe-X.Y.Z-linux-x86_64.AppImage
+   ./Transcribe-X.Y.Z-linux-x86_64.AppImage
    # Alternative without FUSE:
-   ./Transcribe-0.4.0-linux-x86_64.AppImage --appimage-extract-and-run
+   ./Transcribe-X.Y.Z-linux-x86_64.AppImage --appimage-extract-and-run
    ```
 
    Windows: extract the **entire** ZIP, preserve its directories and run
