@@ -14,7 +14,9 @@
 - Linux GUI builds with the official Qt SDK need OpenGL development libraries;
   Ubuntu packages include `libgl-dev libglx-dev libopengl-dev libegl-dev`.
 - Windows: Visual Studio 2022 C++ workload/Windows SDK, x64 developer environment.
-  Official packages use shared Qt 6.8.3 MSVC x64 and PowerShell.
+  Its preset generator needs CMake 3.21+ (the CLI project still accepts 3.20
+  with other supported generators). Official GUI packages require CMake 3.24+,
+  shared Qt 6.8.3 MSVC x64 and PowerShell.
 
 Tested toolchains are recorded in [CI](../../.github/workflows/ci.yml), rather than
 claiming support for every compiler with a C++23 switch. Qt is not required by
