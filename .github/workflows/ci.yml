@@ -118,6 +118,9 @@ jobs:
         env:
           FORMAT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           CLANG_FORMAT: /tmp/transcribe-format-tool/bin/clang-format
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: ${{ github.workspace }}
         run: |
           python3 -m venv /tmp/transcribe-format-tool
           /tmp/transcribe-format-tool/bin/python -m pip install --no-cache-dir --only-binary=:all: --no-deps --require-hashes -r scripts/format-requirements.txt
