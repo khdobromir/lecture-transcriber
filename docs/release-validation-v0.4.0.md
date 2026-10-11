@@ -908,6 +908,29 @@ desktop приёмка и final real dispatch ещё не заявлены.
 не заменял текущий пользовательский буфер с несколькими форматами и не
 объявляется пройденным.
 
+## Linux yt-dlp: точные исходники Readline
+
+Исходная `libreadline.so.6` статически извлечена из SHA-256-проверенного
+PyInstaller archive; её код не исполнялся. Совпали GNU build ID и все
+285136 bytes с `lib64/libreadline.so.6.2` из CentOS
+`readline-6.2-11.el7.x86_64.rpm`. SHA-256 библиотеки:
+`2c5f7b8d6d8a257f08a05f931d6f2c0806dacb368755083f203149ea45222140`.
+Source lock теперь сохраняет оригинальный matching source RPM: upstream
+Readline, восемь patches и build spec. Source RPM SHA-256:
+`9678eb2f67b1784e5fba3ed0d59cba3ce6f3a3936936dfae956f7aed44b4cbf0`.
+Это закрывает конкретный Readline source mapping; полнота остальных
+материалов и final exact-SHA CI этим результатом не заявляются.
+Проверены platform selection (RPM только в Linux), сохранение всех bytes
+source RPM в build-inputs и readback SHA-256. Source suite 18/18, Linux
+packaging 15/15 и static project 1/1 прошли. Основной CI
+[38132654060](https://github.com/khdobromir/lecture-transcriber/actions/runs/38132654060)
+на d205cae завершился успешно, 10/10 jobs; это подтверждает сохранение actual
+Windows Qt SDK settings в hosted ZIP. Linux portable 38132654036 ещё выполняется.
+
+Тот же проверенный native AppImage 8fc8afea прошёл отдельный no-FUSE startup:
+`--appimage-extract-and-run --transcribe-cli --version` вернул 0 и
+`transcribe 0.4.0`. Изолированное тестовое GUI окно закрыто штатно.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и

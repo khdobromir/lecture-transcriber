@@ -44,3 +44,21 @@ module CMake files и generated feature/config headers. `settings.json`
 symlinks, их targets записаны отдельно. Version mismatch, missing configuration
 и выход symlink за SDK root останавливают упаковку. Эти материалы дополняют
 Qt module sources; они не являются обещанием побайтового воспроизведения SDK.
+
+## Readline внутри Linux yt-dlp
+
+В Linux build-inputs сохраняется оригинальный CentOS source RPM
+`readline-6.2-11.el7.src.rpm` (SHA-256
+`9678eb2f67b1784e5fba3ed0d59cba3ce6f3a3936936dfae956f7aed44b4cbf0`).
+Он содержит upstream `readline-6.2.tar.gz`, восемь patch files и `readline.spec`
+с настройками сборки. Содержимое можно прочитать/извлечь `bsdtar`; сборка
+в RPM build environment следует сохранённому spec. При сборе материалов
+RPM hooks, spec и upstream scripts не исполняются.
+
+`libreadline.so.6` внутри закреплённого yt-dlp побайтово совпала с
+`lib64/libreadline.so.6.2` оригинального бинарного CentOS RPM: SHA-256
+`2c5f7b8d6d8a257f08a05f931d6f2c0806dacb368755083f203149ea45222140`,
+GNU build ID `16414a5fb6f903c12c28a12e2d2c3806f78bf097`. Source lock
+фиксирует оба RPM URL/hashes и payload evidence. Лицензия GPLv3+ уже
+сохранена в оригинальном `yt-dlp-embedded-notices/THIRD_PARTY_LICENSES.txt`.
+Windows yt-dlp этой библиотеки не содержит и этот input не получает.

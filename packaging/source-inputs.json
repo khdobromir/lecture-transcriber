@@ -356,6 +356,25 @@
         "for_binary_sha256": [
           "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
         ]
+      },
+      {
+        "name": "yt-dlp-readline-source-6.2-11.el7",
+        "revision": "6.2-11.el7",
+        "filename": "readline-6.2-11.el7.src.rpm",
+        "url": "https://vault.centos.org/7.9.2009/os/Source/SPackages/readline-6.2-11.el7.src.rpm",
+        "sha256": "9678eb2f67b1784e5fba3ed0d59cba3ce6f3a3936936dfae956f7aed44b4cbf0",
+        "kind": "standalone-runtime-source",
+        "for_binary_sha256": [
+          "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+        ],
+        "source_package_format": "rpm",
+        "native_payload": {
+          "path": "libreadline.so.6",
+          "sha256": "2c5f7b8d6d8a257f08a05f931d6f2c0806dacb368755083f203149ea45222140",
+          "gnu_build_id": "16414a5fb6f903c12c28a12e2d2c3806f78bf097",
+          "comparison_package_url": "https://vault.centos.org/7.9.2009/os/x86_64/Packages/readline-6.2-11.el7.x86_64.rpm",
+          "comparison_package_sha256": "d9e52b61beb1ac9c3006604d9ebd4f930f667b64478a61fd78de7ed74922f52e"
+        }
       }
     ]
   },
