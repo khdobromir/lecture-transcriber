@@ -34,6 +34,12 @@ cases; equal suite counts are not a portability requirement.
 
 ## Static analysis and sanitizers
 
+`dependency_pins` compares the installer, CLI smoke, GUI workflow fetch/checkout
+and both platform Whisper manifests offline. Fixture tests reject one changed
+declaration and accept a consistent update. This complements existing source/hash
+mapping checks; a real dependency upgrade must also update clone tags, archive
+hashes, Windows patch baselines and corresponding source mappings as applicable.
+
 Install developer tools explicitly. The scripts do not install them:
 
 ```sh
