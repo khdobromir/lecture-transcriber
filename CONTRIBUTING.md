@@ -8,6 +8,7 @@ avoid new frameworks or user features without discussing their purpose.
 For bugs include version, OS/architecture, installation route, model/settings,
 minimal reproduction and a redacted relevant error/log excerpt. Never attach
 cookies, tokens, private URLs/media, complete transcripts or model weights.
+Report suspected vulnerabilities through the [private security route](SECURITY.md).
 
 ## Development
 

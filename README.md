@@ -173,6 +173,7 @@ and [testing guide](docs/testing/README.md) for the source map and verification 
 
 Report the version, OS, installation route and a minimal reproducible example.
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing process or packaging contracts.
+For vulnerabilities use the [private reporting route](SECURITY.md).
 The [approved modernization roadmap](docs/development-roadmap.md) tracks current work.
 
 ## License
