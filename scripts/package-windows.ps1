@@ -212,17 +212,23 @@ Invoke-Checked python @("$Project\scripts\package_inputs.py", 'archive', $Inputs
     '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
     '--material', "$Project\packaging\source-inputs.json", '--material', "$Project\scripts\package_git_sources.py",
     '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py", '--material', "$Project\scripts\package_svn_sources.py",
-    '--material', "$Project\scripts\package_cargo_sources.py", '--material', "$Project\docs\dependency-source-materials.md",
+    '--material', "$Project\scripts\package_cargo_sources.py", '--material', "$Project\docs\build\dependency-source-materials.md",
     '--material', $SdkSettings, '--material', "$Project\scripts\package_sdk_settings.py")
 $null = Get-SourceIdentity $IdentityFile
-(Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
-    Set-Content ($Zip + '.sha256') -Encoding ascii
-(Get-FileHash $InputsArchive -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $InputsArchive -Leaf) |
-    Set-Content ($InputsArchive + '.sha256') -Encoding ascii
+$ZipHash = (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant()
+$InputsHash = (Get-FileHash $InputsArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+$Validation = Get-Content ($Zip + '.validation.json') -Raw | ConvertFrom-Json
+if ($Validation.zip_sha256 -ne $ZipHash) { throw 'ZIP changed after final smoke.' }
+$Validation | Add-Member -NotePropertyName build_inputs_sha256 -NotePropertyValue $InputsHash
+$Validation | ConvertTo-Json -Depth 8 | Set-Content ($Zip + '.validation.json') -Encoding utf8
 $Published = Join-Path $Destination $Name
 if (Test-Path $Published) { throw 'Refusing to replace an existing candidate.' }
-Move-Item -LiteralPath ($Zip + '.sha256'), ($Zip + '.validation.json') -Destination $Destination
-Move-Item -LiteralPath $InputsArchive, ($InputsArchive + '.sha256') -Destination $Destination
+Move-Item -LiteralPath ($Zip + '.validation.json') -Destination $Destination
+Move-Item -LiteralPath $InputsArchive -Destination $Destination
 Move-Item -LiteralPath $Zip -Destination $Published
+if ((Get-FileHash $Published -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ZipHash -or
+    (Get-FileHash (Join-Path $Destination (Split-Path $InputsArchive -Leaf)) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $InputsHash) {
+    throw 'Artifact changed during staging.'
+}
 Write-Host "Package: $Published"
 Write-Host "Build evidence and staged files: $Stage"

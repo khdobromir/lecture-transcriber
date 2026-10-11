@@ -17,7 +17,7 @@ def prepare_inputs(record_path, inputs, project):
     if digest(image) != record["sha256"]:
         raise ValueError("Candidate AppImage checksum changed after builder verification")
     shutil.copy2(image, inputs / "Transcribe.AppImage")
-    sums = [record["sha256"] + "  Transcribe.AppImage"]
+    hashes = {"APPIMAGE_SHA256": record["sha256"]}
     if record["real_smoke"]:
         prerequisites = project / ".cache/linux-package-container" / record["stage"] / "real-prerequisites"
         metadata = json.loads((prerequisites / "prerequisites.json").read_text())
@@ -28,9 +28,8 @@ def prepare_inputs(record_path, inputs, project):
             if digest(source) != metadata[checksum]:
                 raise ValueError("Public fixture checksum changed: " + name)
             shutil.copy2(source, inputs / name)
-            sums.append(metadata[checksum] + "  " + name)
-    (inputs / "SHA256SUMS").write_text("\n".join(sums) + "\n")
-    return record
+            hashes["AUDIO_SHA256" if key else "MODEL_SHA256"] = metadata[checksum]
+    return dict(record, input_sha256=hashes)
 
 
 def main():
@@ -55,6 +54,8 @@ def main():
                        "-e", "REQUIRE_ASR=" + str(int(record["real_smoke"])),
                        "-v", str(inputs) + ":/inputs:ro", "-v", str(output) + ":/evidence",
                        "-v", str(project / "tests/smoke_linux_clean.sh") + ":/smoke.sh:ro", base, "sh", "/smoke.sh"]
+            for key, value in record["input_sha256"].items():
+                command[2:2] = ["-e", key + "=" + value]
             with (output / "container.log").open("wb") as log:
                 subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT, timeout=900)
             result = dict(record, container=base, container_image=image_id, offline=True)

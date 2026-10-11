@@ -1,4 +1,4 @@
-#include "support.hpp"
+#include "support_portable.hpp"
 #include "media.hpp"
 #include "progress.hpp"
 #include "result.hpp"
@@ -31,14 +31,17 @@ int main() {
         const auto now = std::chrono::system_clock::from_time_t(0);
         auto first = ResultPaths::create(temp.path, "Лекция", now);
         auto second = ResultPaths::create(temp.path, "Лекция", now);
-        CHECK(first.root.filename().string().starts_with("Лекция_") && second.root.string() == first.root.string() + "_2");
+        CHECK(first.root.filename().u8string().starts_with(u8"Лекция_") &&
+              second.root.filename().u8string() == first.root.filename().u8string() + u8"_2");
         CHECK(fs::is_directory(first.logs()) && fs::is_directory(first.transcripts()) && fs::is_directory(first.work()));
+#ifndef _WIN32
         CHECK((fs::status(first.root).permissions() & fs::perms::others_all) == fs::perms::none);
+#endif
         auto provisional = ResultPaths::create(temp.path, "video", now);
         write(provisional.logs() / "metadata.log", "diagnostics");
         write(first.root / "keep", "first");
         provisional.name("Лекция");
-        CHECK(provisional.root.string() == first.root.string() + "_3");
+        CHECK(provisional.root.filename().u8string() == first.root.filename().u8string() + u8"_3");
         CHECK(read(first.root / "keep") == "first" && read(provisional.logs() / "metadata.log") == "diagnostics");
     });
     suite.add("weighted_progress_unequal_parts_parallel_queue", [] {
@@ -93,6 +96,16 @@ int main() {
         write(f.media, "123456789"); CHECK(!cache.publish(f.source, "anonymous", "big", f.media));
         CHECK(!cache.lookup_url("big", "anonymous") && !cache.lookup_url("first", "anonymous"));
     });
+    suite.add("cache_corrupt_entries_are_misses", [] {
+        CacheFixture f;
+        MediaCache cache(f.root, 8);
+        CHECK(cache.publish(f.source, "anonymous", "url", f.media));
+        const auto entry = cache.lookup_url("url", "anonymous");
+        CHECK(entry);
+        write(entry->directory / "media", "");
+        CHECK(!cache.lookup_url("url", "anonymous"));
+    });
+#ifndef _WIN32
     suite.add("cache_corrupt_and_symlink_entries_are_misses", [] {
         CacheFixture f;
         MediaCache cache(f.root, 8);
@@ -113,6 +126,7 @@ int main() {
         try { MediaCache cache(f.root, 8); } catch (const std::runtime_error&) { rejected = true; }
         CHECK(rejected && read(f.media) == "1234");
     });
+#endif
     suite.add("cache_lower_limit_counts_corrupt_payloads_and_removes_abandoned_staging", [] {
         CacheFixture f;
         {

@@ -1,124 +1,66 @@
-# Участие в разработке
+# Contributing
 
-Перед изменениями прочитайте README и проверьте, нет ли похожего issue.
-Для ошибки нужны шаги воспроизведения, команда, версия программы, дистрибутив,
-модель и относящийся к проблеме фрагмент вывода. Не прикладывайте cookies,
-токены, приватные URL, записи и полные расшифровки.
+Read the [README](README.md), [developer guide](docs/developer/getting-started.md)
+and relevant existing issues first. English and Russian contributions/reports are
+welcome. This is a small native CPU-first application; keep changes focused and
+avoid new frameworks or user features without discussing their purpose.
 
-## Локальные проверки
+For bugs include version, OS/architecture, installation route, model/settings,
+minimal reproduction and a redacted relevant error/log excerpt. Never attach
+cookies, tokens, private URLs/media, complete transcripts or model weights.
+Report suspected vulnerabilities through the [private security route](SECURITY.md).
 
-Разработка ведётся в `dev`. В Arch/Omarchy дополнительно к зависимостям README
-нужны `shellcheck` и Python 3.11+:
+## Development
 
-```bash
-sudo pacman -S --needed shellcheck python
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-Werror
-cmake --build build --parallel 2
-ctest --test-dir build --output-on-failure
-bash -n install.sh scripts/download-model.sh scripts/models.sh
-shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
+Branch from current `master`; do not modify it directly. See
+[prerequisites/build presets](docs/build/from-source.md) for Linux and Windows:
+
+```sh
+cmake --preset linux-cli-debug
+cmake --build --preset linux-cli-debug --parallel 2
+ctest --preset linux-cli-debug
 ```
 
-Для Clang добавьте `-DCMAKE_CXX_COMPILER=clang++` и выберите отдельный каталог
-сборки. CTest использует собранный бинарник, а не компилирует его другим GCC.
-Тесты используют C++23 и Python 3.11+ Interpreter; CMake требует его при
-`BUILD_TESTING=ON` (по умолчанию). Для запуска переносимого пакета отдельный
-Python не нужен.
-Тесты установщика запускайте без sudo: они используют отдельный временный HOME,
-настоящие хеши и файловые операции, подменяют сеть и сборочные инструменты.
-Модели и доступ к аккаунту VK для автоматических тестов не нужны.
+GUI changes use a GUI preset, QML lint and appropriate controller/integration
+checks. [Testing](docs/testing/README.md) explains units, native processes,
+static analysis, sanitizers, real ASR and final package checks. Run installers only
+with isolated temporary data/bin paths, without sudo. Ordinary CTest needs no
+models or account credentials. Report tests not run and platform limitations.
 
-Набор CTest зависит от платформы, GUI и наличия FFmpeg; актуальный список:
-`ctest --test-dir build -N`. В Linux CLI configuration с FFmpeg доступны 18 suites,
-в GUI — ещё пять (включая real-smoke harness с отдельными prerequisites).
-Метки: `unit`, `integration`, `installation`, `preflight`; GUI имеет также свои метки.
-Unit-тесты не запускают FFmpeg или Whisper; pipeline
-использует настоящий FFmpeg и управляемую подмену Whisper. Для выборочного запуска:
+## Formatting
 
-```bash
-ctest --test-dir build -L unit --output-on-failure
-TEST_CASE_FILTER=reliability_ ctest --test-dir build -R '^pipeline$' --repeat until-fail:20 --output-on-failure
+Use clang-format **18.1.8**, pinned with Linux x86_64/Windows x64 wheel hashes.
+Install it into a task-local virtual environment, not the application runtime:
+
+```sh
+python3 -m venv /tmp/transcribe-format-tool
+/tmp/transcribe-format-tool/bin/python -m pip install --no-cache-dir --only-binary=:all: --no-deps --require-hashes -r scripts/format-requirements.txt
+CLANG_FORMAT=/tmp/transcribe-format-tool/bin/clang-format python3 scripts/check-format.py --base origin/master
 ```
 
-`TEST_CASE_FILTER` выбирает сценарии по подстроке имени. Если совпадений нет,
-suite завершается ошибкой, чтобы опечатка не давала ложный успешный результат.
-
-Статический анализ требует `clang-tidy`, `cppcheck` с поддержкой C++23 и
-`shellcheck`, установленных разработчиком. Отдельная сборка с Clang и compilation
-database позволяет запускать те же проверки, что и CI:
-
-```bash
-cmake -S . -B build/analysis -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-bash scripts/check-static.sh build/analysis
-```
-
-Для версионированного исполняемого файла задайте, например,
-`CLANG_TIDY=clang-tidy-18`. Анализируется весь собственный C++-код, включая тесты;
-автоматические исправления отключены. Подавления допустимы только адресно, с
-объяснением причины. Скрипт не устанавливает инструменты.
-
-После обычной установки можно отдельно проверить реальный движок:
-
-```bash
-build/smoke_real --binary build/transcribe
-```
-
-Для этой проверки нужны установленная модель medium и VAD, а также встроенный
-пример whisper.cpp `samples/jfk.wav`. Сборка только команды через CMake
-не устанавливает движок и модели. Утилита ищет их в `TRANSCRIBE_HOME` либо
-`~/.local/share/transcribe`. Если они находятся в другом каталоге, укажите его:
-
-```bash
-build/smoke_real --binary build/transcribe --app-home "$HOME/путь-к-установке"
-```
-
-Этот каталог должен содержать `whisper.cpp` и `models`; утилита не переносит
-и не скачивает файлы. Программа обрабатывает пятисекундный
-фрагмент во временном каталоге и проверяет экспорт. Это проверка процессов,
-а не качества распознавания; английский пример обрабатывается с языком `ru`.
-
-`--artifacts /абсолютный/путь/к/новому-каталогу` сохраняет рабочие файлы и
-результаты технического примера, включая диагностику после сбоя. Родительский
-каталог должен существовать; уже существующий каталог не перезаписывается.
-Без этого параметра используется удаляемый временный каталог.
-
-Обязательный CI проверяет Ubuntu 24.04 (GCC/Clang 18), Debian 13 (GCC) и Arch,
-Windows MSVC CLI/Qt ZIP, Qt 6.8.3/6.11.2 Linux, ASan/UBSan,
-а также clang-tidy, cppcheck и ShellCheck. Ubuntu GCC дополнительно повторяет
-сценарии `reliability_` двадцать раз. Обычные проверки доступны по PR, push в
-`dev`/`master` и ручному запуску.
-
-Workflow **Real Whisper smoke** запускается вручную либо по понедельникам
-в 03:17 UTC. Расписание работает после включения workflow в default branch.
-Он с нуля собирает закреплённый Whisper, скачивает medium и VAD с проверкой
-SHA-256 во временный каталог runner и не запускает `install.sh`. При ошибке
-журналы и результаты публичного примера хранятся как artifacts семь дней;
-готовые модели и бинарники не кешируются и не загружаются как artifacts.
-Результаты локальной проверки этих изменений и её ограничения — в
-[отчёте проверки тестов и CI](docs/test-validation.md).
-
-GUI и упаковка: [Windows/Qt](docs/windows-gui.md), [AppImage](docs/linux-portable.md).
-Для приёмки на exact SHA вручную запускаются **CI** и **Linux portable GUI** с
-`real_smoke=true`, а также **Real Whisper smoke**. В portable workflow AppImage
-собирается один раз; builder и offline Ubuntu/Debian проверяют один checksum.
-Зелёный run с пропущенным real step не закрывает реальную приёмку.
-
-Сравнение скорости, памяти и границ дробления описано в README. Выполненные
-локальные проверки `dev` — в [отчёте](docs/dev-validation.md).
-Проверки подготовки v0.2.1 — в [отчёте выпуска](docs/release-validation-v0.2.1.md).
+On Windows use `py -m venv out/format-tool` and its `Scripts/python.exe` for pip;
+pass `--clang-format out/format-tool/Scripts/clang-format.exe` to the checker.
+Add `--fix` to apply the selected ranges, review the diff, then rerun the check.
+Only changed lines in directly owned `src`, `gui` and `tests` C++ files are
+considered; vendor/generated/nested trees and unchanged legacy formatting are
+excluded. Stage new C++ files before checking so Git includes them. With no
+explicit base the script uses the merge-base with `origin/master`.
+Keep style-only edits separate from logic and avoid full-tree formatting.
 
 ## Pull requests
 
-Для всех новых коммитов, включая коммиты слияния, используйте Conventional
-Commits: `<type>[optional scope][!]: <description>`. Например,
-`fix(process): stop whisper-cli on cancellation` или
-`chore(release): prepare v0.2.1`.
+- Use Conventional Commits for every new commit, including merges:
+  `<type>[optional scope][!]: <description>`, e.g. `fix(process): preserve partial output on cancellation`.
+- Describe the concrete problem, resulting behavior and actual verification.
+  Add a reproducing regression for a bug at the appropriate boundary.
+- Preserve CLI defaults, result layout, user paths and protocol v1 unless the
+  change explicitly addresses compatibility and documentation.
+- Keep source/build outputs separate; do not commit models, media, local caches,
+  binaries or private results. Preserve original third-party notices/pins.
+- Keep formatting separate from logic; avoid mass reformatting unrelated code.
+- Version comes from CMake `project(... VERSION ...)`; record user-visible,
+  dependency and version changes in CHANGELOG.
 
-Опишите проблему, конечное поведение и выполненные проверки. Для исправления
-ошибки добавьте воспроизводящий её тест. Сохраняйте совместимость параметров
-CLI и форматов результатов либо явно документируйте изменение.
-Не добавляйте в PR модели, медиа, сборки или личные результаты.
-
-Версия задаётся только в `project(... VERSION ...)` в CMake. Изменения версии,
-зависимостей и пользовательского поведения отражайте в changelog.
-Порядок подготовки и публикации — в [инструкции выпуска](docs/releasing.md).
+[Release preparation](docs/build/releasing.md) has separate exact-SHA, manual and
+artifact/source evidence. A successful PR/build is not authorization to merge,
+move a tag or publish assets.

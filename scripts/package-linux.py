@@ -331,7 +331,7 @@ def main():
         EXTRA_QT_MODULES="waylandclient", PATH=str(cache) + os.pathsep + env["PATH"])
     command = [dependencies["linuxdeploy"], "--appdir", appdir, "--executable", appdir / "usr/bin/transcribe-gui",
         "--executable", appdir / "usr/bin/transcribe", "--desktop-file", PROJECT / "packaging/linux/transcribe-gui.desktop",
-        "--icon-file", PROJECT / "packaging/linux/transcribe-gui.svg", "--plugin", "qt"]
+        "--icon-file", PROJECT / "packaging/linux/transcribe-gui.png", "--plugin", "qt"]
     # Qt's platform plugins also load these integration plugins dynamically.
     # Deploy their dependencies explicitly; they aren't ELF DT_NEEDED entries
     # of the GUI and the pinned Qt plugin does not deploy them for waylandclient.
@@ -375,7 +375,7 @@ def main():
     with (appdir / "transcribe-gui.desktop").open("a") as desktop:
         desktop.write("X-AppImage-Version=" + identity["source"][:12] + "\n")
     (appdir / ".DirIcon").unlink(missing_ok=True)
-    (appdir / ".DirIcon").symlink_to("transcribe-gui.svg")
+    (appdir / ".DirIcon").symlink_to("transcribe-gui.png")
     for name, source_path in [("Transcribe-MIT.txt", PROJECT / "LICENSE"),
                              ("nlohmann-json-MIT.txt", PROJECT / "third_party/nlohmann/LICENSE.MIT")]:
         shutil.copy2(source_path, licenses / name)
@@ -434,21 +434,21 @@ def main():
                     appdir / "package-manifest.json", library_provenance, source_provenance,
                     PROJECT / "scripts/package_git_sources.py", PROJECT / "scripts/package_canonical_sources.py",
                     PROJECT / "scripts/package_source.py", PROJECT / "scripts/package_svn_sources.py",
-                    PROJECT / "scripts/package_cargo_sources.py", PROJECT / "docs/dependency-source-materials.md",
+                    PROJECT / "scripts/package_cargo_sources.py", PROJECT / "docs/build/dependency-source-materials.md",
                     sdk_settings, PROJECT / "scripts/package_sdk_settings.py"])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.
     target = destination / ("Transcribe-" + identity["application_version"] + "-linux-x86_64-" + ("release-" if args.release else "diagnostic-") + identity["source"][:12] + "-" + stage.name + ".AppImage")
     publish_file(image, target, image_hash)
-    target.with_suffix(target.suffix + ".sha256").write_text(digest(target) + "  " + target.name + "\n")
-    target.with_suffix(target.suffix + ".json").write_text(json.dumps(manifest, indent=2) + "\n")
     inputs_target = target.with_suffix(target.suffix + ".build-inputs.tar.gz")
     publish_file(inputs_archive, inputs_target, digest(inputs_archive))
-    inputs_target.with_suffix(inputs_target.suffix + ".sha256").write_text(digest(inputs_target) + "  " + inputs_target.name + "\n")
+    manifest["artifacts"] = dict(image_sha256=digest(target), build_inputs_sha256=digest(inputs_target))
+    target.with_suffix(target.suffix + ".json").write_text(json.dumps(manifest, indent=2) + "\n")
     if args.result_file:
         result = dict(filename=target.name, sha256=digest(target), source=identity["source"],
-                      stage=stage.name, real_smoke=args.real_smoke)
+                      stage=stage.name, real_smoke=args.real_smoke,
+                      build_inputs_filename=inputs_target.name, build_inputs_sha256=digest(inputs_target))
         args.result_file.write_text(json.dumps(result, indent=2) + "\n")
     print("Verified package: " + str(target), flush=True)
 

@@ -1,6 +1,32 @@
 # Изменения
 
-## 0.4.0 — кандидат, не опубликован
+## Unreleased
+
+## v0.4.1 — 2026-10-12
+
+See [release notes](docs/releases/v0.4.1/notes.md) and
+[verification coverage](docs/releases/v0.4.1/validation.md).
+
+- Use the maintainer-supplied application icon in README, Linux desktop/AppImage,
+  Qt windows and Windows executable resources.
+- Run portable CLI/audio/features unit cases on Windows while retaining Linux
+  process-harness and permission/symlink checks.
+- Disable yt-dlp plugin directories for metadata and downloads. Source installs
+  need yt-dlp with `--no-plugin-dirs` support (the pinned 2026.08.19 supports it).
+  Custom extractor plugins are outside the supported configuration; built-in
+  extractors and existing URL/cookies arguments are preserved.
+- Remove standalone release checksum files; keep package/build-input hashes in
+  manifests and verify GitHub's SHA-256 digest for every uploaded asset.
+- Set GUI application-version metadata from the same CMake version as the CLI.
+- Add development presets, pinned changed-line formatting, dependency pin checks,
+  English technical documentation and compact Russian user guides.
+
+## 0.4.0 — 2026-10-11
+
+Published as [v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0),
+including Linux AppImage, Windows ZIP, checksums and retained build inputs.
+Source: `926366a1c4f7ec2d1cc188f8448591809cc3282c`.
+See the [final validation summary](docs/releases/v0.4.0/validation.md).
 
 - Windows portable mode запрещает fallback к PATH/cwd и установленному Whisper;
   child tools получают доверенный cwd и очищенный GGML environment.
@@ -136,5 +162,5 @@
 
 Ограничения: язык распознавания `ru`, Linux/POSIX, установка из исходников.
 Загрузка одной общедоступной лекции VK и скорость на Ryzen 5 7430U измерены
-в [отчёте](docs/lecture-validation-2026-10-03.md); доступность других видео,
+в [отчёте](docs/archive/lecture-validation-2026-10-03.md); доступность других видео,
 точность распознавания и качество возле границ частей этим не подтверждаются.

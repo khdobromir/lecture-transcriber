@@ -9,7 +9,7 @@ import tempfile
 prefix = Path(sys.argv[1]).resolve()
 cli, gui = prefix / "bin/transcribe", prefix / "bin/transcribe-gui"
 for path in [cli, gui, prefix / "share/applications/transcribe-gui.desktop",
-             prefix / "share/icons/hicolor/scalable/apps/transcribe-gui.svg", prefix / "share/transcribe/models.tsv"]:
+             prefix / "share/icons/hicolor/512x512/apps/transcribe-gui.png", prefix / "share/transcribe/models.tsv"]:
     if not path.is_file():
         raise RuntimeError("Missing installed file: " + str(path))
 with tempfile.TemporaryDirectory(prefix="transcribe-install-smoke-") as temporary:

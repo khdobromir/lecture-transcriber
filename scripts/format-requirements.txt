@@ -1,0 +1,4 @@
+# Developer/CI tool only: Linux x86_64 and Windows x64 wheels, never bundled.
+clang-format==18.1.8 \
+    --hash=sha256:2de122b8aa78ba49e326f974131caab2c79f4ae877c227cd4e3e5d82a98d21e5 \
+    --hash=sha256:6ca6768270e291495174faa6d8c082aa0181722b29ef8e36558b397069fa4a2d

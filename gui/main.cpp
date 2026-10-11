@@ -1,5 +1,6 @@
 #include "backend.hpp"
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QtQml/qqmlextensionplugin.h>
@@ -10,6 +11,8 @@ Q_IMPORT_QML_PLUGIN(TranscribePlugin)
 int main(int argc, char** argv) {
     QQuickStyle::setStyle("Fusion");
     QGuiApplication app(argc, argv);
+    app.setApplicationVersion(TRANSCRIBE_VERSION);
+    app.setWindowIcon(QIcon(":/icons/icon.png"));
     app.setApplicationName("Transcribe"); app.setOrganizationName("Transcribe"); app.setDesktopFileName("transcribe-gui");
     try {
         Backend backend;

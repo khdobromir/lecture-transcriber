@@ -1,6 +1,8 @@
 """Ensure clean-container tests consume the builder's exact image and fixtures."""
 import json
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from check_linux_candidate import prepare_inputs
@@ -24,11 +26,23 @@ class CandidateInputTests(unittest.TestCase):
             record = dict(filename=image.name, sha256=digest(image), stage="run-exact", real_smoke=True)
             record_path = dist / "candidate.json"; record_path.write_text(json.dumps(record))
             inputs = project / "inputs"; inputs.mkdir()
-            prepare_inputs(record_path, inputs, project)
+            prepared = prepare_inputs(record_path, inputs, project)
             self.assertEqual((inputs / "Transcribe.AppImage").read_bytes(), b"exact-image")
             self.assertEqual((inputs / "audio.wav").read_bytes(), b"audio")
             self.assertEqual((inputs / "model.bin").read_bytes(), b"model")
-            self.assertEqual(len((inputs / "SHA256SUMS").read_text().splitlines()), 3)
+            self.assertFalse((inputs / "SHA256SUMS").exists())
+            self.assertEqual(len(prepared["input_sha256"]), 3)
+            environment = dict(os.environ, REQUIRE_ASR="1", **prepared["input_sha256"])
+            command = ["sh", str(Path(__file__).with_name("smoke_linux_clean.sh")), "--verify-inputs", str(inputs)]
+            subprocess.run(command, env=environment, check=True)
+            for name in ["Transcribe.AppImage", "audio.wav", "model.bin"]:
+                path = inputs / name
+                original = path.read_bytes(); path.write_bytes(b"corrupted")
+                self.assertNotEqual(subprocess.run(command, env=environment, capture_output=True).returncode, 0)
+                path.write_bytes(original)
+            for key in prepared["input_sha256"]:
+                missing = dict(environment); del missing[key]
+                self.assertNotEqual(subprocess.run(command, env=missing, capture_output=True).returncode, 0)
             model.write_bytes(b"tampered")
             with self.assertRaisesRegex(ValueError, "fixture checksum"):
                 prepare_inputs(record_path, inputs, project)

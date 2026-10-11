@@ -25,7 +25,7 @@ their SHA-256 values, original notices and package metadata without executing Ca
 The rav1e bundle retains 273 baseline lockfile crates; the recipe's cc build-tool
 update is recorded separately and its final resolution is not inferred from that baseline.
 Actual SDK settings and the retained nested inputs accompany the build-inputs
-archive. See docs/binary-source-coverage-v0.4.0.md in the Transcribe source archive
+archive. See docs/releases/v0.4.0/binary-source-coverage.md in the Transcribe source archive
 for the source/notice coverage and rebuild limitations.
 
 | Component | Pinned input | License / source |

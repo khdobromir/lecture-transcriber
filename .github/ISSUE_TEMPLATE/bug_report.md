@@ -1,22 +1,27 @@
 ---
-name: Ошибка
-about: Проблема сборки, установки или обработки лекции
+name: Bug report
+about: Build, installation, GUI or transcription problem (English or Russian)
 labels: bug
 ---
 
-**Что произошло и что ожидалось**
+**Expected and actual behavior**
+English and Russian reports are welcome. For vulnerabilities, use the private
+[security reporting route](https://github.com/khdobromir/lecture-transcriber/security).
 
-**Как воспроизвести**
-Команда запуска и минимальные шаги. Замените приватные ссылки и пути условными.
+**Reproduction**
+Minimal steps/command; replace private URLs and paths with placeholders.
+For a download problem, say whether a local file transcribes successfully.
 
-**Среда**
-- Дистрибутив и архитектура:
-- `transcribe --version`:
-- `ffmpeg -version` и `yt-dlp --version`:
-- Модель, VAD и параметры CPU:
+**Environment**
+- Application version/commit:
+- OS/build and architecture:
+- Installation route: AppImage / Windows ZIP / source / other:
+- Model, VAD, threads/chunks/jobs:
+- System media-tool versions, if using a source install:
 
-**Сообщение ошибки**
-Вставьте относящийся к ошибке фрагмент вывода.
+**Relevant error / redacted log excerpt**
+Report which stage failed: model download/import, media download, local processing
+or export. Mention whether cancellation/retry changes the outcome.
 
-Не прикладывайте cookies, токены, приватные записи и полные расшифровки.
-Для проблемы VK укажите, воспроизводится ли она при обработке локального файла.
+Do not attach cookies, tokens, private URLs/recordings, full transcripts, model
+weights or complete unredacted logs.

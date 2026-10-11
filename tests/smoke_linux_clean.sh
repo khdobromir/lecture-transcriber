@@ -2,6 +2,22 @@
 # Run inside an ordinary minimal Ubuntu/Debian container, with only the final
 # AppImage and optional public speech/model mounted. No build tree or Qt SDK.
 set -eu
+verify_file() {
+    expected=$1
+    case "$expected" in *[!a-f0-9]*|'') printf 'Invalid SHA-256\n' >&2; exit 1;; esac
+    test "${#expected}" -eq 64
+    actual=$(sha256sum < "$2")
+    test "${actual%% *}" = "$expected" || { printf 'SHA-256 mismatch: %s\n' "$2" >&2; exit 1; }
+}
+verify_inputs() {
+    verify_file "${APPIMAGE_SHA256:?Missing AppImage hash}" "$1/Transcribe.AppImage"
+    if [ "${REQUIRE_ASR:-0}" = 1 ]; then
+        verify_file "${AUDIO_SHA256:?Missing audio hash}" "$1/audio.wav"
+        verify_file "${MODEL_SHA256:?Missing model hash}" "$1/model.bin"
+    fi
+}
+# Model-free regression entry point exercises the same verifier as the containers.
+if [ "${1:-}" = --verify-inputs ]; then verify_inputs "$2"; exit 0; fi
 for tool in ffmpeg ffprobe yt-dlp whisper-cli python3 qmake qmake6; do
     if command -v "$tool" >/dev/null 2>&1; then
         printf 'Unexpected installed application dependency: %s\n' "$tool" >&2
@@ -13,7 +29,7 @@ if dpkg-query -W 'libqt6core6*' 2>/dev/null; then
     exit 1
 fi
 test -x /inputs/Transcribe.AppImage
-(cd /inputs && sha256sum -c SHA256SUMS)
+verify_inputs /inputs
 if [ "${REQUIRE_ASR:-0}" = 1 ]; then test -s /inputs/audio.wav && test -s /inputs/model.bin; fi
 export TRANSCRIBE_HOME=/tmp/transcribe-data
 export TRANSCRIBE_GUI_SETTINGS_FILE=/tmp/settings.ini
@@ -34,7 +50,6 @@ if [ -f /inputs/audio.wav ]; then
 fi
 if [ -d /evidence ]; then
     cp /tmp/gui.log /evidence/gui.log
-    cp /inputs/SHA256SUMS /evidence/SHA256SUMS
     if [ -f /tmp/cli.log ]; then
         cp /tmp/cli.log /evidence/cli.log
         cp -r /tmp/results /evidence/results

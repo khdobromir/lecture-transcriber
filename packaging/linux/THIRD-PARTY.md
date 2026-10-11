@@ -55,7 +55,7 @@ the exact final build-tool resolution of the upstream binary.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
 Actual SDK settings and the retained nested inputs accompany the build-inputs
-archive. See docs/binary-source-coverage-v0.4.0.md in the Transcribe source archive
+archive. See docs/releases/v0.4.0/binary-source-coverage.md in the Transcribe source archive
 for the source/notice coverage and rebuild limitations.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.
@@ -76,7 +76,8 @@ provide the corresponding source and build materials for the **actual** bundled
 Qt, FFmpeg, yt-dlp and their dependencies as their licenses require, and include
 notices for the copied system libraries. This repository's source archive alone
 does not contain that material. The LGPL libraries can be replaced in an extracted
-AppDir. The current source-only release workflow does not publish AppImages.
+AppDir. Published binary releases include a separate build-inputs deliverable;
+see the release's manifests and coverage report for the actual retained materials.
 
 Model weights are not bundled. They are downloaded or imported by the GUI, checked
 against the pinned model manifest, and stored outside the read-only AppImage.

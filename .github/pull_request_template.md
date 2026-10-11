@@ -1,8 +1,11 @@
-## Изменение
-Какую проблему решает PR и как изменяется поведение?
+## Change
+What concrete problem does this solve, and what is the resulting behavior?
+English and Russian descriptions are welcome.
 
-## Проверка
-Команды и результаты проверок. Для изменений установки укажите сценарии ошибок.
+## Verification
+Actual commands/results, OS/toolchain and tests not run. For process/installation
+changes include failure/cancellation or upgrade scenarios as applicable.
 
-## Совместимость
-Есть ли изменения параметров CLI, результатов или требований?
+## Compatibility
+CLI/defaults, protocol/results, data paths, dependencies or package requirements.
+Do not include private logs/media, cookies, tokens or model weights.

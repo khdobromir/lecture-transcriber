@@ -1,4 +1,4 @@
-#include "support.hpp"
+#include "support_portable.hpp"
 #include "cli.hpp"
 #include <array>
 
@@ -15,15 +15,20 @@ Options parse(std::initializer_list<std::string_view> args, int cpus = 8) {
 }
 struct Files {
     Temp temp;
-    fs::path root = temp.path / "app data", input = temp.path / "Лекция 1.wav";
+    fs::path root = temp.path / "app data", input = temp.path / fs::path(u8"Лекция 1.wav");
+    fs::path engine = root / "whisper.cpp/build/bin/whisper-cli";
     Options options;
     Files() {
-        write(root / "whisper.cpp/build/bin/whisper-cli", "fixture");
-        fs::permissions(root / "whisper.cpp/build/bin/whisper-cli", fs::perms::owner_all);
+#ifdef _WIN32
+        engine += ".exe";
+#endif
+        write(engine, "fixture");
+        fs::permissions(engine, fs::perms::owner_all);
         for (const auto* model : {"medium-q5_0", "small-q5_1", "large-v3-turbo-q5_0", "silero-v6.2.0"})
             write(root / "models" / (std::string("ggml-") + model + ".bin"), "model");
         write(root / "default-model", "medium\r\n"); write(input, "audio");
         options = parse({"Лекция 1.wav"});
+        options.output = temp.path / "transcripts";
     }
     Inputs validate() { return validate_inputs(options, {root, temp.path}); }
 };
@@ -64,7 +69,7 @@ int main() {
     });
     suite.add("values_terminator_and_literal_shell_characters", [] {
         const auto o = parse({"--out", "Результаты с пробелами", "--prompt", "$(touch PWNED); термин", "--no-vad", "--keep-audio", "--", "--version"});
-        CHECK(o.input == "--version" && o.output == "Результаты с пробелами");
+        CHECK(o.input == "--version" && o.output == fs::path(u8"Результаты с пробелами"));
         CHECK(o.prompt == "$(touch PWNED); термин" && !o.vad && o.keep);
     });
     suite.add("help_version_precedence_and_values", [] {
@@ -98,7 +103,7 @@ int main() {
         write(f.temp.path / "custom model.bin", "custom"); f.options.model = "custom model.bin";
         CHECK(f.validate().model == f.temp.path / "custom model.bin");
         f.options.cookies = "cookies.txt"; write(f.temp.path / "cookies.txt", "cookies");
-        CHECK(f.validate().cookies == (f.temp.path / "cookies.txt").string());
+        CHECK(f.validate().cookies == utf8(f.temp.path / "cookies.txt"));
         f.options.input = "https://example.org/video"; CHECK(f.validate().url && f.validate().input.empty());
     });
     for (const auto& name : {"input", "model", "vad", "cookies"}) for (const auto& defect : {"missing", "empty", "directory"}) {
@@ -107,7 +112,11 @@ int main() {
             fs::path path = f.input;
             if (name == std::string_view("model")) path = f.root / "models/ggml-medium-q5_0.bin";
             if (name == std::string_view("vad")) path = f.root / "models/ggml-silero-v6.2.0.bin";
-            if (name == std::string_view("cookies")) { path = f.temp.path / "cookies.txt"; f.options.cookies = path.string(); write(path, "cookies"); }
+            if (name == std::string_view("cookies")) {
+                path = f.temp.path / "cookies.txt";
+                f.options.cookies = utf8(path);
+                write(path, "cookies");
+            }
             fs::remove(path);
             if (defect == std::string_view("empty")) write(path, "");
             if (defect == std::string_view("directory")) fs::create_directory(path);
@@ -117,18 +126,28 @@ int main() {
     }
     suite.add("preflight_engine_directory_is_rejected", [] {
         Files f;
-        const auto engine = f.root / "whisper.cpp/build/bin/whisper-cli";
-        fs::remove(engine); fs::create_directory(engine);
+        fs::remove(f.engine);
+        fs::create_directory(f.engine);
+#ifdef _WIN32
+        rejected([&] { (void)f.validate(); }, "Нет tools/whisper-cli.exe");
+#else
         rejected([&] { (void)f.validate(); }, "Нет whisper-cli");
+#endif
         CHECK(!fs::exists(f.temp.path / "transcripts"));
     });
     suite.add("missing_engine_and_default_selection", [] {
-        Files f; fs::permissions(f.root / "whisper.cpp/build/bin/whisper-cli", fs::perms::owner_read);
+        Files f;
+#ifndef _WIN32
+        fs::permissions(f.engine, fs::perms::owner_read);
         rejected([&] { (void)f.validate(); }, "Нет whisper-cli");
-        fs::permissions(f.root / "whisper.cpp/build/bin/whisper-cli", fs::perms::owner_all);
-        fs::remove(f.root / "default-model"); rejected([&] { (void)f.validate(); }, "Не удалось прочитать");
-        f.options.model = "medium"; fs::remove(f.root / "models/ggml-silero-v6.2.0.bin");
-        f.options.vad = false; CHECK(f.validate().model == f.root / "models/ggml-medium-q5_0.bin");
+        fs::permissions(f.engine, fs::perms::owner_all);
+#endif
+        fs::remove(f.root / "default-model");
+        rejected([&] { (void)f.validate(); }, "Не удалось прочитать");
+        f.options.model = "medium";
+        fs::remove(f.root / "models/ggml-silero-v6.2.0.bin");
+        f.options.vad = false;
+        CHECK(f.validate().model == f.root / "models/ggml-medium-q5_0.bin");
     });
     return suite.run();
 }

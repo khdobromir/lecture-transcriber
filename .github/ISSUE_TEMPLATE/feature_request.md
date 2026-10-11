@@ -1,11 +1,15 @@
 ---
-name: Предложение
-about: Улучшение утилиты или документации
+name: Improvement proposal
+about: Describe a concrete product or documentation need (English or Russian)
 labels: enhancement
 ---
 
-**Какую задачу нужно решить**
+**Problem to solve**
+Who encounters it, and in which workflow? English and Russian are welcome.
 
-**Предлагаемое поведение**
+**Proposed behavior**
+Explain the expected user outcome and relevant platform/interface.
 
-**Пример использования и возможные альтернативы**
+**Example and alternatives**
+Consider existing options and the CPU-first native CLI/GUI scope. Avoid private
+URLs, media, cookies or transcripts in examples.
