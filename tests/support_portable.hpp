@@ -9,6 +9,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -41,7 +42,18 @@ inline std::string utf8(const fs::path& path) {
     return {value.begin(), value.end()};
 }
 inline fs::path suffixed(fs::path path, std::string_view suffix) { path += suffix; return path; }
-inline std::string getenv(const char* name) { const char* value = std::getenv(name); return value ? value : ""; }
+inline std::string getenv(const char* name) {
+#ifdef _MSC_VER
+    char* raw = nullptr;
+    size_t length = 0;
+    const auto error = _dupenv_s(&raw, &length, name);
+    const std::unique_ptr<char, decltype(&std::free)> value(raw, std::free);
+    if (error) throw std::runtime_error("Cannot read test environment");
+    return value ? value.get() : "";
+#else
+    const char* value = std::getenv(name); return value ? value : "";
+#endif
+}
 struct Temp {
     fs::path path;
     Temp() {

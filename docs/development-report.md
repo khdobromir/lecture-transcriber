@@ -20,6 +20,7 @@ Branch: `chore/modernization-roadmap`, based on
 | D1.3 | English Quick Start/GUI guide/CLI reference/troubleshooting; concise Russian first-run and user guide; README/index navigation | All 19 help options documented; source comparison of defaults/data/cache/path/privacy semantics; CLI help/version and 22/22 CLI unit cases; preceding full CTest covers local/preflight/cancel/result/mock-URL scenarios; 233 local Markdown links checked before developer-guide additions |
 | D1.4a | English developer/source/build/packaging/testing/release guides, source map and concise CONTRIBUTING; historical full mixed guides preserved | Documented preset loops already built/tested on all four Linux configurations; source/CI/packager comparison; 362 local Markdown links; no new runtime features or reduced release gates |
 | D1.4b | Existing component/media/commit lifecycle diagrams, English GUI ownership, two ADRs and benchmark methodology | Compared diagrams/states/commit/error/resource claims with owned implementation and tests; 413 local links; historical lecture identifies development 206cdb5 / version 0.2.1 before v0.3.0, so README now names it precisely rather than calling it a v0.3.0 measurement |
+| E1.1 follow-up | MSVC-specific independent test environment reader with RAII; explicit UTF-8 expected output path | Native CI 38153408846 exposed C4996/getenv as error in the newly portable units; corrected without suppressing warnings. Linux rebuild and affected suites passed; fresh MSVC rerun required |
 
 ## Push checkpoint (2026-10-11)
 

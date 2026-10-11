@@ -69,7 +69,7 @@ int main() {
     });
     suite.add("values_terminator_and_literal_shell_characters", [] {
         const auto o = parse({"--out", "Результаты с пробелами", "--prompt", "$(touch PWNED); термин", "--no-vad", "--keep-audio", "--", "--version"});
-        CHECK(o.input == "--version" && o.output == "Результаты с пробелами");
+        CHECK(o.input == "--version" && o.output == fs::path(u8"Результаты с пробелами"));
         CHECK(o.prompt == "$(touch PWNED); термин" && !o.vad && o.keep);
     });
     suite.add("help_version_precedence_and_values", [] {
