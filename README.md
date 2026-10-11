@@ -13,6 +13,9 @@ conversion uses FFmpeg. The application interface and recognition language are R
 · [Changelog](CHANGELOG.md) · [Documentation](docs/README.md)
 · [Contributing](CONTRIBUTING.md)
 
+Current source includes [Unreleased changes](CHANGELOG.md#unreleased).
+Published v0.4.0 packages have not been rebuilt with these changes.
+
 ## Demo
 
 ![Transcribe desktop interface](docs/assets/gui.png)
@@ -95,7 +98,8 @@ transcribe --no-progress --out "results" "https://example.org/your-video"
 ```
 
 The URL is a placeholder; extractor availability depends on the site and yt-dlp.
-Downloads ignore yt-dlp configuration and disable plugin directories. Source
+Downloads ignore yt-dlp configuration. Current source also disables plugin
+directories; this hardening is not in published v0.4.0 packages. Updated source
 installs need `--no-plugin-dirs` support (available in pinned 2026.08.19);
 custom extractor plugins are outside the supported configuration.
 One chunk is the default. Increasing jobs starts more model-owning processes and
