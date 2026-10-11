@@ -93,10 +93,20 @@ GUI → обновлённый CLI → pinned small model прошёл; поль
 | Финальный CI | Все обязательные jobs на точном SHA workflow_dispatch |
 
 Отсутствие результата обозначается «не проверено». Native Windows CI использует
-Windows Server 2022 runner; чистая Windows 11 VM/машина недоступна. Ручная полная
+Windows Server 2022 runner; Windows 11 теперь доступна для проверки пользователем. Ручная полная
 цепочка ZIP без Qt/Visual Studio/Python/Git, native dialogs/clipboard/open exports
 и пользовательские DPI остаётся отдельным блокирующим условием выпуска.
 Проверки Wayland automation не заменяют оценку native file dialogs/portal и
 полный ручной UI smoke. VK/cookies/network являются отдельными сценариями и не
 объявляются пройденными по mock cache tests. Большие Windows processor groups и
 специальные cgroup/affinity конфигурации не проверены.
+
+Решением пользователя от 10 октября 2026 ручная приёмка Ubuntu desktop исключена
+из обязательных условий выпуска. Clean Ubuntu/Debian container checks остаются
+в CI. Windows 11 и native Omarchy/Hyprland приёмка сохраняются обязательными.
+
+Решением пользователя от 11 октября 2026 проверки cookies и записи
+длительностью 10–15 минут исключены из обязательной приёмки релиза.
+Пользователь подтвердил VK URL, повторное использование кэша и успешное
+распознавание пятиминутной записи на Windows 11 24H2. Эти отменённые
+пункты не блокируют выпуск; прохождение самих отменённых проверок не заявляется.

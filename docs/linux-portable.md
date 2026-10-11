@@ -29,13 +29,23 @@ bash scripts/package-linux.sh --container
 сборки; исходники подключаются read-only. Пакеты устанавливаются в контейнер,
 а не в пользовательскую систему. Результаты принадлежат текущему пользователю:
 
-- `dist/Transcribe-linux-x86_64-*.AppImage` — проверенный файл приложения;
+- `dist/Transcribe-<version>-linux-x86_64-*.AppImage` — проверенный файл приложения;
 - соседние `.sha256` и `.json` — контрольная сумма и состав/происхождение;
+- `.build-inputs.tar.gz` с checksum — сохранённые проверенные bytes upstream
+  inputs, включая инструменты с continuous URL; полный source deliverable
+  для всех runtime компонентов готовится отдельно;
 - `.cache/linux-package-container/` — проверенные загрузки, staging и полные логи.
 
 Первый запуск сборки требует сети. Модели по умолчанию не скачиваются.
 Упаковщик сначала выполняет CTest, QML lint, сборку Whisper и проверки готового
 AppImage, затем копирует прошедший кандидат в `dist`. Прежние файлы не заменяются.
+Для release candidate добавьте `--release`: dirty tree и `--skip-tests` запрещены.
+Флаг `--real-smoke` включает builder GUI→CLI→Whisper с закреплённой публичной речью.
+CI передаёт `--result-file /output/candidate.json`; этот файл содержит точное имя,
+SHA-256 и run directory. `python3 tests/check_linux_candidate.py dist/candidate.json`
+проверяет именно этот AppImage в offline Ubuntu/Debian. В real mode те же аудио
+и модель передаются в контейнеры, и ASR обязателен. Повторной сборки и поиска
+кандидата по glob между этими проверками нет. Evidence остаётся в `dist/clean-evidence`.
 
 ### Сборка в уже подготовленном окружении
 

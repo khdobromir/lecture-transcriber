@@ -44,6 +44,8 @@ def extract_verified(archive, destination, expected_source):
     actual.discard("package-manifest.json")
     if claimed != actual:
         raise ValueError("Package manifest does not cover every file")
+    if not (root / "bin/tools/.transcribe-bundle").is_file():
+        raise ValueError("Missing strict portable bundle marker")
     for directory in ["bin", "bin/tools"]:
         for runtime in ["msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"]:
             if not (root / directory / runtime).is_file():

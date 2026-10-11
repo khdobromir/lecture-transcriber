@@ -11,8 +11,9 @@ GUI на Qt Quick 6.8+ запускает отдельный CLI-процесс.
 [Linux AppImage](linux-portable.md). Ниже описана обычная динамическая сборка.
 
 Для CLI нужны CMake 3.20+, компилятор C++23, FFmpeg и установленный whisper.cpp.
-Для GUI дополнительно нужны CMake 3.24+ и Qt 6.8+ с Quick, QuickControls2, Network,
-Concurrent и Test. Существующий `install.sh` устанавливает Linux CLI как прежде.
+При `BUILD_TESTING=ON` нужен Python 3 Interpreter. Для GUI дополнительно нужны
+CMake 3.24+ и Qt 6.8+ с Quick, QuickControls2, Network, Concurrent;
+Qt Test нужен только для тестов. Существующий `install.sh` устанавливает Linux CLI как прежде.
 Для официального Linux Qt SDK нужны также OpenGL development headers/libraries
 (Ubuntu: `libgl-dev libglx-dev libopengl-dev libegl-dev`).
 GUI собирается явно:
@@ -58,6 +59,10 @@ ZIP и его SHA-256 находятся в `dist`. `-WorkDirectory` и `-Destin
 каталоги; `-SkipTests` предназначен для локальной диагностики и отмечается в
 `package-manifest.json`. CI этот флаг не использует. CI сохраняет проверенный ZIP
 как artifact, без публикации Release. Скрипт не обновляет установленную систему.
+Для release candidate добавьте `-Release`: dirty tree и `-SkipTests` запрещены.
+Source SHA, версия и fingerprint снимаются до configure и сверяются перед
+упаковкой и после smoke. ZIP сначала проверяется в staging и затем переносится
+в Destination под именем с версией, source SHA и уникальным run ID.
 
 В ZIP есть `bin/transcribe-gui.exe`, `bin/transcribe.exe`, Qt DLL/QML/plugins,
 `bin/tools/whisper-cli.exe` и CPU DLL, FFmpeg, yt-dlp, лицензии и манифест. Модели
@@ -68,11 +73,24 @@ ZIP и его SHA-256 находятся в `dist`. `-WorkDirectory` и `-Destin
 единиц. Приложения имеют long-path и PerMonitorV2 manifests, без запроса elevation.
 
 CPU-бэкенды whisper.cpp собираются с `GGML_NATIVE=OFF` и runtime dispatch;
-ускорение CUDA/Vulkan не включено. Интеграционный патч проверяет SHA-256 трёх
+ускорение CUDA/Vulkan не включено. Интеграционный патч проверяет SHA-256 всех изменяемых
 исходных файлов закреплённой ревизии перед записью. Он переводит argv через
 `wmain`, читает аудио через wide API, открывает экспорты через UTF-8 filesystem
 paths и исправляет преобразование путей моделей/VAD для символов вне BMP.
 Установленный Linux whisper.cpp скрипт не меняет.
+Loader ищет CPU variants только рядом с `whisper-cli.exe`; `GGML_BACKEND_PATH`
+на Windows игнорируется. Зависимости backend DLL ищутся в каталоге этой DLL и
+System32. CLI запускает bundled tools из доверенного tools-каталога с очищенным
+GGML environment и PATH. Marker `tools/.transcribe-bundle` запрещает fallback
+к установленному Whisper, PATH или чужому cwd при неполной распаковке.
+`--help`/`--version` остаются доступны для диагностики. Native package smoke
+проверяет безопасную постороннюю DLL с положительным marker-контролем.
+MSVC `/DEPENDENTLOADFLAG:0xA00` ограничивает также import-time DLL lookup до
+входа в `wmain`; smoke читает этот флаг прямо из PE всех трёх executables.
+Назначение флага описано в [Microsoft Learn](https://learn.microsoft.com/en-us/cpp/build/reference/dependentloadflag?view=msvc-170).
+Рядом с ZIP сохраняются versioned `.build-inputs.tar.gz` и checksum: закреплённые
+загрузки, исходный Whisper и точный патч. Этот архив ещё не является полным
+комплектом corresponding sources всех включённых компонентов.
 
 Прежде чем распространять ZIP публично, подготовьте соответствующие исходники
 фактически включённых LGPL/GPL компонентов; см. `packaging/windows/THIRD-PARTY.md`.

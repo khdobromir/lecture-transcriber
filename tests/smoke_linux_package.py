@@ -42,6 +42,8 @@ def main():
         root = work / "squashfs-root"; manifest = verify(root, args.source)
         version = subprocess.check_output([str(moved), "--appimage-extract-and-run", "--transcribe-cli", "--version"],
                                           cwd=work, env=env, text=True, timeout=120).strip()
+        if version != "transcribe " + manifest["application_version"]:
+            raise RuntimeError("CLI version differs from package manifest")
         for name, option in [("whisper-cli", "--help"), ("ffmpeg", "-version"), ("ffprobe", "-version"), ("yt-dlp", "--version")]:
             tool_env = dict(env, LD_LIBRARY_PATH=str(root / "usr/lib"))
             subprocess.run([str(root / "usr/bin/tools" / name), option], cwd=work, env=tool_env,

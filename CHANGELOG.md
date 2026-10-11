@@ -1,6 +1,17 @@
 # Изменения
 
-## Unreleased
+## 0.4.0 — кандидат, не опубликован
+
+- Windows portable mode запрещает fallback к PATH/cwd и установленному Whisper;
+  child tools получают доверенный cwd и очищенный GGML environment.
+- Windows Whisper ограничивает загрузку CPU backends каталогом tools, а поиск
+  их DLL dependencies — каталогом загружаемой DLL и System32; runtime dispatch сохранён.
+  Package smoke содержит безопасную native DLL с положительным marker-контролем.
+- Linux portable CI проверяет один выбранный AppImage и SHA-256 во всех этапах;
+  real mode передаёт одинаковые public speech/model в offline Ubuntu/Debian.
+  Отдельный Real Whisper workflow явно устанавливает Python 3.
+- Упаковщики сверяют source SHA/fingerprint до сборки и перед публикацией;
+  release mode запрещает dirty tree и SkipTests. Windows ZIP проверяется в staging.
 
 - Linux AppImage собирается одной командой в Ubuntu 24.04: Qt/QML, CPU Whisper,
   FFmpeg/ffprobe и standalone yt-dlp упакованы внутрь; системная установка не нужна.

@@ -43,6 +43,10 @@ struct Temp {
     ~Temp() { std::error_code error; fs::remove_all(path, error); }
 };
 int execute(const std::vector<std::string>& args) {
+    if (!args.empty() && args[0] == "--environment") {
+        std::cout << environment_utf8("GGML_BACKEND_PATH") << '\n' << path_utf8(fs::current_path()) << '\n';
+        return 0;
+    }
     if (!args.empty() && args[0] == "--echo") {
         for (size_t i = 1; i < args.size(); ++i) std::cout << args[i].size() << ':' << args[i] << '\n';
         std::cerr << "diagnostic\n"; return 0;
@@ -124,6 +128,21 @@ int execute(const std::vector<std::string>& args) {
     }
 #endif
 #ifdef _WIN32
+    {
+        const auto tools = temp.path / utf8_path("Доверенные tools 😀");
+        fs::create_directory(tools);
+        put(tools / ".transcribe-bundle", "1\n");
+        const auto probe = tools / "probe.exe";
+        fs::copy_file(executable_directory() / "test_portable.exe", probe);
+        require(SetEnvironmentVariableW(L"gGmL_bAcKeNd_PaTh", L"C:\\untrusted\\backend.dll") != 0);
+        std::string environment;
+        run({path_utf8(probe), "--environment"}, temp.path / "environment.log",
+            [&](std::string_view bytes) { environment += bytes; });
+        require(environment == "\n" + path_utf8(tools) + "\n");
+        require(!environment_utf8("GGML_BACKEND_PATH").empty()); // Parent stays unchanged.
+        require(SetEnvironmentVariableW(L"GGML_BACKEND_PATH", nullptr) != 0);
+        std::cout << "PASS bundled child cwd and case-insensitive backend environment isolation\n";
+    }
     {
         const auto tools = temp.path / utf8_path("Каталог CLI 😀") / "tools", home = temp.path / "data";
         fs::create_directories(tools); fs::create_directories(home / "models");

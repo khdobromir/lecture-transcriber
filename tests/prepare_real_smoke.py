@@ -49,7 +49,7 @@ if args.engine:
     for runtime in args.engine.parent.glob("*.dll"):
         shutil.copy2(runtime, engine_directory / runtime.name)
 project = Path(__file__).resolve().parents[1]
-fixture = json.loads((project / "tests/fixtures/russian-speech.json").read_text())
+fixture = json.loads((project / "tests/fixtures/russian-speech.json").read_text(encoding="utf-8"))
 source = root / "russian-source.ogg"
 fetch(fixture["source_url"], source, fixture["source_sha256"], args.audio_source)
 audio = root / "Русская речь 😀.wav"
@@ -57,7 +57,7 @@ subprocess.run([args.ffmpeg, "-nostdin", "-loglevel", "error", "-y", "-ss", str(
                 "-i", str(source), "-t", str(fixture["clip_duration_seconds"]), "-ac", "1", "-ar", "16000",
                 "-c:a", "pcm_s16le", "-map_metadata", "-1", "-bitexact", str(audio)], check=True)
 selection, filename, repository, revision, expected = next(line.split() for line in
-    (project / "scripts/models.tsv").read_text().splitlines() if line.startswith("small "))
+    (project / "scripts/models.tsv").read_text(encoding="utf-8").splitlines() if line.startswith("small "))
 model = home / "models" / filename
 fetch(f"https://huggingface.co/{repository}/resolve/{revision}/{filename}", model, expected, args.model_source)
 environment = {"TRANSCRIBE_REAL_HOME": str(home), "TRANSCRIBE_REAL_AUDIO": str(audio), "TRANSCRIBE_REAL_MODEL": selection}
