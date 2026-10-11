@@ -441,14 +441,14 @@ def main():
     # Publish only a completely checked candidate, never overwrite a previous build.
     target = destination / ("Transcribe-" + identity["application_version"] + "-linux-x86_64-" + ("release-" if args.release else "diagnostic-") + identity["source"][:12] + "-" + stage.name + ".AppImage")
     publish_file(image, target, image_hash)
-    target.with_suffix(target.suffix + ".sha256").write_text(digest(target) + "  " + target.name + "\n")
-    target.with_suffix(target.suffix + ".json").write_text(json.dumps(manifest, indent=2) + "\n")
     inputs_target = target.with_suffix(target.suffix + ".build-inputs.tar.gz")
     publish_file(inputs_archive, inputs_target, digest(inputs_archive))
-    inputs_target.with_suffix(inputs_target.suffix + ".sha256").write_text(digest(inputs_target) + "  " + inputs_target.name + "\n")
+    manifest["artifacts"] = dict(image_sha256=digest(target), build_inputs_sha256=digest(inputs_target))
+    target.with_suffix(target.suffix + ".json").write_text(json.dumps(manifest, indent=2) + "\n")
     if args.result_file:
         result = dict(filename=target.name, sha256=digest(target), source=identity["source"],
-                      stage=stage.name, real_smoke=args.real_smoke)
+                      stage=stage.name, real_smoke=args.real_smoke,
+                      build_inputs_filename=inputs_target.name, build_inputs_sha256=digest(inputs_target))
         args.result_file.write_text(json.dumps(result, indent=2) + "\n")
     print("Verified package: " + str(target), flush=True)
 

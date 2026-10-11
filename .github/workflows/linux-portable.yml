@@ -38,7 +38,6 @@ jobs:
           name: Transcribe-linux-x86_64
           path: |
             dist/*.AppImage
-            dist/*.sha256
             dist/*.json
             dist/*.tar.gz
             dist/clean-evidence/**
