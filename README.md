@@ -41,7 +41,7 @@ Linux-установщик собирает движок под CPU пользо
 Для сборки CLI из исходников:
 
 - Linux, Bash, GCC с поддержкой C++23, CMake ≥ 3.20.
-- Python 3 для тестов (`BUILD_TESTING=ON` по умолчанию) и упаковки; это
+- Python 3.11+ для тестов (`BUILD_TESTING=ON` по умолчанию) и упаковки; это
   зависимость разработчика, отдельный Python для запуска ZIP/AppImage не нужен.
 - Git, curl, FFmpeg, yt-dlp; `sha256sum` из coreutils и `flock` из util-linux.
 - Интернет для установки и загрузки видео. Локальные файлы после установки
@@ -405,7 +405,7 @@ cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
 ```
 
-Тесты и подмены написаны на C++23 и Python 3; CMake требует Python Interpreter
+Тесты и подмены написаны на C++23 и Python 3.11+; CMake требует Python Interpreter
 при включённом `BUILD_TESTING`. FFmpeg настоящий; yt-dlp, распознавание
 и сеть в автоматических тестах заменены собранными C++-процессами.
 Тесты установщика запускайте обычным пользователем; они работают в изолированном HOME.

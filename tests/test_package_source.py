@@ -22,6 +22,111 @@ from package_notices import collect_qt_notices
 
 
 class SourceIdentityTests(unittest.TestCase):
+    def test_sdk_build_settings_retain_original_features_and_reject_other_versions(self):
+        from package_sdk_settings import retain_settings
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); sdk = root / "sdk"
+            files = {"mkspecs/qconfig.pri": b"QT_VERSION = 6.8.3\nQT_CONFIG = release shared\n",
+                     "mkspecs/linux-g++/qmake.conf": b"Original compiler settings\n",
+                     "mkspecs/modules/qt_lib_core.pri": b"QT.core.enabled_features = shared\n",
+                     "include/QtCore/qtcore-config.h": b"#define QT_FEATURE_thread 1\n",
+                     "lib/cmake/Qt6Core/Qt6CoreConfig.cmake": b"Original module configuration\n"}
+            for name, body in files.items():
+                path = sdk / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(body)
+            destination = root / "settings.tar"
+            metadata = retain_settings(sdk, "6.8.3", destination)
+            self.assertEqual(metadata["files"], {name: hashlib.sha256(body).hexdigest() for name, body in sorted(files.items())})
+            with tarfile.open(destination) as archive:
+                for name, body in files.items(): self.assertEqual(archive.extractfile("sdk/" + name).read(), body)
+                self.assertEqual(json.loads(archive.extractfile("settings.json").read()), metadata)
+            duplicate = root / "duplicate.tar"; retain_settings(sdk, "6.8.3", duplicate)
+            self.assertEqual(destination.read_bytes(), duplicate.read_bytes())
+            with self.assertRaisesRegex(ValueError, "version mismatch"): retain_settings(sdk, "6.11.2", root / "wrong.tar")
+            self.assertFalse((root / "wrong.tar").exists())
+            if os.name != "nt":
+                outside = root / "outside.pri"; outside.write_bytes(b"Must not retain")
+                (sdk / "mkspecs/escaped.pri").symlink_to(outside)
+                with self.assertRaisesRegex(ValueError, "escapes SDK"): retain_settings(sdk, "6.8.3", root / "escape.tar")
+                self.assertFalse((root / "escape.tar").exists())
+                (sdk / "mkspecs/escaped.pri").unlink()
+            (sdk / "mkspecs/qconfig.pri").unlink()
+            with self.assertRaisesRegex(ValueError, "qconfig.pri"): retain_settings(sdk, "6.8.3", root / "missing.tar")
+
+    def test_cargo_sources_retain_exact_lock_packages_without_running_cargo(self):
+        from package_cargo_sources import retain, verify, registry_inputs, notice_files
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / "crates"; cache.mkdir()
+            def tar(path, files):
+                with tarfile.open(path, "w") as archive:
+                    for name, body in files.items():
+                        member = tarfile.TarInfo(name); member.size = len(body)
+                        archive.addfile(member, io.BytesIO(body))
+            crate = cache / "example-1.2.3.crate"
+            original = {"example-1.2.3/LICENSE": b"Original copyright and license\n",
+                        "example-1.2.3/Cargo.toml": b'[package]\nname="example"\nversion="1.2.3"\nlicense="MIT"\n',
+                        "example-1.2.3/src/lib.rs": b"compile_error!(\"Never execute source collection\");\n"}
+            tar(crate, original)
+            checksum = hashlib.sha256(crate.read_bytes()).hexdigest()
+            lock = ('version = 3\n[[package]]\nname="example"\nversion="1.2.3"\n'
+                    'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + checksum + '"\n').encode()
+            parent = root / "parent.tar"; tar(parent, {"parent/Cargo.lock": lock, "parent/LICENSE": b"Parent license"})
+            first, second = root / "first.tar", root / "second.tar"
+            with patch("package_cargo_sources.urllib.request.urlopen", side_effect=AssertionError("No network needed")), \
+                    patch("subprocess.run", side_effect=AssertionError("No upstream execution")):
+                metadata = retain(parent, cache, first)
+                retain(parent, cache, second)
+                self.assertEqual(first.read_bytes(), second.read_bytes())
+                self.assertEqual(verify(parent, first), metadata)
+            with tarfile.open(first) as archive:
+                files = {m.name: archive.extractfile(m).read() for m in archive.getmembers()}
+            self.assertEqual(files["crates/example-1.2.3.crate"], crate.read_bytes())
+            self.assertEqual(files["licenses/example-1.2.3/LICENSE"], original["example-1.2.3/LICENSE"])
+            self.assertEqual(files["Cargo.lock"], lock)
+            from package_ffmpeg_sources import collect_ffmpeg_notices
+            binary = root / "ffmpeg.zip"; binary.write_bytes(b"Pinned tool")
+            binary_hash = hashlib.sha256(binary.read_bytes()).hexdigest()
+            common = dict(kind="ffmpeg-dependency-source", revision="c" * 40, repository="https://example.invalid/library.git",
+                          url="https://example.invalid/parent.tar", recipe="scripts.d/library.sh", recipe_slot="",
+                          configure_flags=["--enable-library"], for_binary_sha256=[binary_hash])
+            source = common | dict(name="parent", filename=parent.name, sha256=hashlib.sha256(parent.read_bytes()).hexdigest(),
+                                   required_notices=["LICENSE"])
+            bundle = common | dict(name="registry", filename=first.name, sha256=hashlib.sha256(first.read_bytes()).hexdigest(),
+                                   upstream_sha256=source["sha256"], cargo_input=dict(parent="parent"), strip_components=0,
+                                   required_notices=["Cargo.lock", "registry-sources.json"])
+            recipe = root / "recipe.tar"
+            tar(recipe, {"build/scripts.d/library.sh": ('SCRIPT_REPO="' + common["repository"] + '"\nSCRIPT_COMMIT="'
+                                                       + common["revision"] + '"\n').encode()})
+            source_lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=[binary_hash]),
+                                          dict(name="ffmpeg-build-recipes", filename=recipe.name,
+                                               sha256=hashlib.sha256(recipe.read_bytes()).hexdigest(), for_binary_sha256=[binary_hash])],
+                               ffmpeg_dependencies=dict(for_binary_sha256=[binary_hash], downloads=[source, bundle]))
+            evidence = collect_ffmpeg_notices(source_lock, dict(filename=binary.name, sha256=binary_hash), root,
+                                             root / "licenses", "--enable-library")
+            self.assertEqual(evidence["cargo_inputs"], [dict(source="registry", parent="parent", parent_sha256=source["sha256"],
+                                                           lock_sha256=hashlib.sha256(lock).hexdigest(), packages=1)])
+            self.assertEqual((root / "licenses/FFmpeg-dependency-source-notices/registry/licenses/example-1.2.3/LICENSE").read_bytes(),
+                             original["example-1.2.3/LICENSE"])
+            before = first.read_bytes()
+            with self.assertRaises(FileExistsError): retain(parent, cache, first)
+            self.assertEqual(first.read_bytes(), before)
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                retain(parent, cache, root / "wrong-hash.tar", "0" * 64)
+            self.assertFalse((root / "wrong-hash.tar").exists())
+            for changed in [dict(files, **{"crates/example-1.2.3.crate": b"Corrupt source"}),
+                            {name: body for name, body in files.items() if not name.startswith("crates/")},
+                            dict(files, **{"Cargo.lock": b"Different lock"})]:
+                broken = root / "broken.tar"; tar(broken, changed)
+                with self.assertRaises(ValueError): verify(parent, broken)
+            tar(parent, {"parent/Cargo.lock": lock.replace(b'1.2.3', b'1.2.4')})
+            with self.assertRaisesRegex(ValueError, "parent lock"): verify(parent, first)
+            for invalid in [lock.replace(b'registry+https://github.com/rust-lang/crates.io-index', b'git+https://example.invalid'),
+                            lock.replace(b'name="example"', b'name="../example"'),
+                            lock.replace(checksum.encode(), b'not-a-sha256')]:
+                tar(parent, {"parent/Cargo.lock": invalid})
+                with self.assertRaises(ValueError): registry_inputs(parent)
+            tar(crate, {"example-1.2.3/../../LICENSE": b"Unsafe"})
+            with self.assertRaises(ValueError): notice_files(crate, dict(name="example", version="1.2.3"))
+
     def test_ffmpeg_deps_sources_are_bound_without_executing_upstream_python(self):
         from package_ffmpeg_sources import verify_deps_input
         with tempfile.TemporaryDirectory() as temporary:
@@ -536,6 +641,18 @@ class SourceIdentityTests(unittest.TestCase):
         lock = dict(downloads=[dict(name="ffmpeg-source", for_binary_sha256=["a" * 64, "b" * 64])],
                     ffmpeg_dependencies=dict(for_binary_sha256=["a" * 64, "b" * 64], downloads=[record]))
         self.assertEqual(ffmpeg_source_records(lock, [{"sha256": "a" * 64}]), [record])
+        parent = record | dict(sha256="e" * 64, url="https://example.invalid/source.tar", repository="https://example.invalid/library.git",
+                               recipe="scripts.d/library.sh", recipe_slot="")
+        cargo = parent | dict(name="registry-sources", sha256="f" * 64, upstream_sha256=parent["sha256"],
+                              strip_components=0, cargo_input=dict(parent=parent["name"]))
+        cargo_lock = copy.deepcopy(lock); cargo_lock["ffmpeg_dependencies"]["downloads"] = [parent, cargo]
+        self.assertEqual(ffmpeg_source_records(cargo_lock, [{"sha256": "a" * 64}]), [parent, cargo])
+        for changes in [dict(cargo_input=dict(parent="unknown")), dict(upstream_sha256="d" * 64),
+                        dict(strip_components=1), dict(url="https://example.invalid/other.tar"),
+                        dict(canonical_tar=True), dict(git_snapshot=True), dict(deps_input=dict(parent=parent["name"], path="x"))]:
+            previous = cargo.copy(); cargo.update(changes)
+            with self.assertRaises(ValueError): ffmpeg_source_records(cargo_lock, [{"sha256": "a" * 64}])
+            cargo.clear(); cargo.update(previous)
         record["canonical_tar"] = "true"
         with self.assertRaisesRegex(ValueError, "Incomplete FFmpeg"):
             ffmpeg_source_records(lock, [{"sha256": "a" * 64}])

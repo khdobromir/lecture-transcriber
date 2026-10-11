@@ -2701,6 +2701,182 @@
           "parent": "ffmpeg-shaderc-source",
           "path": "third_party/spirv-tools"
         }
+      },
+      {
+        "name": "ffmpeg-libplacebo-fast_float-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "97b54ca9e75f5303507699d27c6b4f4efe4641a1",
+        "url": "https://codeload.github.com/fastfloat/fast_float/tar.gz/97b54ca9e75f5303507699d27c6b4f4efe4641a1",
+        "filename": "ffmpeg-libplacebo-fast_float-97b54ca9e75f.tar.gz",
+        "recipe": "scripts.d/50-libplacebo.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/fastfloat/fast_float.git",
+        "configure_flags": [
+          "--enable-libplacebo"
+        ],
+        "sha256": "2b132274539286e41f37857cac22aa8441d21bd86d55de825a3342b149f66801",
+        "required_notices": [
+          "LICENSE-MIT",
+          "LICENSE-APACHE",
+          "LICENSE-BOOST"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-libplacebo-source",
+          "path": "3rdparty/fast_float",
+          "commit_base64": "dHJlZSA3N2YzZGY3NWY1ZTA5NjIzYzFmZDNjZGVlZWMyNWEzNDhmNjAwMTVmCnBhcmVudCBiNmM2MmQ0ZjA0ZWViNWRjZTA4ZTIwM2VkZDkzZjgyZjQ1ZTFmMjZlCmF1dGhvciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzg5MjEyMjY5ICswMjAwCmNvbW1pdHRlciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzkwODExNDc0ICswMjAwCgp2dWxrYW4vY29tbWFuZDogZG9uJ3QgcmV1c2UgYSBjb21tYW5kIHdoaWxlIGEgdGhyZWFkIHN0aWxsIHdhaXRzIG9uIGl0Cgp2a19wb2xsX2NvbW1hbmRzIGRyb3BzIHRoZSBjb250ZXh0IGxvY2sgd2hpbGUgaXQgd2FpdHMgZm9yIHRoZSBjb21tYW5kIGF0CnRoZSBoZWFkIG9mIHRoZSBwZW5kaW5nIGxpc3QuIElmIGFub3RoZXIgdGhyZWFkIHJldGlyZXMgdGhhdCBjb21tYW5kIGluCnRoZSBtZWFudGltZSwgdmtfY21kX2JlZ2luIGNhbiBoYW5kIGl0IG91dCBhZ2FpbiBhbmQgcmVzZXQgaXRzIGZlbmNlIHdoaWxlCnRoZSBmaXJzdCB0aHJlYWQgaXMgc3RpbGwgaW5zaWRlIHZrV2FpdEZvckZlbmNlcyBvbiB0aGF0IHZlcnkgZmVuY2UuCg==",
+          "trees_base64": {
+            "77f3df75f5e09623c1fd3cdeeec25a348f60015f": "NDAwMDAgLmdpdGh1YgDAf28eVxT/dgehAxgHUa1dwPXFxTEwMDY0NCAuZ2l0aWdub3JlAHx6Dlu0aB0GlnRMHDDRtALVVcHwMTAwNjQ0IC5naXRsYWItY2kueW1sANAZETycpEjp5bW1jmB4XdtsIHxSMTAwNjQ0IC5naXRtb2R1bGVzADJFwhIKpjOXmeHrXKvdKIXsu78cNDAwMDAgM3JkcGFydHkAAMVawPQpyLm/OqG6ubQaWttxsgwxMDA2NDQgTElDRU5TRQAg+5x9ohy1op4Q9hSgNmGpNRgWUjEwMDY0NCBSRUFETUUubWQAwEFLhP4VzwGpMpwv+lb7RVXyvjExMDA2NDQgUkVMRUFTSU5HLm1kAE4TJSA0tMz8cEFlLw3Ug7NqCh42MTAwNzU1IGNvbXBpbGUAgxC8n0IBQoVzhZ+tCsDqdIqZlXw0MDAwMCBkZW1vcwCHI6cpa8lYP/xi2Nccid1YjHXkzzQwMDAwIGRvY3MAfidcP+70xurAKqA2wMbHjaKIylYxMDA2NDQgZ2NvdnIuY2ZnAKwft6AMTIXANb9O5iEWjf84z517MTAwNjQ0IG1lc29uLmJ1aWxkAO7teL3QPJ37Rly4OOH+cGaqONA/MTAwNjQ0IG1lc29uX29wdGlvbnMudHh0AJWpbHP+kMKTWd+M8+brTVWs+cWvMTAwNjQ0IG1rZG9jcy55bWwA3+Ke3GBqO5vm9eFGHmkgCPMrlkM0MDAwMCBzcmMAQsgWOYDpV2k399683cosNnckS380MDAwMCB0b29scwC47clj1aJjuKSYmxPunlWII+2SpDQwMDAwIHdpbjMyAOtKdwI+mgDKADRd/Mg6WhkGhY7t",
+            "00c55ac0f429c8b9bf3aa1bab9b41a5adb71b20c": "MTYwMDAwIFZ1bGthbi1IZWFkZXJzAHTYpsuTDGjvYXsgLD/zxZ2RnghrMTYwMDAwIGZhc3RfZmxvYXQAl7VMqedfUwNQdpnSfGtPTv5GQaExNjAwMDAgZ2xhZABz2xk/hT4u4Hm/PKimSqLq9kWQQzE2MDAwMCBqaW5qYQAVIGiBwAbHlmf+UVT+gMAcZUEGeTE2MDAwMCBtYXJrdXBzYWZlACl/yONW5oNqYgh5SSRdCaKOnxsT"
+          }
+        }
+      },
+      {
+        "name": "ffmpeg-libplacebo-glad-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "73db193f853e2ee079bf3ca8a64aa2eaf6459043",
+        "url": "https://codeload.github.com/Dav1dde/glad/tar.gz/73db193f853e2ee079bf3ca8a64aa2eaf6459043",
+        "filename": "ffmpeg-libplacebo-glad-73db193f853e.tar.gz",
+        "recipe": "scripts.d/50-libplacebo.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/Dav1dde/glad",
+        "configure_flags": [
+          "--enable-libplacebo"
+        ],
+        "sha256": "33dbeae44d8315ece57e14eba4b1b4a02ac5406d1c4f49cd20048c91522a6b9a",
+        "required_notices": [
+          "LICENSE"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-libplacebo-source",
+          "path": "3rdparty/glad",
+          "commit_base64": "dHJlZSA3N2YzZGY3NWY1ZTA5NjIzYzFmZDNjZGVlZWMyNWEzNDhmNjAwMTVmCnBhcmVudCBiNmM2MmQ0ZjA0ZWViNWRjZTA4ZTIwM2VkZDkzZjgyZjQ1ZTFmMjZlCmF1dGhvciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzg5MjEyMjY5ICswMjAwCmNvbW1pdHRlciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzkwODExNDc0ICswMjAwCgp2dWxrYW4vY29tbWFuZDogZG9uJ3QgcmV1c2UgYSBjb21tYW5kIHdoaWxlIGEgdGhyZWFkIHN0aWxsIHdhaXRzIG9uIGl0Cgp2a19wb2xsX2NvbW1hbmRzIGRyb3BzIHRoZSBjb250ZXh0IGxvY2sgd2hpbGUgaXQgd2FpdHMgZm9yIHRoZSBjb21tYW5kIGF0CnRoZSBoZWFkIG9mIHRoZSBwZW5kaW5nIGxpc3QuIElmIGFub3RoZXIgdGhyZWFkIHJldGlyZXMgdGhhdCBjb21tYW5kIGluCnRoZSBtZWFudGltZSwgdmtfY21kX2JlZ2luIGNhbiBoYW5kIGl0IG91dCBhZ2FpbiBhbmQgcmVzZXQgaXRzIGZlbmNlIHdoaWxlCnRoZSBmaXJzdCB0aHJlYWQgaXMgc3RpbGwgaW5zaWRlIHZrV2FpdEZvckZlbmNlcyBvbiB0aGF0IHZlcnkgZmVuY2UuCg==",
+          "trees_base64": {
+            "77f3df75f5e09623c1fd3cdeeec25a348f60015f": "NDAwMDAgLmdpdGh1YgDAf28eVxT/dgehAxgHUa1dwPXFxTEwMDY0NCAuZ2l0aWdub3JlAHx6Dlu0aB0GlnRMHDDRtALVVcHwMTAwNjQ0IC5naXRsYWItY2kueW1sANAZETycpEjp5bW1jmB4XdtsIHxSMTAwNjQ0IC5naXRtb2R1bGVzADJFwhIKpjOXmeHrXKvdKIXsu78cNDAwMDAgM3JkcGFydHkAAMVawPQpyLm/OqG6ubQaWttxsgwxMDA2NDQgTElDRU5TRQAg+5x9ohy1op4Q9hSgNmGpNRgWUjEwMDY0NCBSRUFETUUubWQAwEFLhP4VzwGpMpwv+lb7RVXyvjExMDA2NDQgUkVMRUFTSU5HLm1kAE4TJSA0tMz8cEFlLw3Ug7NqCh42MTAwNzU1IGNvbXBpbGUAgxC8n0IBQoVzhZ+tCsDqdIqZlXw0MDAwMCBkZW1vcwCHI6cpa8lYP/xi2Nccid1YjHXkzzQwMDAwIGRvY3MAfidcP+70xurAKqA2wMbHjaKIylYxMDA2NDQgZ2NvdnIuY2ZnAKwft6AMTIXANb9O5iEWjf84z517MTAwNjQ0IG1lc29uLmJ1aWxkAO7teL3QPJ37Rly4OOH+cGaqONA/MTAwNjQ0IG1lc29uX29wdGlvbnMudHh0AJWpbHP+kMKTWd+M8+brTVWs+cWvMTAwNjQ0IG1rZG9jcy55bWwA3+Ke3GBqO5vm9eFGHmkgCPMrlkM0MDAwMCBzcmMAQsgWOYDpV2k399683cosNnckS380MDAwMCB0b29scwC47clj1aJjuKSYmxPunlWII+2SpDQwMDAwIHdpbjMyAOtKdwI+mgDKADRd/Mg6WhkGhY7t",
+            "00c55ac0f429c8b9bf3aa1bab9b41a5adb71b20c": "MTYwMDAwIFZ1bGthbi1IZWFkZXJzAHTYpsuTDGjvYXsgLD/zxZ2RnghrMTYwMDAwIGZhc3RfZmxvYXQAl7VMqedfUwNQdpnSfGtPTv5GQaExNjAwMDAgZ2xhZABz2xk/hT4u4Hm/PKimSqLq9kWQQzE2MDAwMCBqaW5qYQAVIGiBwAbHlmf+UVT+gMAcZUEGeTE2MDAwMCBtYXJrdXBzYWZlACl/yONW5oNqYgh5SSRdCaKOnxsT"
+          }
+        }
+      },
+      {
+        "name": "ffmpeg-libplacebo-jinja-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "15206881c006c79667fe5154fe80c01c65410679",
+        "url": "https://codeload.github.com/pallets/jinja/tar.gz/15206881c006c79667fe5154fe80c01c65410679",
+        "filename": "ffmpeg-libplacebo-jinja-15206881c006.tar.gz",
+        "recipe": "scripts.d/50-libplacebo.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/pallets/jinja",
+        "configure_flags": [
+          "--enable-libplacebo"
+        ],
+        "sha256": "b88a20dcc2e34072fcf4159325bc6c34cd4b29a81a8b83d15d2f28ba561da296",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-libplacebo-source",
+          "path": "3rdparty/jinja",
+          "commit_base64": "dHJlZSA3N2YzZGY3NWY1ZTA5NjIzYzFmZDNjZGVlZWMyNWEzNDhmNjAwMTVmCnBhcmVudCBiNmM2MmQ0ZjA0ZWViNWRjZTA4ZTIwM2VkZDkzZjgyZjQ1ZTFmMjZlCmF1dGhvciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzg5MjEyMjY5ICswMjAwCmNvbW1pdHRlciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzkwODExNDc0ICswMjAwCgp2dWxrYW4vY29tbWFuZDogZG9uJ3QgcmV1c2UgYSBjb21tYW5kIHdoaWxlIGEgdGhyZWFkIHN0aWxsIHdhaXRzIG9uIGl0Cgp2a19wb2xsX2NvbW1hbmRzIGRyb3BzIHRoZSBjb250ZXh0IGxvY2sgd2hpbGUgaXQgd2FpdHMgZm9yIHRoZSBjb21tYW5kIGF0CnRoZSBoZWFkIG9mIHRoZSBwZW5kaW5nIGxpc3QuIElmIGFub3RoZXIgdGhyZWFkIHJldGlyZXMgdGhhdCBjb21tYW5kIGluCnRoZSBtZWFudGltZSwgdmtfY21kX2JlZ2luIGNhbiBoYW5kIGl0IG91dCBhZ2FpbiBhbmQgcmVzZXQgaXRzIGZlbmNlIHdoaWxlCnRoZSBmaXJzdCB0aHJlYWQgaXMgc3RpbGwgaW5zaWRlIHZrV2FpdEZvckZlbmNlcyBvbiB0aGF0IHZlcnkgZmVuY2UuCg==",
+          "trees_base64": {
+            "77f3df75f5e09623c1fd3cdeeec25a348f60015f": "NDAwMDAgLmdpdGh1YgDAf28eVxT/dgehAxgHUa1dwPXFxTEwMDY0NCAuZ2l0aWdub3JlAHx6Dlu0aB0GlnRMHDDRtALVVcHwMTAwNjQ0IC5naXRsYWItY2kueW1sANAZETycpEjp5bW1jmB4XdtsIHxSMTAwNjQ0IC5naXRtb2R1bGVzADJFwhIKpjOXmeHrXKvdKIXsu78cNDAwMDAgM3JkcGFydHkAAMVawPQpyLm/OqG6ubQaWttxsgwxMDA2NDQgTElDRU5TRQAg+5x9ohy1op4Q9hSgNmGpNRgWUjEwMDY0NCBSRUFETUUubWQAwEFLhP4VzwGpMpwv+lb7RVXyvjExMDA2NDQgUkVMRUFTSU5HLm1kAE4TJSA0tMz8cEFlLw3Ug7NqCh42MTAwNzU1IGNvbXBpbGUAgxC8n0IBQoVzhZ+tCsDqdIqZlXw0MDAwMCBkZW1vcwCHI6cpa8lYP/xi2Nccid1YjHXkzzQwMDAwIGRvY3MAfidcP+70xurAKqA2wMbHjaKIylYxMDA2NDQgZ2NvdnIuY2ZnAKwft6AMTIXANb9O5iEWjf84z517MTAwNjQ0IG1lc29uLmJ1aWxkAO7teL3QPJ37Rly4OOH+cGaqONA/MTAwNjQ0IG1lc29uX29wdGlvbnMudHh0AJWpbHP+kMKTWd+M8+brTVWs+cWvMTAwNjQ0IG1rZG9jcy55bWwA3+Ke3GBqO5vm9eFGHmkgCPMrlkM0MDAwMCBzcmMAQsgWOYDpV2k399683cosNnckS380MDAwMCB0b29scwC47clj1aJjuKSYmxPunlWII+2SpDQwMDAwIHdpbjMyAOtKdwI+mgDKADRd/Mg6WhkGhY7t",
+            "00c55ac0f429c8b9bf3aa1bab9b41a5adb71b20c": "MTYwMDAwIFZ1bGthbi1IZWFkZXJzAHTYpsuTDGjvYXsgLD/zxZ2RnghrMTYwMDAwIGZhc3RfZmxvYXQAl7VMqedfUwNQdpnSfGtPTv5GQaExNjAwMDAgZ2xhZABz2xk/hT4u4Hm/PKimSqLq9kWQQzE2MDAwMCBqaW5qYQAVIGiBwAbHlmf+UVT+gMAcZUEGeTE2MDAwMCBtYXJrdXBzYWZlACl/yONW5oNqYgh5SSRdCaKOnxsT"
+          }
+        }
+      },
+      {
+        "name": "ffmpeg-libplacebo-markupsafe-source",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "297fc8e356e6836a62087949245d09a28e9f1b13",
+        "url": "https://codeload.github.com/pallets/markupsafe/tar.gz/297fc8e356e6836a62087949245d09a28e9f1b13",
+        "filename": "ffmpeg-libplacebo-markupsafe-297fc8e356e6.tar.gz",
+        "recipe": "scripts.d/50-libplacebo.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/pallets/markupsafe",
+        "configure_flags": [
+          "--enable-libplacebo"
+        ],
+        "sha256": "da7c010c9c81a66ac73036558c1fcb6212b50482f43211cd1254035b94f82414",
+        "required_notices": [
+          "LICENSE.txt"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "git_submodule": {
+          "parent": "ffmpeg-libplacebo-source",
+          "path": "3rdparty/markupsafe",
+          "commit_base64": "dHJlZSA3N2YzZGY3NWY1ZTA5NjIzYzFmZDNjZGVlZWMyNWEzNDhmNjAwMTVmCnBhcmVudCBiNmM2MmQ0ZjA0ZWViNWRjZTA4ZTIwM2VkZDkzZjgyZjQ1ZTFmMjZlCmF1dGhvciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzg5MjEyMjY5ICswMjAwCmNvbW1pdHRlciBLYWNwZXIgTWljaGFqxYJvdyA8a2FzcGVyOTNAZ21haWwuY29tPiAxNzkwODExNDc0ICswMjAwCgp2dWxrYW4vY29tbWFuZDogZG9uJ3QgcmV1c2UgYSBjb21tYW5kIHdoaWxlIGEgdGhyZWFkIHN0aWxsIHdhaXRzIG9uIGl0Cgp2a19wb2xsX2NvbW1hbmRzIGRyb3BzIHRoZSBjb250ZXh0IGxvY2sgd2hpbGUgaXQgd2FpdHMgZm9yIHRoZSBjb21tYW5kIGF0CnRoZSBoZWFkIG9mIHRoZSBwZW5kaW5nIGxpc3QuIElmIGFub3RoZXIgdGhyZWFkIHJldGlyZXMgdGhhdCBjb21tYW5kIGluCnRoZSBtZWFudGltZSwgdmtfY21kX2JlZ2luIGNhbiBoYW5kIGl0IG91dCBhZ2FpbiBhbmQgcmVzZXQgaXRzIGZlbmNlIHdoaWxlCnRoZSBmaXJzdCB0aHJlYWQgaXMgc3RpbGwgaW5zaWRlIHZrV2FpdEZvckZlbmNlcyBvbiB0aGF0IHZlcnkgZmVuY2UuCg==",
+          "trees_base64": {
+            "77f3df75f5e09623c1fd3cdeeec25a348f60015f": "NDAwMDAgLmdpdGh1YgDAf28eVxT/dgehAxgHUa1dwPXFxTEwMDY0NCAuZ2l0aWdub3JlAHx6Dlu0aB0GlnRMHDDRtALVVcHwMTAwNjQ0IC5naXRsYWItY2kueW1sANAZETycpEjp5bW1jmB4XdtsIHxSMTAwNjQ0IC5naXRtb2R1bGVzADJFwhIKpjOXmeHrXKvdKIXsu78cNDAwMDAgM3JkcGFydHkAAMVawPQpyLm/OqG6ubQaWttxsgwxMDA2NDQgTElDRU5TRQAg+5x9ohy1op4Q9hSgNmGpNRgWUjEwMDY0NCBSRUFETUUubWQAwEFLhP4VzwGpMpwv+lb7RVXyvjExMDA2NDQgUkVMRUFTSU5HLm1kAE4TJSA0tMz8cEFlLw3Ug7NqCh42MTAwNzU1IGNvbXBpbGUAgxC8n0IBQoVzhZ+tCsDqdIqZlXw0MDAwMCBkZW1vcwCHI6cpa8lYP/xi2Nccid1YjHXkzzQwMDAwIGRvY3MAfidcP+70xurAKqA2wMbHjaKIylYxMDA2NDQgZ2NvdnIuY2ZnAKwft6AMTIXANb9O5iEWjf84z517MTAwNjQ0IG1lc29uLmJ1aWxkAO7teL3QPJ37Rly4OOH+cGaqONA/MTAwNjQ0IG1lc29uX29wdGlvbnMudHh0AJWpbHP+kMKTWd+M8+brTVWs+cWvMTAwNjQ0IG1rZG9jcy55bWwA3+Ke3GBqO5vm9eFGHmkgCPMrlkM0MDAwMCBzcmMAQsgWOYDpV2k399683cosNnckS380MDAwMCB0b29scwC47clj1aJjuKSYmxPunlWII+2SpDQwMDAwIHdpbjMyAOtKdwI+mgDKADRd/Mg6WhkGhY7t",
+            "00c55ac0f429c8b9bf3aa1bab9b41a5adb71b20c": "MTYwMDAwIFZ1bGthbi1IZWFkZXJzAHTYpsuTDGjvYXsgLD/zxZ2RnghrMTYwMDAwIGZhc3RfZmxvYXQAl7VMqedfUwNQdpnSfGtPTv5GQaExNjAwMDAgZ2xhZABz2xk/hT4u4Hm/PKimSqLq9kWQQzE2MDAwMCBqaW5qYQAVIGiBwAbHlmf+UVT+gMAcZUEGeTE2MDAwMCBtYXJrdXBzYWZlACl/yONW5oNqYgh5SSRdCaKOnxsT"
+          }
+        }
+      },
+      {
+        "name": "ffmpeg-librsvg-registry-sources",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "7612431eb02dc009319094f8513d63c1faaecfb4",
+        "url": "https://codeload.github.com/GNOME/librsvg/tar.gz/7612431eb02dc009319094f8513d63c1faaecfb4",
+        "filename": "ffmpeg-librsvg-registry-7612431eb02d.tar",
+        "recipe": "scripts.d/50-librsvg/99-librsvg.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/GNOME/librsvg.git",
+        "configure_flags": [
+          "--enable-librsvg"
+        ],
+        "sha256": "b02ad38a7ddd8fd00c778152cf495d72e08d4601198a19bc84ada8f362049281",
+        "required_notices": [
+          "Cargo.lock",
+          "registry-sources.json"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "upstream_sha256": "3787f63f63d8725da97065a8809910d4c05189c8b22fd838deffa5f3579a65be",
+        "strip_components": 0,
+        "cargo_input": {
+          "parent": "ffmpeg-librsvg-source"
+        }
+      },
+      {
+        "name": "ffmpeg-rav1e-baseline-registry-sources",
+        "kind": "ffmpeg-dependency-source",
+        "revision": "31435de9d76fddd38f6dcc31d4014574cebb2092",
+        "url": "https://codeload.github.com/xiph/rav1e/tar.gz/31435de9d76fddd38f6dcc31d4014574cebb2092",
+        "filename": "ffmpeg-rav1e-registry-31435de9d76f.tar",
+        "recipe": "scripts.d/50-rav1e.sh",
+        "recipe_slot": "",
+        "repository": "https://github.com/xiph/rav1e.git",
+        "configure_flags": [
+          "--enable-librav1e"
+        ],
+        "sha256": "01769a1a5273decbf47d17f8a7ccb882da77a816e8708658384841abe82e4e6c",
+        "required_notices": [
+          "Cargo.lock",
+          "registry-sources.json"
+        ],
+        "for_binary_sha256": [
+          "3c2c4d6066432b2eab54be830d3ce1f5b68a3f34ecaa6d9f2d0230a49e778560",
+          "bf545d8fee9bb6957c1f3dea0f384bf64edead407d763326dbbd2de1b04768a4"
+        ],
+        "upstream_sha256": "ac56fef82e5f41b53d2c6088f4b0693380c389a55665a698ba768908ee17f073",
+        "strip_components": 0,
+        "cargo_input": {
+          "parent": "ffmpeg-rav1e-source"
+        }
       }
     ]
   }

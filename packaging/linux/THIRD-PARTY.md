@@ -30,7 +30,7 @@ source mapping stops packaging. This remains a partial corresponding-source
 deliverable; toolchain/runtime details and other bundled components still need
 their complete build materials.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a
-partial set of 87 dependency sources. `ffmpeg-source-provenance.json` binds them
+partial set of 93 dependency sources. `ffmpeg-source-provenance.json` binds them
 to the FFmpeg input archive hash, exact build recipes and the bundled tool's
 configure flags. The verified sources are in the adjacent build-inputs archive.
 Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
@@ -41,6 +41,17 @@ and JPEG XL commits through verified Git commit/tree objects and `.gitmodules`.
 Their original license texts are included in the same notices directory.
 The shaderc glslang, SPIRV-Headers and SPIRV-Tools inputs are bound to the
 parent's pinned `DEPS` declarations, parsed without executing upstream Python.
+The libplacebo fast_float, GLAD, Jinja and MarkupSafe source archives are tied
+to its parent Git tree in the same way as the retained submodules above.
+GLAD's generator, templates and registry inputs are retained for the generated
+OpenGL header. Demo-only Nuklear is excluded; the build recipe explicitly
+selects the separately retained Vulkan registry instead of the nested checkout.
+The librsvg registry source bundle retains all 357 crates from its original
+Cargo.lock, checked against their registry SHA-256 values, together with original
+notices and package metadata. Source collection does not run Cargo or crate code.
+The rav1e bundle likewise retains its 273 baseline lockfile crates. Its upstream
+recipe updates the cc build tool, so this baseline is not claimed to establish
+the exact final build-tool resolution of the upstream binary.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
 Remaining libraries, nested inputs and SDK build settings/tool versions still

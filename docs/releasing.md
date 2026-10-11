@@ -57,12 +57,14 @@ real mode обязательно выполняет локальный ASR на 
 | Windows 11 без SDK | Unicode unpack, model download/import, local ASR, cancel/close/retry/history, TXT/SRT/VTT |
 | Omarchy/Hyprland | Native Wayland, масштаб 160%, Tab/Shift+Tab, минимальное окно, portal/clipboard |
 | Linux и Windows | Small, medium+VAD по умолчанию, turbo; один/несколько chunks, порядок/sample bounds |
-| VK/authentication | Public URL, отказ сети, cookies file/browser, cache reuse/refresh |
-| Длинная запись 10–15 минут | RAM, responsiveness, отмена, границы chunks и ручная оценка срезов |
+| VK/network/cache | Public URL, отказ сети, cache reuse/refresh |
 
 Решением пользователя от 10 октября 2026 ручная Ubuntu desktop приёмка больше
 не обязательна для выпуска. Clean Ubuntu/Debian container checks сохраняются.
 Windows 11 проверяется по [ручной инструкции](windows-11-manual-validation.md).
+11 октября пользователь также отменил обязательность проверки cookies и записи
+длительностью 10–15 минут. Пользователь подтвердил VK, повторное использование
+кэша и успешное распознавание пятиминутной записи на Windows 11 24H2.
 
 Каждый результат содержит OS/build, source/package/input/model SHA и evidence.
 Приватные URL, cookies, записи и расшифровки остаются локальными. Публичные
@@ -118,8 +120,8 @@ toolchain/runtime details и build configuration Qt/SDK libraries собираю
 и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
 до фактического завершения этой работы.
 
-`ffmpeg_dependencies` сохраняет частичный набор 83 pinned dependency source archives:
-81 для Linux и 79 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
+`ffmpeg_dependencies` сохраняет частичный набор 95 pinned dependency source archives:
+93 для Linux и 91 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
 archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
 каждой библиотеки, включая нумерованные recipe slots. Если recipe использует тег,
 `recipe_revision` сохраняет его имя, а `revision` и URL архива закрепляют полный

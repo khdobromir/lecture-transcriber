@@ -39,13 +39,24 @@ def ffmpeg_source_records(lock, binaries):
             if record.get("git_snapshot") is not True:
                 raise ValueError("Git source selection requires a Git snapshot")
             selected_git_paths(record)
-        if "canonical_tar_paths" in record or "upstream_sha256" in record:
+        if "canonical_tar_paths" in record or ("upstream_sha256" in record and "cargo_input" not in record):
             if (record.get("canonical_tar") is not True
                     or not re.fullmatch(r"[a-f0-9]{64}", record.get("upstream_sha256", ""))):
                 raise ValueError("Canonical source selection requires a pinned upstream archive")
             selected_canonical_paths(record.get("canonical_tar_paths"))
-        if sum(key in record for key in ["generated_input", "git_submodule", "deps_input"]) > 1:
+        if sum(key in record for key in ["generated_input", "git_submodule", "deps_input", "cargo_input"]) > 1:
             raise ValueError("Ambiguous nested FFmpeg source mapping")
+        if "cargo_input" in record:
+            reference = record["cargo_input"]
+            parents = [p for p in group["downloads"] if isinstance(reference, dict)
+                       and p["name"] == reference.get("parent") and "cargo_input" not in p]
+            if (not isinstance(reference, dict) or set(reference) != {"parent"} or len(parents) != 1
+                    or any(key in record for key in ["git_snapshot", "svn_snapshot", "canonical_tar", "canonical_tar_paths"])
+                    or record.get("strip_components") != 0
+                    or record.get("upstream_sha256") != parents[0]["sha256"]
+                    or any(record.get(key) != parents[0].get(key) for key in
+                           ["url", "revision", "repository", "recipe", "recipe_slot", "for_binary_sha256", "configure_flags"])):
+                raise ValueError("Incomplete Cargo source mapping")
         if "deps_input" in record:
             reference = record["deps_input"]
             parents = [parent for parent in group["downloads"] if isinstance(reference, dict)

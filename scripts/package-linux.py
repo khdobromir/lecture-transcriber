@@ -25,6 +25,7 @@ from package_canonical_sources import canonicalize_verified_tar
 from package_git_sources import fetch_git_source
 from package_svn_sources import fetch_svn_source
 from package_standalone_notices import collect_notices as collect_standalone_notices
+from package_sdk_settings import retain_settings
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -65,6 +66,10 @@ def fetch(record, cache):
         return fetch_svn_source(record, target)
     if record.get("git_snapshot") is True:
         return fetch_git_source(record, target)
+    if "cargo_input" in record:
+        subprocess.run(["python3", str(PROJECT / "scripts/package_cargo_sources.py"), record["url"],
+                        record["upstream_sha256"], str(target), record["sha256"]], check=True)
+        return target
     # Unique partials also allow two builds to use the same cache safely.
     with tempfile.NamedTemporaryFile(dir=cache, prefix="download-", delete=False) as stream:
         partial = Path(stream.name)
@@ -224,6 +229,9 @@ def main():
     qt_libs = subprocess.check_output([str(qmake), "-query", "QT_INSTALL_LIBS"], text=True).strip()
     qt_plugins = subprocess.check_output([str(qmake), "-query", "QT_INSTALL_PLUGINS"], text=True).strip()
     qt_qml = subprocess.check_output([str(qmake), "-query", "QT_INSTALL_QML"], text=True).strip()
+    qt_prefix = subprocess.check_output([str(qmake), "-query", "QT_INSTALL_PREFIX"], text=True).strip()
+    sdk_settings = stage / "qt-sdk-build-settings.tar"
+    retain_settings(Path(qt_prefix), qt_version, sdk_settings)
     env.update(LD_LIBRARY_PATH=qt_libs, QT_PLUGIN_PATH=qt_plugins, QML_IMPORT_PATH=qt_qml)
 
     def run(name, command, *, cwd=PROJECT, environment=env):
@@ -415,7 +423,9 @@ def main():
                    [PROJECT / "packaging/linux/dependencies.json", PROJECT / "packaging/source-inputs.json",
                     appdir / "package-manifest.json", library_provenance, source_provenance,
                     PROJECT / "scripts/package_git_sources.py", PROJECT / "scripts/package_canonical_sources.py",
-                    PROJECT / "scripts/package_source.py", PROJECT / "scripts/package_svn_sources.py"])
+                    PROJECT / "scripts/package_source.py", PROJECT / "scripts/package_svn_sources.py",
+                    PROJECT / "scripts/package_cargo_sources.py", PROJECT / "docs/dependency-source-materials.md",
+                    sdk_settings, PROJECT / "scripts/package_sdk_settings.py"])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)
     # Publish only a completely checked candidate, never overwrite a previous build.

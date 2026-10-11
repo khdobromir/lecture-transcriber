@@ -4,7 +4,7 @@ dynamically linked libraries with their own licenses. Notices are in `licenses/`
 third-party license texts and distribution metadata, read without executing its
 embedded Python code. `notices.json` records the binary hash and archive inventory.
 `licenses/FFmpeg-dependency-source-notices` retains original notices from a partial
-set of 85 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
+set of 91 FFmpeg dependency sources; `ffmpeg-source-provenance.json` binds them to
 the input archive hash, exact upstream build recipes and configure flags from the
 bundled tool. These sources are retained in the adjacent build-inputs archive.
 Opus generated C/H inputs are bound to its pinned `autogen.sh` download hash;
@@ -17,6 +17,13 @@ The shaderc glslang, SPIRV-Headers and SPIRV-Tools inputs are bound to the
 parent's pinned `DEPS` declarations, parsed without executing upstream Python.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
+The libplacebo fast_float, GLAD, Jinja and MarkupSafe source archives are tied
+to its parent Git tree; GLAD's generation scripts, templates and registry inputs
+are retained. Demo-only Nuklear and the unused nested Vulkan registry are excluded.
+The librsvg registry source bundle retains all 357 original Cargo.lock crates,
+their SHA-256 values, original notices and package metadata without executing Cargo.
+The rav1e bundle retains 273 baseline lockfile crates; the recipe's cc build-tool
+update is recorded separately and its final resolution is not inferred from that baseline.
 Remaining libraries, nested inputs and SDK build settings/tool versions still
 require mapping.
 

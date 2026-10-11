@@ -1,6 +1,6 @@
 # v0.4.0: приёмка кандидата
 
-Начало: 9 октября 2026 года; обновлён 10 октября. Статус: **в работе; выпуск не допущен**.
+Начало: 9 октября 2026 года; обновлён 11 октября. Статус: **в работе; выпуск не допущен**.
 Исходная точка: dev `6dbd8c59f69e59021637f7d3004c092b88a2989c`.
 Ни результаты этого baseline, ни dirty локальная сборка не подтверждают final SHA.
 Exact candidate source SHA/fingerprint и package SHA фиксируются упаковщиками;
@@ -83,7 +83,7 @@ archive_inputs: 5 entries, 20 025 391 bytes. Binary/source mismatch regression
 | F1/F2 native regressions | Открыт: Windows CI DLL probes, missing-tools, Unicode, process/cancel |
 | Real Whisper fresh container | Успех на 1edc4f3 (ссылка ниже); повторить на окончательном SHA |
 | Один AppImage SHA во всех средах | Открыт: builder + clean Ubuntu/Debian + native smoke + published download |
-| Windows 11 без SDK | Открыт: среда доступна, пользователь выполняет ручную проверку ZIP |
+| Windows 11 без SDK | Пользователь подтвердил приёмку ZIP кандидата 6030674 на Windows 11 24H2 и совпадение SHA-256; при изменении финального пакета повторить затронутые сценарии |
 | Ubuntu 24.04 desktop X11/Wayland | Обязательность отменена пользователем; отсутствие ручной проверки не блокирует релиз |
 | Omarchy/Hyprland | Открыт: native Wayland, 160%, keyboard, minimum window, dialogs/clipboard/portal/open exports |
 | FUSE/no-FUSE | Открыт для final artifact: обычный mount и extraction launch |
@@ -91,8 +91,8 @@ archive_inputs: 5 entries, 20 025 391 bytes. Binary/source mismatch regression
 | GUI lifecycle | Открыт для пакетов: download/import, live preview, cancel/close/retry/restart history, TXT/SRT/VTT |
 | Cancellation/completion invariant | Локальные suites прошли; final Windows/Linux artifacts ещё не подтверждены |
 | Upgrade v0.3.0 | Локальные installer/history suites прошли; final packages/settings/models/results/legacy history ещё не подтверждены |
-| VK/authentication/network/cache | Открыт: public URL, network failure, cookies file/browser, cache reuse/refresh; private evidence хранить локально |
-| Длинная локальная лекция | Открыт: 10–15 мин, RAM/responsiveness/cancel/chunks и ручная оценка срезов |
+| VK/authentication/network/cache | Пользователь подтвердил VK URL и повторное использование кэша; обязательная cookies-приёмка отменена 11 октября; network failure/refresh остаются отдельными сценариями |
+| Длинная локальная лекция | Пользователь подтвердил распознавание пятиминутной записи; обязательная приёмка 10–15 минут отменена 11 октября |
 | Corresponding sources/notices | Открыт: actual payload inventory, sources/patches/build materials, copied-library notices, сохранённые immutable build inputs |
 | Версия/manifests/docs | Версия локально 0.4.0; final packages ожидаются |
 | Release hygiene | Открыт: clean tree, без SkipTests, private logs/media/model weights |
@@ -789,6 +789,125 @@ Windows 11, Omarchy или автоматические clean-container пров
 Windows 11, Omarchy/Hyprland и остальные неотменённые требования сохраняются.
 Исторические записи выше описывают прежнее состояние и не переписываются.
 
+## Windows 11 24H2: результат ручной приёмки
+
+11 октября пользователь сообщил об успешной проверке предоставленного ZIP
+кандидата `6030674` из artifact `11680527150` (CI `38080844083`). Отдельным
+сообщением пользователь подтвердил совпадение SHA-256 ZIP с поставленной
+контрольной суммой. Sidecar и validation JSON получены из того же artifact:
+SHA-256 ZIP — `c8117937514a31d0d7fb3280cc6eee2602eaed7fd5ff93d92975ed34ca3512ec`.
+Manifest source — PR merge `2137ae851d0aeb0ca77ee50171f28953a9a32285`;
+`6030674` обозначает head ветки этого CI, а не source внутри ZIP. Полный номер
+сборки Windows в переписке не приведён и не заменяется предполагаемым значением.
+
+По отчёту пользователя все GUI-сценарии работают: история сохраняется после
+перезапуска, после отмены и повторного запуска создаётся новая запись,
+распознавание выполняется для локальных файлов и ссылок. Новая запись при retry
+соответствует отсутствию возобновления ASR с места остановки. Наблюдаемая
+загрузка CPU с моделью small — около 50% на машине пользователя; это не
+универсальный benchmark. Это ручной отчёт пользователя, а не запуск ассистента.
+
+Дополнительно пользователь уточнил, что проверенные ссылки были из VK,
+повторное использование кэша работает, пятиминутная запись успешно распознана.
+Затем явно разрешил выпуск без проверки cookies и записи на 10–15 минут.
+Эти два сценария исключены из обязательных условий релиза; их прохождение
+не заявляется. Остальные неотменённые требования сохраняются.
+
+Ручная Windows-приёмка этого ZIP зачтена. Она не переносится автоматически на
+новый ZIP. На текущем source `b83f2d3c6e083b7fd27e0569c43c82305d4970ff`
+[CI 38082099140](https://github.com/khdobromir/lecture-transcriber/actions/runs/38082099140)
+прошёл 10/10 jobs, а
+[Linux portable 38082099158](https://github.com/khdobromir/lecture-transcriber/actions/runs/38082099158)
+завершился успешно. Оба запуска автоматические; final real-smoke dispatch
+по-прежнему требуется. Ubuntu desktop остаётся исключённой из обязательной
+ручной матрицы по решению пользователя.
+
+## Libplacebo: вложенные исходники и генератор OpenGL
+
+Закреплены четыре source archives из Git tree libplacebo
+`1937beef3a2f508266c68efea1491e3fc4600e04`: fast_float
+`97b54ca9e75f5303507699d27c6b4f4efe4641a1`, GLAD
+`73db193f853e2ee079bf3ca8a64aa2eaf6459043`, Jinja
+`15206881c006c79667fe5154fe80c01c65410679` и MarkupSafe
+`297fc8e356e6836a62087949245d09a28e9f1b13`. Существующий submodule verifier
+проверяет parent commit/tree, mode 160000, `.gitmodules`, repository и revision.
+Все четыре проверки выполнены на настоящих скачанных архивах.
+
+Pinned Meson добавляет fast_float headers и запускает GLAD с `--reproducible`
+для генерации OpenGL header. Сохранены исходники генератора, registry inputs,
+templates, Jinja и MarkupSafe и их оригинальные license files. Эти upstream
+Python scripts не запускались при проверке. Nuklear относится к отключённым
+demos; вложенный Vulkan-Headers не используется, поскольку recipe передаёт
+`-Dvulkan-registry` из отдельно сохранённого Vulkan input.
+
+Source lock теперь содержит 93 FFmpeg inputs: 91 для Linux, 89 для Windows.
+Проверен retained archive с parent и четырьмя child sources: SHA-256 каждого
+исходного файла сверён после архивирования. Полнота F7 ещё не заявлена.
+
+## Дополнительные исходники и native-проверка
+
+### Registry sources уже включённых FFmpeg libraries
+
+`package_cargo_sources.py` сохраняет исходные `.crate` files из статически
+прочитанного parent `Cargo.lock`, каждый с SHA-256 из lockfile, и оригинальные
+notices/Cargo.toml. Cargo, build.rs и библиотечный код не исполняются. Это
+build-time сбор материалов существующего FFmpeg, без Rust SDK/runtime приложения.
+Оба упаковщика используют один helper; он включается в build materials.
+Для статического TOML parser используется стандартный `tomllib`; minimum
+Python для tests/packaging явно поднят до 3.11 в CMake, README и CONTRIBUTING.
+Пользователю portable ZIP/AppImage отдельный Python по-прежнему не нужен.
+
+| Parent | Registry packages | Notice/metadata files | Canonical TAR SHA-256 |
+| --- | ---: | ---: | --- |
+| librsvg 7612431eb02d | 357 | 997 | `b02ad38a7ddd8fd00c778152cf495d72e08d4601198a19bc84ada8f362049281` |
+| rav1e 31435de9d76f baseline | 273 | 764 | `01769a1a5273decbf47d17f8a7ccb882da77a816e8708658384841abe82e4e6c` |
+
+TAR хранит исходные compressed crates без повторного сжатия: итоговый hash
+не зависит от zlib упаковщика. Для librsvg повторная сборка из проверенного
+cache дала тот же TAR SHA. Collector сверяет полный набор packages, parent
+archive и lockfile hashes и каждый retained crate. Regression отвергает
+повреждённый/пропущенный crate, другой lockfile, небезопасные paths и unknown
+registry. Она падает при обходе проверки crate SHA и проходит с actual guard.
+Source suite: 18/18; Linux packaging: 15/15; static project: 1/1.
+Fresh CMake packaging/static CTest: 7/7.
+
+Source lock содержит 95 FFmpeg inputs: 93 Linux, 91 Windows. Rav1e recipe
+выполняет `cargo update cc`; 273 baseline packages не объявляются доказательством
+final build-tool resolution. `corresponding_sources_complete=false` сохраняется:
+оставшиеся actual native inputs ещё требуют закрытия. Оба упаковщика теперь
+сохраняют actual Qt SDK mkspecs, CMake module configuration и generated feature
+headers в `qt-sdk-build-settings.tar` с per-file hashes и version guard.
+Unit fixtures проверяют original bytes, canonical repeat, другую версию,
+отсутствующие настройки и symlink за пределы SDK; hosted сборка ещё требуется.
+
+### Native Omarchy: AppImage из CI 38082099158
+
+Скачан AppImage с source PR merge `8fc8afea79637fd9e8368f57c8ab40cea0d029e5`
+(head ветки CI — `b83f2d3`). SHA-256
+`a4129bcdac70e5f5679b8d7f30afc2d4af994a7c65cd06b368b0697e32f25fcd`
+совпал с candidate JSON и sidecar. FUSE CLI version/help и native Wayland GUI
+успешно запускаются. Hyprland 0.56.2, монитор 1920×1080 с scale 1.3333334;
+для тестового окна задан `QT_SCALE_FACTOR=1.2`. Системные настройки не менялись.
+Публичный WAV выбран через Ctrl+O/file dialog; Ctrl+Enter запустил настоящую
+GUI → bundled CLI → medium/VAD цепочку, GUI показал «Готово» и transcript.
+Оригинальные пользовательские модели только читались; копии, настройки и
+результаты теста находятся отдельно в `/tmp`.
+
+С тем же AppImage CLI на 30-секундном pinned public WAV прошли medium+VAD
+(chunks=1/jobs=1, 35.26 с) и turbo+VAD (chunks=2/jobs=2, 40.55 с).
+TXT/SRT/VTT созданы; все SRT/VTT segments упорядочены и находятся в пределах
+0–30000 ms. WAV SHA совпал с reference fixture
+`3a2de982221381bf7d51e228bb8d47da90cce7e6b1d4e841c2f24f433223869f`;
+model/VAD hashes сверены с manifest. Это технический smoke, не оценка WER.
+QML errors не обнаружены; остаются известные nonfatal fontconfig warnings
+старой bundled библиотеки при чтении новых host configs. Полная final-package
+desktop приёмка и final real dispatch ещё не заявлены.
+Минимальное окно проверено отдельно: 864×720 compositor units при app factor 1.2
+(720×600 logical QML). После штатного закрытия результат сохранился в settings,
+тот же AppImage перезапущен с теми же изолированными настройками. Clipboard test
+не заменял текущий пользовательский буфер с несколькими форматами и не
+объявляется пройденным.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -796,10 +915,10 @@ Windows 11, Omarchy/Hyprland и остальные неотменённые тр
 
 | Code review | Результат |
 | --- | --- |
-| Summary | Windows isolation и portable identity дополнены 89 FFmpeg source inputs, Git submodule proofs, static DEPS mapping и generated C/H sources без checkpoint files |
+| Summary | 95 FFmpeg inputs: libplacebo Git submodules и два проверяемых registry source bundles дополняют прежние sources; Windows manual report и native AppImage medium/VAD/turbo evidence записаны |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
-| Major issues | P1: Windows 11 приёмка ещё не выполнена; полные corresponding sources и остальные неотменённые manual gates открыты |
-| Minor issues | CI прошёл на 6030674; shaderc dependency retention требует своего exact-SHA CI |
+| Major issues | P1: полные corresponding sources и остальные неотменённые manual gates открыты; Windows 11 приёмка зачтена для проверенного ZIP 6030674 |
+| Minor issues | CI 10/10 и Linux portable прошли на b83f2d3; final real dispatch и приёмка окончательных пакетов ещё требуются |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
 | Questions for author | Windows 11 доступна, проверяет пользователь; обязательная Ubuntu desktop приёмка отменена пользователем |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |

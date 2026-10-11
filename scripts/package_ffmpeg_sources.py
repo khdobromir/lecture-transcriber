@@ -170,6 +170,15 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
     recipe_archive = verified_input(recipes[0], cache)
     flags = set(shlex.split(configuration))
     deps_inputs = []
+    cargo_inputs = []
+    for record in sources:
+        if "cargo_input" in record:
+            from package_cargo_sources import verify
+            parent = next(source for source in sources if source["name"] == record["cargo_input"]["parent"])
+            result = verify(verified_input(parent, cache), verified_input(record, cache))
+            cargo_inputs.append(dict(source=record["name"], parent=parent["name"],
+                                     parent_sha256=result["parent_sha256"], lock_sha256=result["lock_sha256"],
+                                     packages=len(result["packages"])))
     for record in sources:
         if "deps_input" in record:
             parent = next(source for source in sources if source["name"] == record["deps_input"]["parent"])
@@ -226,6 +235,8 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
                 recipe_source = next(source for source in sources if source["name"] == record["git_submodule"]["parent"])
             if "deps_input" in record:
                 recipe_source = next(source for source in sources if source["name"] == record["deps_input"]["parent"])
+            if "cargo_input" in record:
+                recipe_source = next(source for source in sources if source["name"] == record["cargo_input"]["parent"])
             recipe_revision = recipe_source.get("recipe_revision", recipe_source["revision"])
             revision_variable = "SCRIPT_REV" if record.get("svn_snapshot") is True else "SCRIPT_COMMIT"
             if record.get("svn_snapshot") is True:
@@ -240,7 +251,7 @@ def collect_ffmpeg_notices(lock, binary, cache, licenses, configuration):
     collect_qt_notices(sources, cache, licenses / "FFmpeg-dependency-source-notices")
     evidence = dict(schema=1, ffmpeg_input_sha256=binary["sha256"], recipe_input=recipes[0], sources=sources,
                     configuration=configuration, generated_inputs=generated_inputs, git_submodules=submodules,
-                    deps_inputs=deps_inputs,
+                    deps_inputs=deps_inputs, cargo_inputs=cargo_inputs,
                     corresponding_sources_complete=False)
     (licenses / "ffmpeg-source-provenance.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     return evidence

@@ -36,6 +36,11 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 }
 function Get-Verified($Dependency) {
     $Target = Join-Path $Stage $Dependency.filename
+    if ($Dependency.PSObject.Properties.Name -contains 'cargo_input') {
+        Invoke-Checked python @("$Project\scripts\package_cargo_sources.py", $Dependency.url,
+            $Dependency.upstream_sha256, $Target, $Dependency.sha256)
+        return $Target
+    }
     if (($Dependency.PSObject.Properties.Name -contains 'svn_snapshot') -and $Dependency.svn_snapshot -eq $true) {
         Invoke-Checked python @("$Project\scripts\package_svn_sources.py", $Dependency.url, $Dependency.revision,
             $Dependency.svn_repository_uuid, $Dependency.svn_archive_prefix, $Target, $Dependency.sha256)
@@ -80,6 +85,8 @@ function Get-SourceIdentity([string]$Expected = '') {
 $Identity = Get-SourceIdentity
 $IdentityFile = Join-Path $Stage 'source-identity.json'
 $Identity | ConvertTo-Json | Set-Content $IdentityFile -Encoding utf8
+$SdkSettings = Join-Path $Stage 'qt-sdk-build-settings.tar'
+Invoke-Checked python @("$Project\scripts\package_sdk_settings.py", $QtRoot, $QtVersion, $SdkSettings)
 Invoke-Checked cmake @('-S', $Project, '-B', $Build, '-G', 'Visual Studio 17 2022', '-A', 'x64',
     "-DCMAKE_PREFIX_PATH=$QtRoot", '-DTRANSCRIBE_BUILD_GUI=ON', '-DBUILD_TESTING=ON', '-DTRANSCRIBE_WARNINGS_AS_ERRORS=ON')
 Invoke-Checked cmake @('--build', $Build, '--config', 'Release', '--parallel', '4')
@@ -204,7 +211,9 @@ Invoke-Checked python @("$Project\scripts\package_inputs.py", 'archive', $Inputs
     '--material', "$Project\packaging\windows\dependencies.json", '--material', "$Project\scripts\patch-whisper-windows.py",
     '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
     '--material', "$Project\packaging\source-inputs.json", '--material', "$Project\scripts\package_git_sources.py",
-    '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py", '--material', "$Project\scripts\package_svn_sources.py")
+    '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py", '--material', "$Project\scripts\package_svn_sources.py",
+    '--material', "$Project\scripts\package_cargo_sources.py", '--material', "$Project\docs\dependency-source-materials.md",
+    '--material', $SdkSettings, '--material', "$Project\scripts\package_sdk_settings.py")
 $null = Get-SourceIdentity $IdentityFile
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |
     Set-Content ($Zip + '.sha256') -Encoding ascii

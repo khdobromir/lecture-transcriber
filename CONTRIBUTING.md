@@ -8,7 +8,7 @@
 ## Локальные проверки
 
 Разработка ведётся в `dev`. В Arch/Omarchy дополнительно к зависимостям README
-нужны `shellcheck` и Python 3:
+нужны `shellcheck` и Python 3.11+:
 
 ```bash
 sudo pacman -S --needed shellcheck python
@@ -21,7 +21,7 @@ shellcheck -x install.sh scripts/download-model.sh scripts/models.sh
 
 Для Clang добавьте `-DCMAKE_CXX_COMPILER=clang++` и выберите отдельный каталог
 сборки. CTest использует собранный бинарник, а не компилирует его другим GCC.
-Тесты используют C++23 и Python 3 Interpreter; CMake требует его при
+Тесты используют C++23 и Python 3.11+ Interpreter; CMake требует его при
 `BUILD_TESTING=ON` (по умолчанию). Для запуска переносимого пакета отдельный
 Python не нужен.
 Тесты установщика запускайте без sudo: они используют отдельный временный HOME,
