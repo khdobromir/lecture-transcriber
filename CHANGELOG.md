@@ -1,6 +1,11 @@
 # Изменения
 
-## 0.4.0 — кандидат, не опубликован
+## 0.4.0 — 2026-10-11
+
+Published as [v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0),
+including Linux AppImage, Windows ZIP, checksums and retained build inputs.
+Source: `926366a1c4f7ec2d1cc188f8448591809cc3282c`.
+See the [final validation summary](docs/release-validation-v0.4.0.md).
 
 - Windows portable mode запрещает fallback к PATH/cwd и установленному Whisper;
   child tools получают доверенный cwd и очищенный GGML environment.

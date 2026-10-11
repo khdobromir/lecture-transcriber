@@ -1,6 +1,31 @@
-# v0.4.0: приёмка кандидата
+# v0.4.0: final release summary and historical validation
 
-Начало: 9 октября 2026 года; обновлён 11 октября. Статус: **в работе; выпуск не допущен**.
+## Published release
+
+**Published on 2026-10-11 at 13:13 UTC:**
+[v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0).
+The annotated tag resolves to `926366a1c4f7ec2d1cc188f8448591809cc3282c`.
+
+Successful runs on that exact source commit:
+
+- [CI: Linux/Windows, Qt, static analysis and sanitizers](https://github.com/khdobromir/lecture-transcriber/actions/runs/38140262175)
+- [Linux portable package](https://github.com/khdobromir/lecture-transcriber/actions/runs/38140264088)
+- [Real Whisper smoke](https://github.com/khdobromir/lecture-transcriber/actions/runs/38140266652)
+
+The release includes AppImage, Windows ZIP, source archive, SHA256SUMS,
+package manifests, build-inputs archives, `release-validation.json`,
+`source-offer-verification.json`, and Linux/Windows CI artifact records.
+Those uploaded records describe the published bytes; this documentation update
+does not rebuild, replace, or independently revalidate those assets.
+
+Manual observations and explicit waivers are retained below. Automated CI is not
+a substitute for every native desktop or authenticated-network scenario.
+Statements such as “not admitted” in the following dated journal describe the
+candidate at that earlier point, **not the current publication status**.
+
+## Historical candidate journal
+
+Начало: 9 октября 2026 года; обновлён 11 октября. Исторический начальный статус: **в работе; выпуск не допущен**.
 Исходная точка: dev `6dbd8c59f69e59021637f7d3004c092b88a2989c`.
 Ни результаты этого baseline, ни dirty локальная сборка не подтверждают final SHA.
 Exact candidate source SHA/fingerprint и package SHA фиксируются упаковщиками;
