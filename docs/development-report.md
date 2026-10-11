@@ -14,6 +14,7 @@ Branch: `chore/modernization-roadmap`, based on
 | D0.2 | English download-first README, supplied icon, actual isolated QML screenshot, recorded CLI help; GitHub About/topics | QML startup case 3/3 QtTest checks; CLI help/version; local README links; whitespace |
 | D0.3 | Canonical PNG in Qt resource; Windows CLI/GUI ICO; installed Linux PNG and AppImage icon paths | GCC Debug GUI build; CMake install/startup from Unicode cwd; 5/5 packaging/source/QML suites; PNG/6 ICO sizes inspected |
 | E1.1 | Portable/POSIX test helpers, Windows unit registration, Unicode-safe fixtures and common corruption case | GCC GUI build; 7/7 unit/pipeline/install/preflight/GUI integration suites; CLI 22/22, audio 22/22, features 10/10 cases (all 53 original Linux cases retained) |
+| E1.2 | Disabled ambient yt-dlp plugins in both downloader calls; strengthened portable/POSIX mocks; explicit offline plugin smoke | Regression failed before flag and passed after; actual yt-dlp 2026.08.19 positive marker loaded, isolated marker not loaded, no network |
 
 ## Verification boundaries
 

@@ -93,6 +93,9 @@ transcribe --no-progress --out "results" "https://example.org/your-video"
 ```
 
 The URL is a placeholder; extractor availability depends on the site and yt-dlp.
+Downloads ignore yt-dlp configuration and disable plugin directories. Source
+installs need `--no-plugin-dirs` support (available in pinned 2026.08.19);
+custom extractor plugins are outside the supported configuration.
 One chunk is the default. Increasing jobs starts more model-owning processes and
 uses more memory. Live TXT preserves recording order; final subtitles appear
 when export completes. Use GUI Cancel or CLI Ctrl+C rather than killing the process.

@@ -1,5 +1,16 @@
 # Изменения
 
+## Unreleased
+
+- Use the maintainer-supplied application icon in README, Linux desktop/AppImage,
+  Qt windows and Windows executable resources.
+- Run portable CLI/audio/features unit cases on Windows while retaining Linux
+  process-harness and permission/symlink checks.
+- Disable yt-dlp plugin directories for metadata and downloads. Source installs
+  need yt-dlp with `--no-plugin-dirs` support (the pinned 2026.08.19 supports it).
+  Custom extractor plugins are outside the supported configuration; built-in
+  extractors and existing URL/cookies arguments are preserved.
+
 ## 0.4.0 — 2026-10-11
 
 Published as [v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0),

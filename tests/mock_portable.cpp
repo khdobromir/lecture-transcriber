@@ -80,6 +80,9 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
         put(utf8_path(prefix + ".srt"), "1\n00:00:00,000 --> 00:00:00,100\n" + text + '\n');
         put(utf8_path(prefix + ".vtt"), "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\n" + text + '\n');
     } else if (kind == "yt-dlp") {
+        for (const auto* flag : {"--ignore-config", "--no-cache-dir", "--no-playlist", "--no-plugin-dirs"})
+            if (std::find(args.begin(), args.end(), flag) == args.end()) throw std::runtime_error("missing downloader isolation flag");
+        if (args.size() < 2 || args[args.size() - 2] != "--") throw std::runtime_error("missing URL separator");
         if (std::find(args.begin(), args.end(), "--simulate") != args.end()) {
             for (size_t i = 0; i + 2 < args.size(); ++i) if (args[i] == "--print-to-file") {
                 auto path = args[i + 2];

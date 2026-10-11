@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
             CHECK(has(args, "--no-playlist") && has(args, "--ignore-config"));
             CHECK(args.size() >= 2 && args[args.size() - 2] == "--" && args.back().starts_with("https://"));
             CHECK(value(args, "-f") == "bestaudio/best");
-            CHECK(has(args, "--no-cache-dir"));
+            CHECK(has(args, "--no-cache-dir") && has(args, "--no-plugin-dirs"));
             if (has(args, "--simulate")) {
                 const std::map<std::string, std::string> fields{
                     {"%(title)s", test::getenv("MOCK_TITLE").empty() ? "Тестовое видео" : test::getenv("MOCK_TITLE")},

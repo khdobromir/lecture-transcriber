@@ -47,7 +47,7 @@ std::string template_path(const fs::path& path) {
     return escaped;
 }
 std::vector<std::string> downloader(const Options& o) {
-    std::vector<std::string> args{tool_path("yt-dlp"), "--ignore-config", "--no-cache-dir", "--no-playlist", "-f", "bestaudio/best"};
+    std::vector<std::string> args{tool_path("yt-dlp"), "--ignore-config", "--no-plugin-dirs", "--no-cache-dir", "--no-playlist", "-f", "bestaudio/best"};
     if (!o.browser.empty()) args.insert(args.end(), {"--cookies-from-browser", o.browser});
     if (!o.cookies.empty()) args.insert(args.end(), {"--cookies", o.cookies});
     return args;
