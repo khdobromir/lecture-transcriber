@@ -1,112 +1,63 @@
-# Проверка установленного кандидата стабилизации
+# Candidate validation
 
-Этот документ описывает воспроизводимую проверку и её ограничения. Он не
-назначает следующую версию и не объявляет готовность к выпуску. Исторические
-release notes и отчёт v0.3.0 сохранены. Общий перечень:
-[stabilization-scenarios.md](../archive/stabilization-scenarios.md).
+[Testing](README.md) · [Manual matrix](manual.md) · [Release procedure](../build/releasing.md)
 
-## Получение evidence для точного SHA
+This is a procedure, not a declaration that the current branch is release ready.
+Historical observations and waivers are in the [v0.4.0 journal](../releases/v0.4.0/validation.md)
+and [pre-modernization guidance](../archive/candidate-validation-before-modernization.md).
 
-Проверки PR используют merge tree. После последнего изменения исходников,
-зависимостей или упаковки запускается `CI` через workflow_dispatch на ветке
-кандидата с `real_smoke=true`. Отчёт привязывается к этому source SHA, а не к
-предыдущему зелёному запуску. `package-manifest.json` содержит source SHA и
-dirty flag; `.validation.json` рядом с ZIP содержит SHA-256 **самого ZIP**,
-не digest контейнера GitHub artifact.
+## Exact source and final artifacts
 
-Linux Qt 6.8.3 job устанавливает GUI/CLI в отдельный Unicode prefix, выполняет
-startup smoke, собирает закреплённый Whisper и запускает `test_gui_real` с
-установленным CLI. Windows package job сначала проверяет распакованный
-итоговый ZIP с минимальным PATH, затем candidate-only harness запускает CLI
-из этого ZIP. Harness использует Qt SDK; этот сценарий не доказывает работу
-на чистом Windows-компьютере без SDK.
+After the last source/dependency/packaging change, dispatch CI and Linux portable
+on the candidate branch with `real_smoke=true`, and run Real Whisper smoke.
+Inspect actual steps: a green run with skipped real checks is insufficient.
+PR CI normally tests a merge tree; record the source SHA actually executed.
+Package manifests include source/version/fingerprint and dirty flag. ZIP
+validation records the SHA-256 of the inner application ZIP, not the GitHub
+artifact container digest. Clean checks use the same final AppImage bytes.
 
-Artifacts содержат QtTest/CTest diagnostics, toolchain configuration,
-`prerequisites.json`, `validation.json`, screenshot приложения и проверенный
-ZIP с отдельными checksum/validation files. Модели и исходное аудио в Git
-и diagnostic artifacts не включаются. `tests/fixtures/russian-speech.json`
-содержит URL/SHA-256 публичного OGG, 30-секундный интервал, лицензию и атрибуцию.
-SHA-256 фактического WAV после декодирования фиксируется для каждой ОС; вход
-и модель должны быть проверены перед использованием. Побайтовое равенство
-ASR-текста между CPU не является критерием.
+Linux Qt 6.8.3 installs GUI/CLI to an isolated Unicode prefix and runs installed
+startup plus real GUI/CLI/Whisper. Windows validates the extracted final ZIP with
+minimal PATH before invoking the candidate-only real harness against its CLI.
+The harness uses SDK Qt; independent deployed startup and a clean Windows 11
+manual test remain distinct requirements.
 
-## Дополнительная реальная проверка
+Retain QtTest/CTest logs, CMake configuration, prerequisites/validation JSON,
+sanitized screenshot, manifest and package checksums. Do not upload models,
+private media, credentials or full private transcripts. The real GUI fixture
+[russian-speech.json](../../tests/fixtures/russian-speech.json) pins public OGG,
+license/attribution and the 30–60 second interval. Verify model/input hashes
+before use; record decoded WAV hashes per OS. ASR text need not match byte-for-byte
+across CPUs. This is integration evidence, not WER measurement.
 
-Реальный Whisper выявил две ситуации, отсутствовавшие в mock fixtures:
-20 ms quantization timestamps и предсказанный конец последнего сегмента
-после конца аудиочасти. `export_timestamp_bounds` проверяет реальные sample
-bounds, ограничение пересекающегося сегмента, одно contextual warning при
-существенном ограничении и отказ для целиком внешнего сегмента. Финальные
-экспорты остаются в пределах исходных samples; ошибка сохраняет рабочие файлы.
-Проверка с относительным каталогом также выявила duplicate history row после
-старта задачи: legacy относительный root и новый абсолютный root указывали на
-один результат. Единая абсолютная lexical форма используется для discovery,
-known paths, timestamps и выбранного результата; регрессия проверяет оба aliases.
-Native Windows real smoke выявил узкий `ifstream` в `is_file_exist` Whisper:
-UTF-8 WAV отбрасывался до декодирования с exit 2. Патч закреплённого
-`examples/common.cpp` открывает filesystem path; model-free package regression
-проверяет, что Unicode input достигает model initialization. Windows GUI smoke
-и QML/DPI tests используют native `windows` QPA с системными fonts: offscreen
-database требовала отсутствующий SDK/lib/fonts. Backend logs и result.json
-реального сценария сохраняются в artifacts также при ошибке.
-Native Windows tests выбирают также `windows` platform theme. На `d10cfb6`
-три QML suites воспроизвели access violation в создании native окна с `generic`:
-[Qt 6.8.3 QWindowsWindow](https://github.com/qt/qtbase/blob/v6.8.3/src/plugins/platforms/windows/qwindowswindow.cpp)
-обращается к `QWindowsTheme::instance()`, а generic theme не создаёт этот объект.
-Исправление меняет только тему тестового окружения; native QPA, DPI, keyboard
-и реальный Windows GUI smoke сохраняются обязательными проверками.
-GUI preflight использует tools рядом с выбранным CLI. Windows real harness
-оставляет data home без engine, чтобы распознавание выполнял именно оригинальный
-Whisper из Unicode-каталога распакованного ZIP; portable regression проверяет
-этот fallback отдельно от model download.
+## Required boundaries
 
-Локальная разработческая проверка с Qt 6.11.2/GCC 16/FFmpeg 9 подтвердила
-installed GUI startup и реальный QML → CLI → Whisper с medium и small,
-первый model import, preview, completed и три экспорта. Это evidence рабочего дерева; финальный
-SHA обязан повторить затронутые проверки. Native Wayland/Hyprland проверка
-окна, Tab/Shift+Tab, minimum size и screenshot прошла без QML warnings.
-Минимальный Qt 6.8.3 также прошёл 18 CTest suites, QML lint, cppcheck и
-clang-tidy 18 для новых сценариев; installed prefix и реальная цепочка с
-первым импортом small model проверены отдельно. Это также проверка рабочего дерева.
-
-CLI `install.sh` допускает отдельный `TRANSCRIBE_BIN_DIR`: это позволяет
-проверить обновление копии v0.3.0 без изменения HOME или пользовательского CLI.
-Обычный путь установки остаётся `~/.local/bin`. Installation regression
-проверяет независимый prefix и сохранение прежнего пользовательского файла.
-Реальный изолированный upgrade копии v0.3.0 с `install.sh` и subsequent
-GUI → обновлённый CLI → pinned small model прошёл; пользовательский CLI не менялся.
-100/150/200% scale, light/dark, minimum window, длинный input и keyboard
-проверены автоматически; native Wayland и X11/XWayland запуски прошли.
-
-## Матрица допуска
-
-| Проверка | Обязательное evidence |
+| Boundary | Evidence |
 |---|---|
-| Четыре review defects | Native Windows/Linux regressions, PR #5–#7 |
-| Protocol/process/cancel | Общие vectors, GUI streaming и управляемое дерево, PR #8 |
-| GUI state/ownership/retry | Переходы, поколения, teardown, late commit, PR #9 |
-| GUI → настоящий CLI | Success/failure/cancel/cache/history на обеих ОС, PR #10 |
-| Реальное распознавание | Source/model/input SHA, Qt/Whisper/FFmpeg versions, preview + bounded TXT/SRT/VTT |
-| Итоговый ZIP | Manifest + все files, CRT/DPI/asInvoker, clean PATH, Unicode unpack, ZIP SHA |
-| Linux install | System Qt и официальный SDK, отдельный prefix/cwd, entry/icon, legacy upgrade |
-| Interface | 100/150/200% DPI, light/dark, minimum size, long messages, keyboard, dialogs/clipboard/open exports |
-| Финальный CI | Все обязательные jobs на точном SHA workflow_dispatch |
+| Native paths/processes | Linux/Windows Unicode, locks, descendant termination, clean DLL lookup |
+| Protocol/cancel/commit | Shared parser vectors, machine control, GUI streaming, partial-output and late-cancel regressions |
+| Model/GUI lifetime | Range/hash/recovery, worker barriers/generations, teardown and retry |
+| Real exports | Actual engine/model/input versions and hashes, preview, completed manifest, bounded TXT/SRT/VTT |
+| Final ZIP/AppImage | Hash/inventory/source policy, clean startup and bundled-tool smoke |
+| Linux installed prefix | Separate prefix/cwd, runtime environment, desktop entry/icon, isolated legacy upgrade |
+| Native desktop | User OS, DPI, dialogs, clipboard, open exports and keyboard checks |
+| Final CI | All required jobs/real steps on exact final candidate source |
 
-Отсутствие результата обозначается «не проверено». Native Windows CI использует
-Windows Server 2022 runner; Windows 11 теперь доступна для проверки пользователем. Ручная полная
-цепочка ZIP без Qt/Visual Studio/Python/Git, native dialogs/clipboard/open exports
-и пользовательские DPI остаётся отдельным блокирующим условием выпуска.
-Проверки Wayland automation не заменяют оценку native file dialogs/portal и
-полный ручной UI smoke. VK/cookies/network являются отдельными сценариями и не
-объявляются пройденными по mock cache tests. Большие Windows processor groups и
-специальные cgroup/affinity конфигурации не проверены.
+Sample/export checks allow Whisper timestamp-token quantization (20 ms) and
+clip a segment crossing the audio end with contextual warning. Entirely external
+segments fail. Preserve these cases and relative/absolute history aliases.
+Windows patches and native QPA/theme settings address verified Unicode/Qt
+integration defects; see [Windows packaging](../build/windows.md).
 
-Решением пользователя от 10 октября 2026 ручная приёмка Ubuntu desktop исключена
-из обязательных условий выпуска. Clean Ubuntu/Debian container checks остаются
-в CI. Windows 11 и native Omarchy/Hyprland приёмка сохраняются обязательными.
+Mark absent evidence **not checked**, rather than inferring it from workflow
+presence. Large Windows processor groups and unusual cgroup/affinity setups have
+not been established by these ordinary checks. Live URLs/cookies and desktop
+interaction are independent of mock cache and offscreen tests.
 
-Решением пользователя от 11 октября 2026 проверки cookies и записи
-длительностью 10–15 минут исключены из обязательной приёмки релиза.
-Пользователь подтвердил VK URL, повторное использование кэша и успешное
-распознавание пятиминутной записи на Windows 11 24H2. Эти отменённые
-пункты не блокируют выпуск; прохождение самих отменённых проверок не заявляется.
+## Acceptance scope
+
+For v0.4.0 the maintainer waived Ubuntu desktop acceptance (clean containers
+remain), cookies and a 10–15 minute recording. The user confirmed VK/cache and
+five-minute recognition on Windows 11 24H2. These are dated release decisions,
+not passes for the waived scenarios or a blanket future waiver. A new release
+records its own manual scope, failures and unverified scenarios with exact hashes.

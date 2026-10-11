@@ -8,8 +8,9 @@ tour. The guides below separate current instructions from dated evidence.
 | First run | [Quick Start](user/quick-start.md), [краткая инструкция](user/ru/quick-start.md) |
 | User Guide | [GUI/models/results](user/guide.md), [CLI reference](user/cli.md), [руководство](user/ru/guide.md), [troubleshooting](troubleshooting.md) |
 | Architecture | [CLI protocol v1](architecture/protocol-v1.md), [GUI states and ownership](architecture/gui-states.md) |
-| Build and packaging | [Linux portable package](build/linux-portable.md), [release procedure](build/releasing.md), [dependency source materials](build/dependency-source-materials.md) |
-| Testing | [Integration coverage](testing/integration-coverage.md), [candidate validation](testing/candidate-validation.md), [manual acceptance](testing/manual.md) |
+| Developer Guide | [Getting started and source map](developer/getting-started.md), [contributing](../CONTRIBUTING.md) |
+| Build and packaging | [Source builds/presets](build/from-source.md), [Linux portable package](build/linux-portable.md), [Windows ZIP](build/windows.md), [release procedure](build/releasing.md), [dependency source materials](build/dependency-source-materials.md) |
+| Testing | [Test layers and commands](testing/README.md), [integration coverage](testing/integration-coverage.md), [candidate validation](testing/candidate-validation.md), [manual acceptance](testing/manual.md) |
 | Published v0.4.0 | [Notes](releases/v0.4.0/notes.md), [validation](releases/v0.4.0/validation.md), [binary source coverage](releases/v0.4.0/binary-source-coverage.md) |
 | Modernization | [Approved roadmap](development-roadmap.md), [implementation evidence](development-report.md) |
 | History | [Archive](archive/README.md) |

@@ -2,4 +2,6 @@
 
 This address is retained for compatibility through the next release.
 
-See [stabilization-scenarios](archive/stabilization-scenarios.md) and the [documentation index](README.md).
+See [testing](testing/README.md), [manual acceptance](testing/manual.md) and the
+[documentation index](README.md). The [original stabilization scenarios](archive/stabilization-scenarios.md)
+are retained as historical context.

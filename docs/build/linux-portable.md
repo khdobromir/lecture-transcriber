@@ -1,130 +1,99 @@
-# Переносимый GUI для Linux
+# Linux portable package
 
-`scripts/package-linux.sh` собирает один `Transcribe-*.AppImage`: GUI, внутренний
-backend, Qt/QML/plugins, CPU Whisper, FFmpeg/ffprobe и самостоятельный yt-dlp
-с Python внутри. На машине запуска эти программы устанавливать не требуется.
-CLI сохраняется для внутренней работы GUI и диагностики; запускать его отдельно
-для обычной работы не нужно.
+[User installation](../user/quick-start.md) · [Source build](from-source.md)
+· [Release gates](releasing.md)
 
-Целевая совместимость: **Linux x86_64, glibc 2.39+**, Ubuntu 24.04+, Debian 13,
-Arch/Omarchy, Wayland и X11. Нужен обычный Linux desktop с графическим стеком и
-драйверами. Другие архитектуры, старые glibc и Alpine/musl не входят в этот пакет.
-Переносимость подтверждается испытанием итогового файла, а не наличием расширения
-`.AppImage`. Движок собирается с `GGML_NATIVE=OFF`, без CUDA/Vulkan/BLAS.
-CPU-модули x64, AVX и AVX2 выбираются движком во время запуска; baseline-модуль
-не требует AVX2. Более специализированные CPU-модули в этот пакет не включаются.
-GUI по умолчанию использует программный renderer Qt Quick. Для проверки GPU
-можно явно задать `QT_QUICK_BACKEND=rhi`; совместимость драйверов проверяется
-отдельно. Скорость распознавания от renderer интерфейса не зависит.
+The packager builds one self-contained AppImage: Qt/QML/plugins, native GUI/CLI,
+CPU Whisper, FFmpeg/ffprobe, standalone yt-dlp (including its embedded Python),
+fonts and CA certificates. Models remain separate user data. The target is
+**Linux x86_64, glibc 2.39+**: Ubuntu 24.04+, Debian 13 and Arch/Omarchy,
+Wayland/X11. It still needs a normal desktop graphics stack/drivers; musl/Alpine,
+ARM and older glibc are outside this package target.
 
-## Одна команда сборки
+Whisper is built with `GGML_NATIVE=OFF`, without CUDA/Vulkan/BLAS. x64, AVX and
+AVX2 CPU modules dispatch at runtime; baseline does not require AVX2. The GUI
+uses Qt Quick software rendering by default. Explicit `QT_QUICK_BACKEND=rhi`
+is an optional driver-specific UI check, not ASR GPU acceleration.
 
-На машине **сборки** нужны Docker и Compose. Из корня проекта:
+## Build
 
-```bash
+With Docker and Compose installed on the build host, from the repository root:
+
+```sh
 bash scripts/package-linux.sh --container
 ```
 
-Контейнер использует закреплённый digest Ubuntu 24.04, Qt 6.8.3 и инструменты
-сборки; исходники подключаются read-only. Пакеты устанавливаются в контейнер,
-а не в пользовательскую систему. Результаты принадлежат текущему пользователю:
+The container uses pinned Ubuntu 24.04 image digest and Qt 6.8.3. Source is mounted
+read-only; build dependencies are installed inside it. Outputs belong to the
+invoking user. Network is required for initial verified downloads; ordinary
+packaging does not download models.
 
-- `dist/Transcribe-<version>-linux-x86_64-*.AppImage` — проверенный файл приложения;
-- соседние `.sha256` и `.json` — контрольная сумма и состав/происхождение;
-- `.build-inputs.tar.gz` с checksum — сохранённые проверенные bytes upstream
-  inputs, включая инструменты с continuous URL; полный source deliverable
-  для всех runtime компонентов готовится отдельно;
-- `.cache/linux-package-container/` — проверенные загрузки, staging и полные логи.
+- `dist/Transcribe-<version>-linux-x86_64-*.AppImage`: verified application.
+- Adjacent `.sha256`/`.json`: checksum, inventory and provenance.
+- `.build-inputs.tar.gz` and checksum: retained upstream source/tool inputs.
+- `.cache/linux-package-container/`: downloads, staging and logs.
 
-Первый запуск сборки требует сети. Модели по умолчанию не скачиваются.
-Упаковщик сначала выполняет CTest, QML lint, сборку Whisper и проверки готового
-AppImage, затем копирует прошедший кандидат в `dist`. Прежние файлы не заменяются.
-Для release candidate добавьте `--release`: dirty tree и `--skip-tests` запрещены.
-Флаг `--real-smoke` включает builder GUI→CLI→Whisper с закреплённой публичной речью.
-CI передаёт `--result-file /output/candidate.json`; этот файл содержит точное имя,
-SHA-256 и run directory. `python3 tests/check_linux_candidate.py dist/candidate.json`
-проверяет именно этот AppImage в offline Ubuntu/Debian. В real mode те же аудио
-и модель передаются в контейнеры, и ASR обязателен. Повторной сборки и поиска
-кандидата по glob между этими проверками нет. Evidence остаётся в `dist/clean-evidence`.
+A candidate command, also used by CI, is:
 
-### Сборка в уже подготовленном окружении
+```sh
+bash scripts/package-linux.sh --container --release --real-smoke --result-file /output/candidate.json
+python3 tests/check_linux_candidate.py dist/candidate.json
+```
 
-В Ubuntu 24.04 с C++23, CMake 3.24+, Python 3.12+, Git, binutils, patchelf,
-desktop-file-utils, FFmpeg для тестов, fonts-dejavu-core, OpenGL development
-headers и Qt 6.8.3 SDK:
+Release mode rejects dirty source and skipped tests. `--real-smoke` downloads
+pinned public Russian speech and small model, then checks actual GUI → bundled
+CLI → bundled Whisper, preview and exports. `candidate.json` identifies one exact
+filename/hash/run: the offline Ubuntu/Debian checks use that same artifact,
+without rebuilding or choosing another glob match. Real mode reuses the same
+model/audio in the offline containers. Evidence is in `dist/clean-evidence`.
 
-```bash
+For an already prepared Ubuntu 24.04 build environment:
+
+```sh
 bash scripts/package-linux.sh --qt-root /path/to/Qt/6.8.3/gcc_64 --jobs 2
 ```
 
-Полный набор build dependencies — в `packaging/linux/Dockerfile`. `--work-directory`
-и `--destination` задают другие каталоги. `--skip-tests` предназначен для
-диагностики, отмечается в манифесте; даже тогда startup/package smoke обязателен.
-Флаг `--real-smoke` дополнительно скачивает закреплённый публичный русский пример
-и small-модель, проверяет GUI → встроенный backend → встроенный Whisper,
-живой preview и TXT/SRT/VTT. Это проверка интеграции, не качества распознавания.
-Для повторных разработческих проверок можно указать `--build-directory` и
-`--whisper-build-directory`: CMake и тесты выполняются снова, исходники backend
-сравниваются с закреплённым архивом. По умолчанию оба build-каталога новые.
+Required tools include C++23, CMake 3.24+, Python 3.12+, Git, binutils, patchelf,
+desktop-file-utils, FFmpeg, fonts-dejavu-core, OpenGL headers and Qt 6.8.3.
+[Dockerfile](../../packaging/linux/Dockerfile) is the complete build dependency
+specification. `--work-directory`/`--destination` select output locations.
+Diagnostic `--skip-tests` is recorded; startup/package smoke still runs.
+Explicit `--build-directory` and `--whisper-build-directory` permit developer
+reuse; CMake/tests run again and backend sources are checked against pinned input.
+Defaults create fresh build directories. Previous output files are never replaced.
 
-## Запуск
+## Install and runtime contract
 
-Скопируйте только AppImage на другую поддерживаемую машину:
+User launch, no-FUSE fallback, model import and data locations are in the
+[Quick Start](../user/quick-start.md) and [user guide](../user/guide.md).
+`install.sh` is unnecessary for AppImages. Replace the complete file to upgrade;
+models/settings/history/results live outside it. An incomplete bundled tool set
+fails closed, without system PATH/old-engine fallback. The installed desktop
+PNG and embedded window icon derive from [the same supplied image](../../packaging/ICONS.md).
 
-```bash
-chmod +x Transcribe-*.AppImage
-./Transcribe-имя-сборки.AppImage
-```
+Model HTTPS uses the bundled public CA store and system certificates; TLS
+verification stays enabled. A fully offline first run requires prior model/VAD
+import. Extract-and-run needs temporary disk space and does not install packages;
+automatic fallback on a FUSE error is not implemented.
 
-Статический AppImage runtime не требует установленной `libfuse2`. Если FUSE
-запрещён или отсутствует, запускайте тот же файл без установки пакетов:
+## Verification and source materials
 
-```bash
-./Transcribe-имя-сборки.AppImage --appimage-extract-and-run
-```
+Manifest identity includes Git source SHA, dirty flag, source fingerprint,
+versions, required glibc and file/symlink hashes/permissions. Source changes during
+build are rejected. Smoke checks the final AppImage in a fresh Unicode path with
+SDK overrides cleared, not just the staging directory.
 
-Этот режим временно распаковывает приложение и требует дополнительного места;
-он не устанавливает его в систему. Автоматический переход при отказе FUSE не
-реализован. Источник и бинарник могут лежать в каталогах с кириллицей и пробелами.
+Clean Ubuntu/Debian payload tests have no installed Qt/Python/FFmpeg/yt-dlp and
+no network. Native desktop dialogs/portal/clipboard need separate manual checks.
+A successful GUI build alone does not establish AppImage portability.
 
-## Модели и пользовательские данные
+[dependencies.json](../../packaging/linux/dependencies.json) pins bytes. Moving
+`continuous` URLs do not authorize changing bytes: a mismatch fails until a
+reviewed update changes binary/source mappings and the package is revalidated.
+Read-only AppImage tools do not self-update; ship a new complete build.
 
-На вкладке «Модели» скачайте выбранную модель и VAD либо импортируйте проверенные
-`.bin`. Модели проверяются по закреплённым SHA-256. Они находятся вне read-only
-AppImage, по умолчанию в `~/.local/share/transcribe/models`. Поддерживается
-`TRANSCRIBE_HOME`; старый движок пользователя для AppImage не используется.
-После подготовки моделей локальные файлы распознаются без сети. Для первого
-запуска полностью офлайн предварительно импортируйте модели; образ с включёнными
-весами этим упаковщиком не создаётся.
-В комплект включено хранилище публичных корневых сертификатов для HTTPS-загрузки
-моделей. Системные сертификаты также учитываются; проверка TLS сохраняется.
-
-Настройки GUI — в пользовательском Qt config directory; для изоляции можно задать
-`TRANSCRIBE_GUI_SETTINGS_FILE`. Результаты — в `~/Transcriptions` или выбранной
-папке. Замена AppImage не удаляет модели, настройки, историю или результаты.
-`install.sh` для AppImage не нужен. Неполный встроенный комплект вызывает ошибку;
-fallback к установленным FFmpeg/yt-dlp/Whisper в переносимом режиме запрещён.
-
-## Проверка и обновление
-
-Манифест содержит Git HEAD, признак dirty, fingerprint фактических исходников,
-версии зависимостей, требуемую glibc и хеши/права всех файлов и относительных
-symlinks. Упаковщик отклоняет изменение исходников во время сборки. Проверяется
-не staging, а окончательный AppImage, скопированный в новый Unicode-каталог,
-с очищенными Qt SDK environment overrides и запуском без FUSE.
-
-CI собирает пакет на Ubuntu 24.04 и запускает извлечённый payload в минимальных
-Ubuntu 24.04 и Debian 13 без установленных Qt, Python, FFmpeg и yt-dlp. Native
-Wayland/X11, диалоги, clipboard и открытие файлов требуют проверки на desktop;
-offscreen/container тесты их не заменяют.
-
-Версии и контрольные суммы закреплены в `packaging/linux/dependencies.json`.
-Часть upstream-инструментов публикуется под перемещаемым `continuous`: смена
-байтов приводит к явному отказу SHA-256, а не исполнению новой версии. Для обновления
-нужно проверить новую ревизию, обновить pin и заново проверить пакет. Исправные
-загрузки сохраняются в кэше. Самообновление инструментов внутри AppImage отключено
-его read-only устройством; обновление downloader выполняется новой сборкой.
-
-Перед публичной раздачей необходимы источники и notices фактически включённых
-компонентов: [THIRD-PARTY.md](../../packaging/linux/THIRD-PARTY.md). Создание локального
-AppImage не публикует GitHub Release и не меняет текущий source-only release workflow.
+Before public binary distribution, verify actual payload notices and source/build
+materials with [THIRD-PARTY](../../packaging/linux/THIRD-PARTY.md),
+[source materials](dependency-source-materials.md) and the [release procedure](releasing.md).
+Build inputs alone are not the complete source deliverable. Packaging does not
+publish a GitHub Release; publication is a separate authorized maintainer action.

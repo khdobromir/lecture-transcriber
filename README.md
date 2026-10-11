@@ -68,7 +68,7 @@ URL downloads and downloading models need network access; local recognition does
 | Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg and standalone yt-dlp included |
 | Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp and runtime included |
 | Linux source installer | C++23 toolchain and CLI prerequisites | Builds the CLI and CPU engine; uses system FFmpeg/yt-dlp |
-| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](CONTRIBUTING.md) |
+| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](docs/build/from-source.md) |
 
 No separate Python, Qt SDK or compiler is needed to run the binary packages.
 Models, settings and results are user data outside the packages. GPU acceleration,
@@ -151,9 +151,9 @@ Do not publish cookies, private URLs, recordings or unredacted diagnostic logs.
 ## Development and testing
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DTRANSCRIBE_WARNINGS_AS_ERRORS=ON
-cmake --build build --parallel 2
-ctest --test-dir build --output-on-failure
+cmake --preset linux-cli-debug
+cmake --build --preset linux-cli-debug --parallel 2
+ctest --preset linux-cli-debug
 ```
 
 CLI: CMake 3.20+ and C++23. GUI: CMake 3.24+, Qt 6.8+ and
@@ -164,7 +164,8 @@ Use `-DBUILD_TESTING=OFF` for an application-only build.
 static analysis and ASan/UBSan. [Real Whisper smoke](.github/workflows/real-smoke.yml)
 and [portable package checks](.github/workflows/linux-portable.yml) are separate.
 [Published 0.4.0 validation](docs/releases/v0.4.0/validation.md) describes that release,
-not every later source revision. See [CONTRIBUTING](CONTRIBUTING.md) for developer checks.
+not every later source revision. See the [developer guide](docs/developer/getting-started.md)
+and [testing guide](docs/testing/README.md) for the source map and verification levels.
 
 ## Contributing
 

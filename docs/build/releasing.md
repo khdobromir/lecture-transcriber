@@ -1,30 +1,33 @@
-# Подготовка и публикация выпуска
+# Release procedure
 
-Работа ведётся в отдельной рабочей ветке; аннотированный тег ставится на проверенный итоговый
-`master`. Номер версии берётся из `project(... VERSION ...)` в CMake.
-Ниже `X.Y.Z` означает выбранную версию, `SOURCE_SHA` — полный проверяемый SHA.
-Исторические validation документы описывают прежние испытания и не заменяются.
+[Build](from-source.md) · [Candidate validation](../testing/candidate-validation.md)
+· [Manual matrix](../testing/manual.md) · [Source materials](dependency-source-materials.md)
 
-## Подготовка и freeze
+A package build is not permission to merge, tag or publish. Those are separate
+maintainer actions. Never move an existing release tag or replace tested public
+assets. v0.4.0 was published on 2026-10-11 from
+`926366a1c4f7ec2d1cc188f8448591809cc3282c`; its
+[final summary/journal](../releases/v0.4.0/validation.md) records actual evidence
+and limitations. Earlier results do not validate a future release.
 
-1. Завершите изменения кода, упаковки, VERSION, README, CONTRIBUTING, CHANGELOG,
-   `docs/release-notes-vX.Y.Z.md` и `docs/release-validation-vX.Y.Z.md` до freeze.
-2. Из чистой копии выполните GCC/Clang warnings-as-errors, CTest, ASan/UBSan,
-   static analysis и QML lint; проверьте сборку без тестов, установку, help/version.
-3. Проверьте сохранение settings/models/results и legacy history при upgrade.
-4. Создайте Conventional Commit и candidate branch/PR. Проверьте source SHA,
-   tree/fingerprint и отсутствие dirty tree. RC — обозначение кандидата, а не
-   обещание, что релиз уже готов. Не переносите CI с предыдущего SHA.
+## Prepare and freeze
 
-## Единственный комплект кандидатов
+1. Finish code, dependency/packaging changes and `project(... VERSION ...)`, the
+   single version source. Update README, CONTRIBUTING, CHANGELOG and
+   `docs/releases/vX.Y.Z/{notes,validation}.md` before freeze.
+2. Build GCC/Clang/MSVC with warnings-as-errors; run relevant CTest, QML lint,
+   static analysis, ASan/UBSan/LSan, application-only build, install and help/version.
+   Check data/settings/model/result preservation and legacy history upgrade.
+3. Create small Conventional Commits and a clean candidate branch/PR. Record
+   source SHA, tree/fingerprint and dirty flag. An RC name is not a readiness claim.
 
-На clean candidate вручную запустите **CI** и **Linux portable GUI** с
-`real_smoke=true`, а также **Real Whisper smoke**. Дождитесь всех обязательных
-jobs (в текущем CI их 10); проверяйте steps, включая отсутствие skipped real
-steps. Windows MSVC/Qt, Linux Qt 6.8.3/6.11.2, sanitizers и static analysis входят
-в обязательную матрицу. В отчёте сохраните ссылки на конкретные run и source SHA.
+## One checked artifact set
 
-Локальная сборка release candidates:
+Dispatch **CI** and **Linux portable GUI** on the exact candidate source with
+`real_smoke=true`, plus **Real Whisper smoke**. Inspect all required jobs and
+actual real steps; a skipped step does not establish a pass. The CI matrix is
+[defined here](../../.github/workflows/ci.yml); do not freeze a job-count claim
+that can drift. Record source SHA and concrete run links.
 
 ```sh
 bash scripts/package-linux.sh --container --release --real-smoke --result-file /output/candidate.json
@@ -35,188 +38,87 @@ python3 tests/check_linux_candidate.py dist/candidate.json
 ./scripts/package-windows.ps1 -QtRoot C:/Qt/6.8.3/msvc2022_64 -Release -RealSmoke
 ```
 
-Release mode запрещает dirty tree и SkipTests; diagnostic пакеты имеют явное
-обозначение. Windows ZIP проходит smoke в staging до переноса в Destination.
-Source identity снимается до configure и проверяется после финального smoke.
-AppImage собирается один раз; builder, clean Ubuntu и Debian проверяют один
-SHA-256. Clean containers работают без сети и без Qt/Python/FFmpeg/yt-dlp;
-real mode обязательно выполняет локальный ASR на тех же public fixtures.
+Release mode forbids dirty source and skipped tests. Source identity is captured
+before configure and rechecked after final smoke. Windows validates the extracted
+final ZIP before publishing it to the output directory. Linux builds once and
+checks that same AppImage SHA-256 in builder and offline clean Ubuntu/Debian,
+without Qt/Python/FFmpeg/yt-dlp installed. Real mode uses the same public input/model
+for local ASR there. No post-acceptance repacking or opportunistic glob selection.
 
-Запишите application/source/dependency/input/model/package hashes и toolchain.
-Сохраните проверенные build inputs, особенно bytes инструментов с continuous URL,
-вместе с manifests и build logs; moving URL не считается immutable источником.
-Не пересобирайте файл после приёмки. Изменение кода или payload требует нового
-кандидата и повторения затронутых проверок.
+Retain application/source/dependency/input/model/package hashes, toolchain,
+manifest, test logs and verified build-input bytes. Moving continuous URLs are
+not immutable sources. Any payload/source change needs a new candidate and
+revalidation of affected gates.
 
-## Ручная приёмка
+## Manual scope and privacy
 
-Конечные ZIP/AppImage с теми же hashes проходят следующую матрицу:
+Check final ZIP/AppImage hashes on clean Windows 11 and native Linux desktop:
+Unicode unpack, first model import/download, local ASR, cancel/close/retry/history,
+TXT/SRT/VTT, keyboard, dialogs, clipboard and display scales. Record small,
+medium+VAD and turbo/chunks as actually exercised. Service URL/cache/network
+checks are separate from local recognition. See the [manual checklist](../testing/manual.md).
 
-| Среда | Обязательная проверка |
-| --- | --- |
-| Windows 11 без SDK | Unicode unpack, model download/import, local ASR, cancel/close/retry/history, TXT/SRT/VTT |
-| Omarchy/Hyprland | Native Wayland, масштаб 160%, Tab/Shift+Tab, минимальное окно, portal/clipboard |
-| Linux и Windows | Small, medium+VAD по умолчанию, turbo; один/несколько chunks, порядок/sample bounds |
-| VK/network/cache | Public URL, отказ сети, cache reuse/refresh |
+The v0.4.0 maintainer decisions waived Ubuntu desktop, cookies and 10–15 minute
+recording requirements while keeping clean-container checks and native acceptance.
+The user confirmed VK/cache and a five-minute Windows 11 24H2 recording. Preserve
+these dated decisions; do not claim waived cases passed or silently extend their
+scope to later releases. Record a future release's own required scope explicitly.
 
-Решением пользователя от 10 октября 2026 ручная Ubuntu desktop приёмка больше
-не обязательна для выпуска. Clean Ubuntu/Debian container checks сохраняются.
-Windows 11 проверяется по [ручной инструкции](../archive/windows-11-manual-validation.md).
-11 октября пользователь также отменил обязательность проверки cookies и записи
-длительностью 10–15 минут. Пользователь подтвердил VK, повторное использование
-кэша и успешное распознавание пятиминутной записи на Windows 11 24H2.
+Every result names OS/build and source/package/input/model hashes. Private media,
+URLs/cookies/transcripts remain local; CI uses pinned public fixtures. Server
+2022 with SDK is not a clean Windows 11 desktop; offscreen is not native portal
+acceptance; short ASR smoke is not WER. An unmet required gate blocks publication.
 
-Каждый результат содержит OS/build, source/package/input/model SHA и evidence.
-Приватные URL, cookies, записи и расшифровки остаются локальными. Публичные
-CI artifacts используют только закреплённые public fixtures. Не считать
-Server 2022 с SDK доказательством чистой Windows 11, offscreen — desktop приёмкой,
-а короткий smoke — измерением WER. Незакрытый обязательный пункт блокирует выпуск.
+## Binary source and notice materials
 
-## Материалы бинарной раздачи
+Map actual payload inventory to verified sources, recipes, patches, build settings
+and license/notice texts. Preserve shared-library replacement/relinking materials.
+The application source archive and build-input archives form a versioned set;
+neither alone replaces the whole distribution source offer. Do not infer legal
+completeness from a helper succeeding or from upstream package naming.
 
-Для фактического payload подготовьте versioned notices и corresponding source /
-build materials Qt, FFmpeg, yt-dlp и зависимостей, copied Linux libraries и
-AppImage runtime. Сопоставьте компоненты и версии с inventory; сохраните
-проверенные исходники, патчи, build scripts и inputs. Проверьте возможность
-замены shared libraries. См. `packaging/linux/THIRD-PARTY.md` и
-`packaging/windows/THIRD-PARTY.md`. Source archive Transcribe не заменяет этот
-комплект. До готовности этих материалов бинарники не публикуются как release assets.
+| Material / check | Owned implementation |
+|---|---|
+| Binary/source pins, platform/Qt mapping | [source-inputs.json](../../packaging/source-inputs.json), [selector](../../scripts/package_inputs.py) |
+| Qt original sources/notices/settings and ICU SDK identity | [Qt notices](../../scripts/package_notices.py), [SDK sources](../../scripts/package_sdk_sources.py), [SDK settings](../../scripts/package_sdk_settings.py) |
+| Standalone yt-dlp embedded notices without execution | [collector](../../scripts/package_standalone_notices.py) |
+| Copied Linux libraries/fonts/CA payload and authenticated exact APT sources | [library provenance](../../scripts/package_linux_notices.py), [source provenance](../../scripts/package_linux_sources.py) |
+| Runtime/libfuse/squashfuse/musl and exact Alpine recipes | [AppImage runtime sources](../../scripts/package_runtime_sources.py) |
+| FFmpeg binary enable flags, parent/recipe/source identity and notices | [FFmpeg dependency collector](../../scripts/package_ffmpeg_sources.py) |
+| Git/Gitiles/SVN original source retention | [Git](../../scripts/package_git_sources.py), [canonical TAR](../../scripts/package_canonical_sources.py), [SVN](../../scripts/package_svn_sources.py) |
+| Cargo registry crates and native yt-dlp dependencies | [registry collector](../../scripts/package_cargo_sources.py), [materials guide](dependency-source-materials.md) |
 
-`packaging/source-inputs.json` закрепляет исходники FFmpeg и yt-dlp, snapshot
-BtbN build recipes и восемь Qt source modules точными revisions/SHA-256.
-Исходники связаны с binary pins и Qt SDK version обоих комплектов. Упаковщики
-сохраняют эти байты в build-inputs archive; обновление binary/Qt pin без
-соответствующего source mapping отклоняется. `package_notices.py` копирует
-Qt notices/attributions и указанные ими license/copyright files из проверенных
-архивов в пакет; `Qt-source-notices/notices.json` фиксирует hashes и происхождение.
-`package_standalone_notices.py` сохраняет notices и metadata из проверенного
-yt-dlp PyInstaller archive без исполнения кода. Source lock также содержит
-раздельные по binary SHA исходники встроенного Python и Python dependencies;
-оба упаковщика используют общий `package_inputs.py select-sources` selector.
-Linux дополнительно сохраняет binary/source package versions и copyright texts
-в `linux-library-provenance.json` и `licenses/Linux-system`.
-`package_linux_sources.py` сопоставляет эти библиотеки точным source package
-versions из authenticated APT indexes, сохраняет `.dsc`/upstream/Debian archives
-без распаковки и проверяет их SHA-256. `linux-source-provenance.json` связывает
-сохранённые inputs с payload hashes. Container builder включает `deb-src` и
-сохраняет индексы; при локальной сборке matching indexes нужны заранее.
-Отсутствующая exact version, неоднозначные checksums или изменённый cache
-останавливают упаковку. Источники нельзя заменять ближайшей доступной версией.
-Та же процедура включает DejaVu и CA bundle: записываются hashes payload,
-точные binary/source versions и hash принадлежащего пакету генератора CA bundle.
-`package_sdk_sources.py` проверяет original hashes трёх ICU libraries из Qt SDK
-по `linux_sdk_dependencies` в source lock. Проверенные ICU 73.2 sources входят
-в Linux build inputs, notices — в `licenses/Qt-sdk-source-notices`. Обновление
-SDK binaries без проверенного mapping отклоняется даже при прежней версии Qt.
-`package_runtime_sources.py` отдельно проверяет AppImage runtime SHA и
-`linux_appimage_runtime` в source lock. Linux архив включает sources runtime,
-musl, mimalloc, zstd, zlib, libfuse, squashfuse и два exact Alpine recipe snapshots
-с патчами. Оригинальные notices включаются в
-`licenses/AppImage-runtime-source-notices`; `appimage-runtime-provenance.json`
-связывает их с binary pin и upstream build evidence. Обязательные notices,
-включая terms из README/header, должны присутствовать в verified source archive.
-Это ещё не полный corresponding-source комплект: зависимости FFmpeg/yt-dlp,
-toolchain/runtime details и build configuration Qt/SDK libraries собираются
-и сопоставляются отдельно. `corresponding_sources_complete=false` сохраняется
-до фактического завершения этой работы.
+Exact source versions/checksums are required: no nearest-version fallback. Cache
+hash mismatch, unsafe paths/redirects, missing notices or unmatched SDK/binary
+pins fail packaging. Preserve source data without executing it during collection.
+Canonical Gitiles TARs intentionally pin normalized retained bytes; other archives
+pin original bytes. Git/SVN helpers retain explicit revisions/properties and do
+not run checkouts/hooks. Bounded transient-network retries never relax hashes.
 
-`ffmpeg_dependencies` сохраняет частичный набор 95 pinned dependency source archives:
-93 для Linux и 91 для Windows. `package_ffmpeg_sources.py` проверяет SHA исходного FFmpeg
-archive, исходного recipe snapshot и соответствие SCRIPT_REPO/SCRIPT_COMMIT
-каждой библиотеки, включая нумерованные recipe slots. Если recipe использует тег,
-`recipe_revision` сохраняет его имя, а `revision` и URL архива закрепляют полный
-resolved commit; `recipe_tag_object_url` указывает на проверенный upstream tag
-object. При обновлении такого input нужно заново проверить разрешение тега
-в commit. Например, Windows FFmpeg использует Schannel, но его libssh/SRT всё
-равно требуют OpenSSL; соответствующие sources сохраняются на обеих платформах.
-MinGW/winpthreads сохраняется только для Windows; его GitHub mirror указан на
-upstream странице `https://www.mingw-w64.org/source/`. Для gnulib используется
-тот же GitHub mirror, что `SCRIPT_MIRROR2` в pinned libiconv recipe, и полный
-`SCRIPT_COMMIT2`. Поле `repository` продолжает обозначать исходный SCRIPT_REPO.
-Для libdrm сохраняются original `LICENSES/MIT.txt` и copyright-bearing core sources,
-public headers/build script; для MinGW — runtime/winpthreads
-COPYING, AUTHORS и disclaimers; для gnulib — COPYING и original license-notices.
-Исходное дерево libiconv сохраняется отдельно на полном `SCRIPT_COMMIT`,
-вместе с COPYING/COPYING.LIB и notices libcharset; его gnulib
-располагается по pinned recipe. Generated inputs и toolchain materials остаются
-отдельной незавершённой частью F7.
-Для официальных Googlesource archives без enclosing directory поле
-`strip_components=0` сохраняет пути notices целиком. По умолчанию снимается
-один корневой каталог; другие значения, absolute paths и traversal отвергаются.
-Gitiles назначает файлам время создания archive при каждом запросе, поэтому
-у AOM/libvpx/libwebp `canonical_tar=true`: downloader формирует TAR с нулевыми
-timestamps/owners и стабильным порядком записей, затем проверяет его закреплённый
-`sha256`. Пин относится к сохраняемому `.tar`, а не к изменчивому upstream gzip.
-Пути, типы, permissions и содержимое файлов входят в проверяемые bytes; symlinks,
-devices, duplicate/unsafe entries и неизвестные PAX fields отвергаются. Оригинальные
-тексты notices сохраняются без изменений. Helper общий для Linux/Windows и
-публикует input только после совпадения SHA-256. Остальные downloads проверяются
-по исходным bytes. Обе платформы посылают явный `Transcribe-package/1` User-Agent;
-HTTP 200 с HTML challenge также отклоняется проверкой hash.
-Для libiconv, soxr и opencore-amr `git_snapshot=true` сохраняет TAR прямо из
-primary HTTPS Git repository. Общий `package_git_sources.py` fetches полный
-закреплённый commit в временный bare repository, проверяет FETCH_HEAD и SHA-256
-созданного `git archive` с явными prefix и `tar.umask=0022`. Checkout и source
-scripts не выполняются. Git system/global config, inherited GIT variables,
-hooks, credential helpers и redirects исключены; cache публикуется атомарно
-без замены существующего input. Original Git metadata и source symlinks
-остаются в pinned TAR как данные; notice collector не следует по ссылкам.
-Helpers `package_git_sources.py`, `package_canonical_sources.py` и
-`package_source.py` сохраняются также в `materials/` build-inputs архива.
-Для LAME `svn_snapshot=true` использует неизменяемый SVN DAV baseline revision
-6835. Общий `package_svn_sources.py` проверяет repository UUID, числовые revisions,
-пути, per-file lengths/SHA-1 и окончательный TAR SHA-256. Raw repository bytes,
-executable bits и original SVN/custom properties сохраняются; свойства доступны
-в `.transcribe-svn-properties.json` внутри source TAR. Helper не разворачивает
-keywords/EOL и не выполняет исходники. Checkout reconstruction должен учитывать
-сохранённые properties; original FFmpeg recipe с `SCRIPT_REV` также сохраняется.
-Redirects, XML DTD/entities, externals и special files отвергаются, объём/число
-entries ограничены. Temporary files очищаются, готовый input публикуется без
-замены прежнего cache; helper включается в build materials на обеих платформах.
-SVN requests ограничены тремя попытками для HTTP 502/503/504, timeout,
-connection reset, incomplete read и unexpected TLS EOF. Certificate errors,
-invalid metadata и hash mismatch не повторяются.
-AMF сохраняет только используемые recipe пути `amf/public/include` и original
-`LICENSE.txt`: 57 headers и license, 58 original files. `git_archive_paths`
-задаёт явные относительные пути без patterns/options/traversal; helper передаёт
-их после `--` в `git archive` и сохраняет strict commit/TAR pins. Каждый header
-также включён в original notices. Git retrieval может загружать полное дерево
-objects (~345 MB для закреплённого AMF); это временный cache, а source TAR
-содержит лишь 58 выбранных файлов (~640 KiB). Для выбранных source paths предел
-одной Git команды — 300 секунд; обычные Git sources сохраняют предел 120 секунд.
-Linux downloader повторяет только HTTP 502/503/504, максимум три попытки
-с паузами 1 и 2 секунды; ошибка называет input. SHA mismatch, HTTP 404 и
-небезопасный redirect не повторяются. Эти retries не меняют закреплённые bytes.
-Проверяются также enable
-flags настоящего bundled FFmpeg; notices из verified sources сохраняются в
-`licenses/FFmpeg-dependency-source-notices`, а связи — в
-`ffmpeg-source-provenance.json`. Для FFmpeg 8.1 используется recipe slot 2
-nv-codec-headers (SDK 13.0). Chromaprint использует FFTW с GPL notices; upstream
-имя `lgpl` не заменяет рассмотрение условий каждого компонента. Полнота набора
-не заявляется: оставшиеся библиотеки, nested/generated inputs и toolchains
-всё ещё требуют соответствующих материалов.
+[Platform notices](../../THIRD_PARTY.md) and
+[v0.4.0 coverage](../releases/v0.4.0/binary-source-coverage.md) explain concrete
+materials and residual upstream reproducibility limits. In particular rav1e's
+recipe-time `cargo update cc` does not prove the final dependency resolution.
+Retained-input `corresponding_sources_complete=false` is not automatically a
+verdict about the full application-plus-input deliverable. Validate that actual
+combined set, preserving explicit limitations and original legal texts.
+The [pre-modernization inventory](../archive/releasing-before-modernization.md)
+retains the detailed historical component/recipe investigation.
 
-## Слияние и публикация
+## Authorized merge and publication
 
-1. Слейте прошедший приёмку candidate через PR в `master`, Conventional Commit
-   для merge: `chore(release): merge vX.Y.Z into master`. Не удаляйте `dev`.
-2. Проверьте итоговый master SHA и полный обязательный CI. Если code tree изменился,
-   соберите новый комплект и повторите приёмку; старое evidence автоматически не переносится.
-3. Сопоставьте exact-SHA manifests, checksums, ручную матрицу и материалы раздачи.
-   Все обязательные gates должны быть подтверждены текущим отчётом.
-4. Убедитесь, что тег отсутствует, создайте аннотированный `vX.Y.Z` на проверенном
-   master. Проверьте `git rev-parse vX.Y.Z^{commit}` и remote peeled tag.
-5. Подготовьте notes из `docs/release-notes-vX.Y.Z.md` и прошедшие assets. Проверьте
-   состав на private logs/media/model weights. Опубликуйте существующий проверенный
-   комплект; повторная упаковка после испытаний недопустима.
-6. Скачайте опубликованные assets в новый каталог, сверьте SHA-256 и выполните
-   краткий запуск. Отдельно проверьте GitHub source archive и его соответствие тегу.
-7. Дополните актуальный отчёт ссылками на final-SHA CI, тег, release и hashes.
-   Убирайте только созданные в этой задаче временные файлы, сохраняя необходимые
-   build inputs/evidence и пользовательские данные.
-
-v0.4.0 [опубликован 11 октября 2026 года](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0)
-с исходным SHA `926366a1c4f7ec2d1cc188f8448591809cc3282c`.
-Итог и историческая хронология находятся в [release validation](../releases/v0.4.0/validation.md).
-Для следующего выпуска все применимые gates выполняются заново на его final SHA;
-прежний зелёный workflow или неполная ручная матрица не заменяют приёмку.
+1. After maintainer authorization and acceptance, merge the candidate into master
+   with a Conventional Commit, e.g. `chore(release): merge vX.Y.Z into master`.
+2. Verify final master SHA and required CI. If the code/payload tree changed,
+   rebuild and revalidate; old candidate evidence does not transfer automatically.
+3. Match exact-SHA manifests, checksums, manual scope and complete material set.
+4. Confirm the tag is absent. Create an annotated `vX.Y.Z` on checked master;
+   compare `git rev-parse vX.Y.Z^{commit}` and the remote peeled tag.
+5. Prepare notes and the already-checked assets; exclude private logs/media/model
+   weights. Publish those bytes without repacking. There is no automatic release
+   publication workflow in this repository.
+6. Independently download/rehash public assets to a new directory and smoke them.
+   Check the GitHub source archive and its tagged tree separately.
+7. Record final-SHA runs, tag, release and hashes in validation. Clean only
+   provenance-checked task-owned temporary outputs, preserving required evidence,
+   build inputs and all user data. Do not remove unrelated branches or files.

@@ -1,6 +1,6 @@
 # CLI reference
 
-[User guide](guide.md) · [Source installation](../../CONTRIBUTING.md)
+[User guide](guide.md) · [Source installation](../build/from-source.md)
 
 ```sh
 transcribe [OPTIONS] "FILE_OR_URL"

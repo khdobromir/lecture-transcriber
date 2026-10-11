@@ -41,4 +41,4 @@ After model preparation, local-file recognition needs no network. URL download
 and model download do. Use **Отменить** to stop a task and retain published
 partial text. See [troubleshooting](../troubleshooting.md) for missing models,
 download failures or incomplete packages. CLI installation/builds have a separate
-[source guide](../../CONTRIBUTING.md) and [CLI reference](cli.md).
+[source guide](../build/from-source.md) and [CLI reference](cli.md).

@@ -13,6 +13,7 @@ contains current entry points.
 - [v0.2.0 notes](release-notes-v0.2.0.md), [validation](release-validation-v0.2.0.md).
 - [v0.2.1 notes](release-notes-v0.2.1.md), [validation](release-validation-v0.2.1.md).
 - [v0.3.0 notes](release-notes-v0.3.0.md), [validation](release-validation-v0.3.0.md), [review](release-review-v0.3.0.md).
+- Pre-modernization full guides: [release inventory/procedure](releasing-before-modernization.md), [source materials](dependency-source-materials-before-modernization.md), [Linux portable](linux-portable-before-modernization.md), [candidate evidence](candidate-validation-before-modernization.md).
 
 The [v0.4.0 release record](../releases/v0.4.0/validation.md) includes its final
 published summary and the preserved candidate journal, including dated waivers.
