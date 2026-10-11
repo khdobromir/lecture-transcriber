@@ -12,6 +12,7 @@ qt_add_qml_module(transcribe_gui_logic URI Transcribe VERSION 1.0
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Transcribe"
     SOURCES backend.hpp history.hpp models.hpp)
 qt_add_executable(transcribe-gui main.cpp)
+target_compile_definitions(transcribe-gui PRIVATE TRANSCRIBE_VERSION="${PROJECT_VERSION}")
 qt_add_resources(transcribe-gui app_icon PREFIX "/icons" BASE "${PROJECT_SOURCE_DIR}"
     FILES "${PROJECT_SOURCE_DIR}/icon.png")
 set_target_properties(transcribe-gui PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.4.1 — release candidate
+
+Not published. See [release notes](docs/releases/v0.4.1/notes.md) and
+[validation requirements](docs/releases/v0.4.1/validation.md).
+
 - Use the maintainer-supplied application icon in README, Linux desktop/AppImage,
   Qt windows and Windows executable resources.
 - Run portable CLI/audio/features unit cases on Windows while retaining Linux
@@ -10,6 +15,11 @@
   need yt-dlp with `--no-plugin-dirs` support (the pinned 2026.08.19 supports it).
   Custom extractor plugins are outside the supported configuration; built-in
   extractors and existing URL/cookies arguments are preserved.
+- Remove standalone release checksum files; keep package/build-input hashes in
+  manifests and verify GitHub's SHA-256 digest for every uploaded asset.
+- Set GUI application-version metadata from the same CMake version as the CLI.
+- Add development presets, pinned changed-line formatting, dependency pin checks,
+  English technical documentation and compact Russian user guides.
 
 ## 0.4.0 — 2026-10-11
 
