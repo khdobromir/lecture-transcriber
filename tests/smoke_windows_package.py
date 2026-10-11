@@ -12,6 +12,7 @@ import sys
 import tempfile
 import wave
 import shutil
+import struct
 
 def verify_executable_manifest(executable):
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -30,14 +31,17 @@ def verify_executable_manifest(executable):
     if not module:
         raise ctypes.WinError(ctypes.get_last_error())
     try:
-        resource = kernel.FindResourceW(module, 1, 24)
-        if not resource:
-            raise RuntimeError("Missing executable manifest: " + str(executable))
-        size = kernel.SizeofResource(module, resource)
-        pointer = kernel.LockResource(kernel.LoadResource(module, resource))
-        if not pointer or not size:
-            raise RuntimeError("Unreadable executable manifest")
-        manifest = ET.fromstring(ctypes.string_at(pointer, size))
+        def resource_bytes(identifier, kind):
+            resource = kernel.FindResourceW(module, identifier, kind)
+            if not resource:
+                raise RuntimeError(f"Missing executable resource {identifier}/{kind}: {executable}")
+            size = kernel.SizeofResource(module, resource)
+            pointer = kernel.LockResource(kernel.LoadResource(module, resource))
+            if not pointer or not size:
+                raise RuntimeError("Unreadable executable resource")
+            return ctypes.string_at(pointer, size)
+
+        manifest = ET.fromstring(resource_bytes(1, 24))
         level = manifest.find(".//{*}requestedExecutionLevel")
         if level is None or level.get("level") != "asInvoker":
             raise RuntimeError("Package requests elevation")
@@ -45,6 +49,17 @@ def verify_executable_manifest(executable):
             raise RuntimeError("Missing PerMonitorV2 manifest")
         if (manifest.findtext(".//{*}longPathAware") or "").lower() != "true":
             raise RuntimeError("Missing long-path manifest")
+        # RC group 101 must reference every original image from the supplied ICO.
+        expected = (Path(__file__).resolve().parents[1] / "packaging/windows/transcribe.ico").read_bytes()
+        group = resource_bytes(101, 14)
+        header = struct.unpack_from("<HHH", expected)
+        if header[:2] != (0, 1) or not header[2] or struct.unpack_from("<HHH", group) != header:
+            raise RuntimeError("Executable icon group differs from source ICO")
+        for index in range(header[2]):
+            entry = struct.unpack_from("<BBBBHHII", expected, 6 + 16 * index)
+            actual = struct.unpack_from("<BBBBHHIH", group, 6 + 14 * index)
+            if actual[:7] != entry[:7] or resource_bytes(actual[7], 3) != expected[entry[7]:entry[7] + entry[6]]:
+                raise RuntimeError("Executable icon image differs from source ICO")
     finally:
         kernel.FreeLibrary(module)
 
@@ -170,7 +185,7 @@ with tempfile.TemporaryDirectory(prefix="transcribe-package-smoke-") as temporar
     if marker.exists():
         raise RuntimeError("Packaged GUI/CLI loaded an untrusted backend")
 evidence = {"source": expected_source, "dirty": manifest["dirty"], "zip_sha256": digest(archive), "verified_files": len(manifest["files"]),
-            "checks": ["final ZIP extraction and every file SHA-256", "app-local CRT in bin and tools", "embedded manifests, DPI and asInvoker", "minimal PATH",
+            "checks": ["final ZIP extraction and every file SHA-256", "app-local CRT in bin and tools", "embedded manifests, DPI and asInvoker", "CLI and GUI icon groups/images match source ICO", "minimal PATH",
                        "bundled tools and Whisper Unicode input preflight", "native backend probe positive control and cwd/env rejection", "Unicode paths and different cwd", "deployed native Windows Qt/QML startup"],
             "real_gui_cli_speech": bool(args.real_gui), "manual_clean_windows_11": "unverified"}
 archive.with_suffix(archive.suffix + ".validation.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")

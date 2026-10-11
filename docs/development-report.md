@@ -24,6 +24,7 @@ Branch: `chore/modernization-roadmap`, based on
 | E1.1 native expectation | Engine-directory regression expects the platform's actual missing-engine diagnostic | Windows preflight explicitly reports `Нет tools/whisper-cli.exe`, Linux reports `Нет whisper-cli`; same case retained with platform-specific expectation; Linux CLI units rerun |
 | E1.4 | Offline Whisper pin consistency contract registered on both platforms | Four unittest methods include all seven single-declaration mutations, consistent upgrade and malformed/duplicate fixtures; dependency_pins/package_source_identity/static_project_contract 3/3 CTest suites; no network or build script execution |
 | D2.1 / D0.2 metadata | SECURITY/private reporting, concise English issue/PR templates accepting Russian, homepage points to pushed Quick Start | GitHub API confirmed private-vulnerability-reporting enabled and homepage/description; no invented email/SLA; local links/whitespace checked |
+| D0.3 native verification | Windows final-ZIP smoke compares both application PE icon groups and every referenced image with the tracked source ICO | Python syntax and existing PE/package helper tests locally; native resource verification awaits the next Windows package job, rather than inferring icon presence from compilation |
 
 ## Push checkpoint (2026-10-11)
 
