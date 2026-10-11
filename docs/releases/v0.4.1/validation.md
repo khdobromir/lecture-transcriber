@@ -1,8 +1,7 @@
-# v0.4.1 candidate validation
+# v0.4.1 validation
 
-This document describes evidence collection before source freeze; it is not a
-claim that a candidate has passed. The delivery's `release-validation.json`
-records the actual candidate commit, source tree/fingerprint, artifact hashes,
+This document defines the verification scope. The release's `release-validation.json`
+records the actual release commit, source tree/fingerprint, artifact hashes,
 concrete CI run links, performed checks, omissions and status. Keeping measured
 evidence beside immutable packages avoids changing the source commit merely to
 record its own SHA. A missing result is unverified, not a pass.
@@ -51,8 +50,8 @@ The external validation record lists performed checks, failures, unverified
 scenarios and known limitations. Missing optional package checks alone do not
 set status to `BLOCKED`.
 
-No merge, tag or GitHub Release is part of preparation. After separate owner
-authorization, verify final master SHA/CI and any source-tree changes before an
+The owner authorized merge, tag creation and publication on 2026-10-12.
+Verify final master SHA/CI and any source-tree changes before an
 annotated tag. Changed build inputs require rebuilding affected packages and
 updated evidence; old candidate results do not describe changed bytes.
 After upload, `release_assets.py verify-github` requires the GitHub SHA-256 digest

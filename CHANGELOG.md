@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-## 0.4.1 — release candidate
+## v0.4.1 — 2026-10-12
 
-Not published. See [release notes](docs/releases/v0.4.1/notes.md) and
+See [release notes](docs/releases/v0.4.1/notes.md) and
 [verification coverage](docs/releases/v0.4.1/validation.md).
 
 - Use the maintainer-supplied application icon in README, Linux desktop/AppImage,

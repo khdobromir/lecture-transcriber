@@ -10,6 +10,11 @@ assets. v0.4.0 was published on 2026-10-11 from
 [final summary/journal](../releases/v0.4.0/validation.md) records actual evidence
 and limitations. Earlier results do not validate a future release.
 
+Starting with v0.4.1, GitHub Release titles, release-note headings and annotated
+tag messages use only `vX.Y.Z`, for example `v0.4.1`, without the application name.
+Tags already follow that format. Versioned package/source filenames retain the
+`Transcribe-` prefix. Do not rename historical releases.
+
 ## Prepare and freeze
 
 1. Finish code, dependency/packaging changes and `project(... VERSION ...)`, the

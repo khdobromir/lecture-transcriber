@@ -1,11 +1,10 @@
-# Transcribe v0.4.1
+# v0.4.1
 
 - **Windows 11 x64:** `Transcribe-0.4.1-windows-x64.zip`
 - **Linux x86_64, glibc 2.39+:** `Transcribe-0.4.1-linux-x86_64.AppImage`
 
-Release candidate; not published. These are the intended final asset names.
-Publication is a separate maintainer action. See the
-[verification record](validation.md).
+See the [verification record](validation.md) and the release's
+`release-validation.json` for exact source and artifact identities.
 
 This maintenance release improves application identity, downloader isolation,
 cross-platform regression coverage and documentation. It keeps the independent
@@ -84,7 +83,7 @@ and [third-party inventory](../../../THIRD_PARTY.md). Retained source archives d
 not establish byte-identical reproduction of upstream binaries; rav1e's recipe-time
 `cargo update cc` remains an explicitly recorded upstream reconstruction limit.
 
-Read [validation](validation.md) and the candidate's `release-validation.json`
+Read [validation](validation.md) and the release's `release-validation.json`
 for concrete source/package SHAs, CI runs, platform acceptance and known limits.
 Package checks, including manual desktop testing, are optional under the
 maintainer policy set on 2026-10-11. Untested scenarios remain explicitly recorded;
