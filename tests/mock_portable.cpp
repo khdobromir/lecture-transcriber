@@ -80,6 +80,9 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
         put(utf8_path(prefix + ".srt"), "1\n00:00:00,000 --> 00:00:00,100\n" + text + '\n');
         put(utf8_path(prefix + ".vtt"), "WEBVTT\n\n00:00:00.000 --> 00:00:00.100\n" + text + '\n');
     } else if (kind == "yt-dlp") {
+        const auto report = std::find(args.begin(), args.end(), "--print-to-file");
+        if (std::find(args.begin(), args.end(), "--simulate") == args.end() && std::distance(report, args.end()) < 3)
+            throw std::runtime_error("missing download report");
         for (const auto* flag : {"--ignore-config", "--no-cache-dir", "--no-playlist", "--no-plugin-dirs"})
             if (std::find(args.begin(), args.end(), flag) == args.end()) throw std::runtime_error("missing downloader isolation flag");
         if (args.size() < 2 || args[args.size() - 2] != "--") throw std::runtime_error("missing URL separator");
@@ -97,8 +100,6 @@ int execute(const std::vector<std::string>& args, const std::string& kind) {
             if (extension != path.npos) path.replace(extension, 7, "wav");
             for (size_t at = 0; (at = path.find("%%", at)) != std::string::npos; ++at) path.erase(at, 1);
             fs::copy_file(utf8_path(input), utf8_path(path), fs::copy_options::overwrite_existing);
-            const auto report = std::find(args.begin(), args.end(), "--print-to-file");
-            if (std::distance(report, args.end()) < 3) throw std::runtime_error("missing download report");
             put(utf8_path(*(report + 2)), path + '\n');
         }
     } else throw std::runtime_error("unknown mock tool");
