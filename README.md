@@ -119,6 +119,8 @@ flowchart LR
 
 The GUI owns presentation and background model/history operations. A backend
 process runs one transcription task and supervises its external tools.
+See [architecture and decisions](docs/architecture/overview.md) for ownership,
+media flow and the completion/cancellation boundary.
 
 ## Engineering Highlights
 
@@ -144,8 +146,8 @@ than real time. ASR mistakes, especially terms, names and formulas, need review.
 ETA is approximate; partial text is not a completed result. Interrupted tasks
 can be retried but do not resume recognition at the previous position.
 
-[One historical 0.3.0 lecture measurement](docs/archive/lecture-validation-2026-10-03.md)
-is hardware/input specific; it is neither a current 0.4.0 benchmark nor a WER study.
+[Historical development measurements and methodology](docs/benchmarks/README.md)
+are hardware/input specific; they are neither current 0.4.0 benchmarks nor a WER study.
 Do not publish cookies, private URLs, recordings or unredacted diagnostic logs.
 
 ## Development and testing

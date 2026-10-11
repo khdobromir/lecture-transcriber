@@ -1,16 +1,15 @@
-# Состояния GUI и владение workers
+# GUI states and worker ownership
 
-GUI использует Qt Quick Controls и Layouts. C++ управляет задачей, моделью и
-файлами; QML показывает состояния и вызывает разрешённые действия. Компонент
-получает Backend как required property. Модели списка принадлежат GUI thread.
-Основание: [Qt Quick best practices](https://doc.qt.io/qt-6.8/qtquick-bestpractices.html),
-[Qt Quick performance](https://doc.qt.io/qt-6.8/qtquick-performance.html).
+[Architecture](overview.md) · [Protocol](protocol-v1.md)
 
-## Текущая задача и сохранённый результат
+QML uses Qt Quick Controls/Layouts for presentation and allowed actions; C++ owns
+tasks, models and files. Backend is a required QML property. List models/QObjects
+belong to the GUI thread. [states.hpp](../../gui/states.hpp) is the transition
+source of truth; [backend.cpp](../../gui/backend.cpp) implements task orchestration.
 
-`TaskState` и guards определены в `gui/states.hpp`:
+## Current task versus saved result
 
-| Из | Разрешённые переходы |
+| From | Allowed next task states |
 |---|---|
 | idle/completed/interrupted/failed | starting |
 | starting | running/cancel_requested/failed/interrupted |
@@ -18,65 +17,62 @@ GUI использует Qt Quick Controls и Layouts. C++ управляет з
 | cancel_requested | finalizing/failed/interrupted |
 | finalizing | completed/cancel_requested/failed/interrupted |
 
-Повторный переход в то же состояние допустим. `busy` выводится из состояния;
-новая задача запрещена, пока задача или установка модели активна. `canCancel`
-становится false после terminal event. Завершённый backend с согласованным
-успехом переходит в finalizing на время независимой проверки manifest/экспортов.
-Поздняя отмена не отменяет подтверждённый commit. Обычное закрытие асинхронно
-ждёт окончания задачи и/или операции с моделью.
+Self-transitions are allowed. Busy is derived from state; a new task is forbidden
+while a task/model operation is active. Cancel becomes unavailable after a terminal
+event. A backend with coherent success enters finalizing while an independent
+worker verifies manifest/exports. Late cancellation does not revoke a confirmed
+commit. Ordinary close asynchronously waits for task/model settlement.
 
-`taskResultDirectory` относится к текущему запуску; `resultDirectory`, текст и
-`selectedStatus` — к выбранному сохранённому результату. Историю можно открыть
-во время задачи и затем вернуться к её результату. Preflight и FailedToStart
-меняют только текущую задачу. Retry сохраняет параметры в памяти; cookies не
-записываются в QSettings. Каталог и журналы доступны отдельно для текущей задачи.
-Ошибка связи не делает сохранённый completed manifest ошибочным: его можно
-открыть из истории отдельно от состояния текущего процесса.
+`taskResultDirectory` belongs to the current run. `resultDirectory`, preview and
+`selectedStatus` belong to the selected saved result. History can open during a
+task, then return to its result. Preflight/FailedToStart affect the current task
+only. Retry keeps parameters in memory, not cookies in QSettings. Task directories
+and logs have separate actions. A failed connection does not invalidate a saved
+completed manifest; history may still discover it independently.
 
-Каждый запуск, выбор результата и scan имеют поколение. Preview/history workers
-получают снимок параметров и cooperative cancellation token. Outstanding flag
-остаётся true до обработки finished в GUI thread: уже завершённый worker с
-ещё не доставленным callback нельзя переиспользовать для нового чтения.
-Устаревший callback не применяет результат к новому выбору или scan.
-Чтение TXT ограничено 512 KiB; хвост объясняется в тексте, полный TXT открывается
-отдельным действием. Ошибки preview/history и предупреждения имеют свой контекст.
+Run, selection and scan generations reject stale callbacks. Preview/history
+workers receive snapshots and cooperative cancellation tokens. Outstanding remains
+true until the finished callback is handled in the GUI thread: a finished worker
+with a queued callback cannot be reused early. Old callbacks cannot overwrite a
+new selection/scan. TXT reading is limited to 512 KiB, with an explained tail view
+and separate full-file action. Preview/history errors and task warnings retain
+separate contexts.
 
-## Установка модели
+## Model installation
 
-`ModelState`: idle, waiting_lock, checking_existing, downloading, verifying,
-publishing, cancelling, ready, failed, cancelled. Неактивное состояние допускает
-новую операцию только через waiting_lock. Рабочие фазы переходят друг в друга;
-import может сообщать снимки фаз, пропуская уже завершённые короткие фазы.
-Из cancelling разрешён только фактический итог ready/failed/cancelled.
+[ModelManager](../../gui/models.cpp) has idle, waiting_lock, checking_existing,
+downloading, verifying, publishing, cancelling, ready, failed and cancelled
+states. Inactive states start through waiting_lock. Active phases may advance;
+import can skip short phases because the UI receives snapshots. Cancelling only
+settles to actual ready/failed/cancelled (or remains cancelling).
 
-Hash, import, backup и replace выполняются в workers. Отмена проверяется при
-ожидании lock, между блоками чтения/копирования и при повторах replace. Только
-GUI thread использует QNetworkReply, watcher и QObject. HTTP callbacks проверяют
-identity reply и поколение операции. Публикация и сохранение выбора модели
-заканчиваются под `.install.lock`; ready/failed/cancelled освобождают владение
-ровно после завершения worker. Успешный commit сохраняет ready при поздней отмене.
+Hashing/import/backup/replacement run in workers. Cancellation is checked while
+waiting for locks, between read/copy blocks and replacement retries. Only GUI
+thread code uses QNetworkReply/watchers/QObjects. HTTP callbacks check reply
+identity and operation generation. Publication and model selection finish under
+`.install.lock`; terminal states release ownership only after workers finish.
+A successful commit retains ready under late cancellation.
 
-Повреждённая установленная модель не удаляется. Пользователь явно выбирает
-«Сохранить резервную копию и восстановить»: сначала создаётся отдельная копия
-под installation lock, затем новый файл проверяется по SHA-256 и публикуется.
-Ошибка сети/hash/записи сохраняет оригинал и завершённую резервную копию.
-Импорт неверного файла также не заменяет установленную модель.
+An installed corrupt model is not deleted. Explicit backup-and-recover first
+copies it under the installation lock, then hashes/publishes a new file.
+Network/hash/write errors preserve the original and completed backup. An invalid
+import cannot replace the installed model.
 
-Деструктор — страховка: выставляет cooperative cancellation, отключает callbacks
-и соединяет workers, перехватывая исключения уже завершённой работы. Штатный
-close не вызывает блокирующий join в обработчике UI. Tests используют data-only
-Readers/Workers hooks и barriers для stale callback, teardown и commit/cancel.
+Destructors are the final safeguard: request cooperative cancellation, disconnect
+callbacks and join workers, catching completed-work exceptions. Ordinary UI close
+does not block on joining inside its event handler. [workers.hpp](../../gui/workers.hpp)
+unwraps Qt worker exceptions for meaningful diagnostics. Tests inject data-only
+Readers/Workers hooks and barriers, not a second production orchestration layer.
 
-## Интерфейс и проверки
+## UI and verification
 
-Стандартные Controls обеспечивают клавиатурные действия; Ctrl+O, Ctrl+Enter,
-Ctrl+Q и F5 документированы в интерфейсе. Native dialogs возвращают фокус.
-Длинные ошибки задачи и модели доступны для выделения в ограниченных ScrollView;
-пути и сохранённые сообщения отображаются как plain text. Минимальное окно
-720×600; экспортные действия переносятся по ширине.
+Standard Controls support keyboard interaction: Ctrl+O, Ctrl+Enter, Ctrl+Q and F5.
+Native dialogs return focus. Task/model errors remain selectable within bounded
+ScrollViews; paths, transcript and history messages use plain text. Minimum window
+size is 720×600 and export actions wrap.
 
-Controller/QML tests проверяют guards, preflight и FailedToStart/retry,
-A→B→A, устаревший scan, исключения workers, teardown, cancel hash/publish,
-позднюю отмену после commit, backup recovery, close при задаче/model lock и
-Tab/Shift+Tab. Ручные native dialogs/portal/clipboard/DPI в установленных
-пользовательских окружениях отмечаются отдельно в отчёте кандидата.
+[Controller tests](../../tests/test_gui.cpp) and [QML tests](../../tests/test_qml.cpp)
+cover guards, preflight, FailedToStart/retry, A→B→A selection, stale scans, worker
+exceptions/teardown, hash/publication cancellation, late commit, backup recovery,
+close during task/model lock and Tab/Shift+Tab. Native dialogs/portal/clipboard and
+user DPI are separately recorded in [manual acceptance](../testing/manual.md).

@@ -1,7 +1,7 @@
 # Developer guide
 
 [Build prerequisites and presets](../build/from-source.md) · [Testing](../testing/README.md)
-· [Process/protocol boundary](../architecture/protocol-v1.md) · [Contributing](../../CONTRIBUTING.md)
+· [Architecture](../architecture/overview.md) · [Contributing](../../CONTRIBUTING.md)
 
 Clone the repository and create a focused work branch from current `master`.
 Use a clean build directory and ordinary user permissions. Do not test installers
