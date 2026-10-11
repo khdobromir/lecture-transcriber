@@ -16,7 +16,7 @@
 Published as [v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0),
 including Linux AppImage, Windows ZIP, checksums and retained build inputs.
 Source: `926366a1c4f7ec2d1cc188f8448591809cc3282c`.
-See the [final validation summary](docs/release-validation-v0.4.0.md).
+See the [final validation summary](docs/releases/v0.4.0/validation.md).
 
 - Windows portable mode запрещает fallback к PATH/cwd и установленному Whisper;
   child tools получают доверенный cwd и очищенный GGML environment.
@@ -152,5 +152,5 @@ See the [final validation summary](docs/release-validation-v0.4.0.md).
 
 Ограничения: язык распознавания `ru`, Linux/POSIX, установка из исходников.
 Загрузка одной общедоступной лекции VK и скорость на Ryzen 5 7430U измерены
-в [отчёте](docs/lecture-validation-2026-10-03.md); доступность других видео,
+в [отчёте](docs/archive/lecture-validation-2026-10-03.md); доступность других видео,
 точность распознавания и качество возле границ частей этим не подтверждаются.

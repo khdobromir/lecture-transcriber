@@ -434,7 +434,7 @@ def main():
                     appdir / "package-manifest.json", library_provenance, source_provenance,
                     PROJECT / "scripts/package_git_sources.py", PROJECT / "scripts/package_canonical_sources.py",
                     PROJECT / "scripts/package_source.py", PROJECT / "scripts/package_svn_sources.py",
-                    PROJECT / "scripts/package_cargo_sources.py", PROJECT / "docs/dependency-source-materials.md",
+                    PROJECT / "scripts/package_cargo_sources.py", PROJECT / "docs/build/dependency-source-materials.md",
                     sdk_settings, PROJECT / "scripts/package_sdk_settings.py"])
     validate_identity(PROJECT, identity, args.release, args.skip_tests)
     destination = args.destination.resolve(); destination.mkdir(parents=True, exist_ok=True)

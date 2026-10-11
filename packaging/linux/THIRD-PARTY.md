@@ -55,7 +55,7 @@ the exact final build-tool resolution of the upstream binary.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
 Actual SDK settings and the retained nested inputs accompany the build-inputs
-archive. See docs/binary-source-coverage-v0.4.0.md in the Transcribe source archive
+archive. See docs/releases/v0.4.0/binary-source-coverage.md in the Transcribe source archive
 for the source/notice coverage and rebuild limitations.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.

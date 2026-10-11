@@ -15,6 +15,7 @@ Branch: `chore/modernization-roadmap`, based on
 | D0.3 | Canonical PNG in Qt resource; Windows CLI/GUI ICO; installed Linux PNG and AppImage icon paths | GCC Debug GUI build; CMake install/startup from Unicode cwd; 5/5 packaging/source/QML suites; PNG/6 ICO sizes inspected |
 | E1.1 | Portable/POSIX test helpers, Windows unit registration, Unicode-safe fixtures and common corruption case | GCC GUI build; 7/7 unit/pipeline/install/preflight/GUI integration suites; CLI 22/22, audio 22/22, features 10/10 cases (all 53 original Linux cases retained) |
 | E1.2 | Disabled ambient yt-dlp plugins in both downloader calls; strengthened portable/POSIX mocks; explicit offline plugin smoke | Regression failed before flag and passed after; actual yt-dlp 2026.08.19 positive marker loaded, isolated marker not loaded, no network |
+| D1.2 | Migrated all 28 original documents, retained forwarding addresses, added index/archive/manual entry, updated full source-material paths in both packagers | Compared all 28 document bodies with pre-migration HEAD (only link relocation/banners differ); 191 local Markdown links resolve; 4/4 packaging/source contract suites |
 
 ## Push checkpoint (2026-10-11)
 

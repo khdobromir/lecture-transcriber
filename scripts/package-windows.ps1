@@ -212,7 +212,7 @@ Invoke-Checked python @("$Project\scripts\package_inputs.py", 'archive', $Inputs
     '--material', "$Project\packaging\windows\whisper-unicode.hpp", '--material', "$Bundle\package-manifest.json",
     '--material', "$Project\packaging\source-inputs.json", '--material', "$Project\scripts\package_git_sources.py",
     '--material', "$Project\scripts\package_canonical_sources.py", '--material', "$Project\scripts\package_source.py", '--material', "$Project\scripts\package_svn_sources.py",
-    '--material', "$Project\scripts\package_cargo_sources.py", '--material', "$Project\docs\dependency-source-materials.md",
+    '--material', "$Project\scripts\package_cargo_sources.py", '--material', "$Project\docs\build\dependency-source-materials.md",
     '--material', $SdkSettings, '--material', "$Project\scripts\package_sdk_settings.py")
 $null = Get-SourceIdentity $IdentityFile
 (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path $Zip -Leaf) |

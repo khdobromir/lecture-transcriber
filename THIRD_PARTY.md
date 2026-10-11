@@ -32,8 +32,8 @@ user results remain outside both binary packages.
   `licenses/`, Qt/FFmpeg/yt-dlp notices and redistributable runtime.
 - [Source input mapping](packaging/source-inputs.json): exact archives, revisions,
   checksums and component relationships used by the packaging collectors.
-- [Source materials guide](docs/dependency-source-materials.md) and
-  [v0.4.0 coverage report](docs/binary-source-coverage-v0.4.0.md): retained inputs,
+- [Source materials guide](docs/build/dependency-source-materials.md) and
+  [v0.4.0 coverage report](docs/releases/v0.4.0/binary-source-coverage.md): retained inputs,
   attribution and explicit rebuilding/coverage limitations.
 - [v0.4.0 release](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0):
   binary/source artifacts, checksums, manifests, build-inputs and validation records.

@@ -95,17 +95,17 @@ SHA-256 во временный каталог runner и не запускает
 журналы и результаты публичного примера хранятся как artifacts семь дней;
 готовые модели и бинарники не кешируются и не загружаются как artifacts.
 Результаты локальной проверки этих изменений и её ограничения — в
-[отчёте проверки тестов и CI](docs/test-validation.md).
+[отчёте проверки тестов и CI](docs/archive/test-validation.md).
 
-GUI и упаковка: [Windows/Qt](docs/windows-gui.md), [AppImage](docs/linux-portable.md).
+GUI и упаковка: [Windows/Qt](docs/archive/windows-gui.md), [AppImage](docs/build/linux-portable.md).
 Для приёмки на exact SHA вручную запускаются **CI** и **Linux portable GUI** с
 `real_smoke=true`, а также **Real Whisper smoke**. В portable workflow AppImage
 собирается один раз; builder и offline Ubuntu/Debian проверяют один checksum.
 Зелёный run с пропущенным real step не закрывает реальную приёмку.
 
 Сравнение скорости, памяти и границ дробления описано в README. Выполненные
-локальные проверки `dev` — в [отчёте](docs/dev-validation.md).
-Проверки подготовки v0.2.1 — в [отчёте выпуска](docs/release-validation-v0.2.1.md).
+локальные проверки `dev` — в [отчёте](docs/archive/dev-validation.md).
+Проверки подготовки v0.2.1 — в [отчёте выпуска](docs/archive/release-validation-v0.2.1.md).
 
 ## Pull requests
 
@@ -121,4 +121,4 @@ CLI и форматов результатов либо явно докумен�
 
 Версия задаётся только в `project(... VERSION ...)` в CMake. Изменения версии,
 зависимостей и пользовательского поведения отражайте в changelog.
-Порядок подготовки и публикации — в [инструкции выпуска](docs/releasing.md).
+Порядок подготовки и публикации — в [инструкции выпуска](docs/build/releasing.md).

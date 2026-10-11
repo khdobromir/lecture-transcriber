@@ -10,7 +10,7 @@ conversion uses FFmpeg. The application interface and recognition language are R
 **C++23 · Qt Quick / QML · CMake · Linux / Windows · CPU-only**
 
 [Download v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0)
-· [Changelog](CHANGELOG.md) · [Documentation](docs/windows-gui.md)
+· [Changelog](CHANGELOG.md) · [Documentation](docs/archive/windows-gui.md)
 · [Contributing](CONTRIBUTING.md)
 
 ## Demo
@@ -66,7 +66,7 @@ URL downloads and downloading models need network access; local recognition does
 | Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg and standalone yt-dlp included |
 | Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp and runtime included |
 | Linux source installer | C++23 toolchain and CLI prerequisites | Builds the CLI and CPU engine; uses system FFmpeg/yt-dlp |
-| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](docs/windows-gui.md) |
+| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](docs/archive/windows-gui.md) |
 
 No separate Python, Qt SDK or compiler is needed to run the binary packages.
 Models, settings and results are user data outside the packages. GPU acceleration,
@@ -82,8 +82,8 @@ export PATH="$HOME/.local/bin:$PATH"
 transcribe --help
 ```
 
-Run the installer as a regular user. [Linux portable details](docs/linux-portable.md)
-and [GUI/Windows instructions](docs/windows-gui.md) explain the separate routes.
+Run the installer as a regular user. [Linux portable details](docs/build/linux-portable.md)
+and [GUI/Windows instructions](docs/archive/windows-gui.md) explain the separate routes.
 
 ## Usage
 
@@ -101,7 +101,7 @@ uses more memory. Live TXT preserves recording order; final subtitles appear
 when export completes. Use GUI Cancel or CLI Ctrl+C rather than killing the process.
 
 Use `transcribe --help` for all flags. The GUI exposes task, history and model
-management; machine consumers use the [JSONL v1 contract](docs/protocol-v1.md).
+management; machine consumers use the [JSONL v1 contract](docs/architecture/protocol-v1.md).
 
 ## How it works
 
@@ -141,7 +141,7 @@ than real time. ASR mistakes, especially terms, names and formulas, need review.
 ETA is approximate; partial text is not a completed result. Interrupted tasks
 can be retried but do not resume recognition at the previous position.
 
-[One historical 0.3.0 lecture measurement](docs/lecture-validation-2026-10-03.md)
+[One historical 0.3.0 lecture measurement](docs/archive/lecture-validation-2026-10-03.md)
 is hardware/input specific; it is neither a current 0.4.0 benchmark nor a WER study.
 Do not publish cookies, private URLs, recordings or unredacted diagnostic logs.
 
@@ -160,7 +160,7 @@ Use `-DBUILD_TESTING=OFF` for an application-only build.
 [CI](.github/workflows/ci.yml) covers Linux GCC/Clang, Windows MSVC, Qt,
 static analysis and ASan/UBSan. [Real Whisper smoke](.github/workflows/real-smoke.yml)
 and [portable package checks](.github/workflows/linux-portable.yml) are separate.
-[Published 0.4.0 validation](docs/release-validation-v0.4.0.md) describes that release,
+[Published 0.4.0 validation](docs/releases/v0.4.0/validation.md) describes that release,
 not every later source revision. See [CONTRIBUTING](CONTRIBUTING.md) for developer checks.
 
 ## Contributing
