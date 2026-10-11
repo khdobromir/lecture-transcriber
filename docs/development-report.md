@@ -17,6 +17,7 @@ Branch: `chore/modernization-roadmap`, based on
 | E1.2 | Disabled ambient yt-dlp plugins in both downloader calls; strengthened portable/POSIX mocks; explicit offline plugin smoke | Regression failed before flag and passed after; actual yt-dlp 2026.08.19 positive marker loaded, isolated marker not loaded, no network |
 | D1.2 | Migrated all 28 original documents, retained forwarding addresses, added index/archive/manual entry, updated full source-material paths in both packagers | Compared all 28 document bodies with pre-migration HEAD (only link relocation/banners differ); 191 local Markdown links resolve; 4/4 packaging/source contract suites |
 | E1.3 | Extracted test registration with root/config output paths, added eight schema-2 configure/build/test presets and nondestructive in-source guard | CTest JSON comparison preserves all 23 existing contracts; Linux CLI Debug/Release 18/18 each (GCC/Clang), GUI Debug/Release 23/23 each; all_qmllint; application-only Qt-free build; guard rejected temporary fixture without changing sentinel |
+| D1.3 | English Quick Start/GUI guide/CLI reference/troubleshooting; concise Russian first-run and user guide; README/index navigation | All 19 help options documented; source comparison of defaults/data/cache/path/privacy semantics; CLI help/version and 22/22 CLI unit cases; preceding full CTest covers local/preflight/cancel/result/mock-URL scenarios; 233 local Markdown links checked before developer-guide additions |
 
 ## Push checkpoint (2026-10-11)
 

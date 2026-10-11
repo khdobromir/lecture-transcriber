@@ -10,7 +10,7 @@ conversion uses FFmpeg. The application interface and recognition language are R
 **C++23 · Qt Quick / QML · CMake · Linux / Windows · CPU-only**
 
 [Download v0.4.0](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0)
-· [Changelog](CHANGELOG.md) · [Documentation](docs/archive/windows-gui.md)
+· [Changelog](CHANGELOG.md) · [Documentation](docs/README.md)
 · [Contributing](CONTRIBUTING.md)
 
 ## Demo
@@ -42,6 +42,8 @@ The last two examples require installed tools/models and your own media file.
 
 ## Quick Start
 
+[English guide](docs/user/quick-start.md) · [Краткая инструкция на русском](docs/user/ru/quick-start.md)
+
 1. Download the application and its checksum from [Releases](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.0).
 2. Linux: make the AppImage executable and launch it. Windows: extract the **whole**
    ZIP and launch `bin/transcribe-gui.exe`.
@@ -66,7 +68,7 @@ URL downloads and downloading models need network access; local recognition does
 | Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg and standalone yt-dlp included |
 | Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp and runtime included |
 | Linux source installer | C++23 toolchain and CLI prerequisites | Builds the CLI and CPU engine; uses system FFmpeg/yt-dlp |
-| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](docs/archive/windows-gui.md) |
+| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](CONTRIBUTING.md) |
 
 No separate Python, Qt SDK or compiler is needed to run the binary packages.
 Models, settings and results are user data outside the packages. GPU acceleration,
@@ -83,7 +85,7 @@ transcribe --help
 ```
 
 Run the installer as a regular user. [Linux portable details](docs/build/linux-portable.md)
-and [GUI/Windows instructions](docs/archive/windows-gui.md) explain the separate routes.
+and the [user guide](docs/user/guide.md) explain the separate routes.
 
 ## Usage
 
@@ -100,7 +102,8 @@ One chunk is the default. Increasing jobs starts more model-owning processes and
 uses more memory. Live TXT preserves recording order; final subtitles appear
 when export completes. Use GUI Cancel or CLI Ctrl+C rather than killing the process.
 
-Use `transcribe --help` for all flags. The GUI exposes task, history and model
+Use `transcribe --help` or the [CLI reference](docs/user/cli.md) for all flags.
+The GUI exposes task, history and model
 management; machine consumers use the [JSONL v1 contract](docs/architecture/protocol-v1.md).
 
 ## How it works
