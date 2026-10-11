@@ -41,7 +41,10 @@ inline std::string utf8(const fs::path& path) {
     const auto value = path.u8string();
     return {value.begin(), value.end()};
 }
-inline fs::path suffixed(fs::path path, std::string_view suffix) { path += suffix; return path; }
+inline fs::path suffixed(fs::path path, std::string_view suffix) {
+    path += suffix;
+    return path;
+}
 inline std::string getenv(const char* name) {
 #ifdef _MSC_VER
     char* raw = nullptr;
@@ -51,7 +54,8 @@ inline std::string getenv(const char* name) {
     if (error) throw std::runtime_error("Cannot read test environment");
     return value ? value.get() : "";
 #else
-    const char* value = std::getenv(name); return value ? value : "";
+    const char* value = std::getenv(name);
+    return value ? value : "";
 #endif
 }
 struct Temp {
@@ -61,8 +65,11 @@ struct Temp {
         std::random_device random;
         for (int attempt = 0; attempt < 100; ++attempt) {
             const auto candidate = fs::temp_directory_path() /
-                ("transcribe-test-" + std::to_string(random()) + '-' + std::to_string(random()));
-            if (fs::create_directory(candidate)) { path = candidate; return; }
+                                   ("transcribe-test-" + std::to_string(random()) + '-' + std::to_string(random()));
+            if (fs::create_directory(candidate)) {
+                path = candidate;
+                return;
+            }
         }
         throw std::runtime_error("Cannot create independent test directory");
 #else
@@ -71,24 +78,39 @@ struct Temp {
         path = pattern;
 #endif
     }
-    ~Temp() { std::error_code error; fs::remove_all(path, error); }
+    ~Temp() {
+        std::error_code error;
+        fs::remove_all(path, error);
+    }
     Temp(const Temp&) = delete;
     Temp& operator=(const Temp&) = delete;
 };
 inline void link(const fs::path& target, const fs::path& destination) {
-    fs::create_directories(destination.parent_path()); fs::create_symlink(target, destination);
+    fs::create_directories(destination.parent_path());
+    fs::create_symlink(target, destination);
 }
 inline size_t entries(const fs::path& directory) { return static_cast<size_t>(std::distance(fs::directory_iterator(directory), fs::directory_iterator())); }
-inline fs::path single(const fs::path& directory) { CHECK(entries(directory) == 1); return fs::directory_iterator(directory)->path(); }
+inline fs::path single(const fs::path& directory) {
+    CHECK(entries(directory) == 1);
+    return fs::directory_iterator(directory)->path();
+}
 inline void wav(const fs::path& file, double seconds = 0.5, int rate = 44100, int channels = 2,
                 const std::function<bool(double)>& silent = {}) {
     const auto samples = static_cast<uint32_t>(seconds * rate);
     std::ostringstream out(std::ios::binary);
     const auto le = [&](uint32_t value, int bytes) { for (int i = 0; i < bytes; ++i) out.put(static_cast<char>((value >> (8U * static_cast<unsigned>(i))) & 255U)); };
-    out << "RIFF"; le(36 + samples * static_cast<uint32_t>(channels) * 2, 4); out << "WAVEfmt "; le(16, 4);
-    le(1, 2); le(static_cast<uint32_t>(channels), 2); le(static_cast<uint32_t>(rate), 4);
-    le(static_cast<uint32_t>(rate * channels * 2), 4); le(static_cast<uint32_t>(channels * 2), 2); le(16, 2);
-    out << "data"; le(samples * static_cast<uint32_t>(channels) * 2, 4);
+    out << "RIFF";
+    le(36 + samples * static_cast<uint32_t>(channels) * 2, 4);
+    out << "WAVEfmt ";
+    le(16, 4);
+    le(1, 2);
+    le(static_cast<uint32_t>(channels), 2);
+    le(static_cast<uint32_t>(rate), 4);
+    le(static_cast<uint32_t>(rate * channels * 2), 4);
+    le(static_cast<uint32_t>(channels * 2), 2);
+    le(16, 2);
+    out << "data";
+    le(samples * static_cast<uint32_t>(channels) * 2, 4);
     for (uint32_t i = 0; i < samples; ++i) {
         const double time = static_cast<double>(i) / rate;
         const auto value = static_cast<int16_t>(silent && silent(time) ? 0 : 10000 * std::sin(time * 2 * 3.141592653589793 * 440));
@@ -96,7 +118,10 @@ inline void wav(const fs::path& file, double seconds = 0.5, int rate = 44100, in
     }
     write(file, out.str());
 }
-struct Call { std::string kind; std::vector<std::string> args; };
+struct Call {
+    std::string kind;
+    std::vector<std::string> args;
+};
 inline std::vector<Call> calls(const fs::path& file) {
     if (!fs::exists(file)) return {};
     std::ifstream in(file, std::ios::binary);
@@ -110,7 +135,8 @@ inline std::vector<Call> calls(const fs::path& file) {
             CHECK(static_cast<bool>(std::getline(in, line)));
             std::string arg(static_cast<size_t>(std::stoul(line)), '\0');
             CHECK(static_cast<bool>(in.read(arg.data(), static_cast<std::streamsize>(arg.size()))));
-            CHECK(in.get() == '\n'); call.args.push_back(std::move(arg));
+            CHECK(in.get() == '\n');
+            call.args.push_back(std::move(arg));
         }
         result.push_back(std::move(call));
     }
@@ -131,11 +157,16 @@ struct Suite {
         for (const auto& [name, run] : cases) {
             if (!filter.empty() && !contains(name, filter)) continue;
             ++selected;
-            try { run(); std::cout << "PASS " << name << '\n'; }
-            catch (const std::exception& error) { ++failed; std::cerr << "FAIL " << name << ": " << error.what() << '\n'; }
+            try {
+                run();
+                std::cout << "PASS " << name << '\n';
+            } catch (const std::exception& error) {
+                ++failed;
+                std::cerr << "FAIL " << name << ": " << error.what() << '\n';
+            }
         }
         std::cout << selected - failed << '/' << selected << " cases passed\n";
         return failed || !selected ? 1 : 0;
     }
 };
-}
+} // namespace test

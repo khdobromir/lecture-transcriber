@@ -112,7 +112,11 @@ int main() {
             fs::path path = f.input;
             if (name == std::string_view("model")) path = f.root / "models/ggml-medium-q5_0.bin";
             if (name == std::string_view("vad")) path = f.root / "models/ggml-silero-v6.2.0.bin";
-            if (name == std::string_view("cookies")) { path = f.temp.path / "cookies.txt"; f.options.cookies = utf8(path); write(path, "cookies"); }
+            if (name == std::string_view("cookies")) {
+                path = f.temp.path / "cookies.txt";
+                f.options.cookies = utf8(path);
+                write(path, "cookies");
+            }
             fs::remove(path);
             if (defect == std::string_view("empty")) write(path, "");
             if (defect == std::string_view("directory")) fs::create_directory(path);
@@ -122,7 +126,8 @@ int main() {
     }
     suite.add("preflight_engine_directory_is_rejected", [] {
         Files f;
-        fs::remove(f.engine); fs::create_directory(f.engine);
+        fs::remove(f.engine);
+        fs::create_directory(f.engine);
 #ifdef _WIN32
         rejected([&] { (void)f.validate(); }, "Нет tools/whisper-cli.exe");
 #else
@@ -137,9 +142,12 @@ int main() {
         rejected([&] { (void)f.validate(); }, "Нет whisper-cli");
         fs::permissions(f.engine, fs::perms::owner_all);
 #endif
-        fs::remove(f.root / "default-model"); rejected([&] { (void)f.validate(); }, "Не удалось прочитать");
-        f.options.model = "medium"; fs::remove(f.root / "models/ggml-silero-v6.2.0.bin");
-        f.options.vad = false; CHECK(f.validate().model == f.root / "models/ggml-medium-q5_0.bin");
+        fs::remove(f.root / "default-model");
+        rejected([&] { (void)f.validate(); }, "Не удалось прочитать");
+        f.options.model = "medium";
+        fs::remove(f.root / "models/ggml-silero-v6.2.0.bin");
+        f.options.vad = false;
+        CHECK(f.validate().model == f.root / "models/ggml-medium-q5_0.bin");
     });
     return suite.run();
 }

@@ -7,7 +7,10 @@
 #include <unistd.h>
 
 namespace test {
-struct Capture { int code; std::string out, err; };
+struct Capture {
+    int code;
+    std::string out, err;
+};
 // Independent fork/exec harness: production process code is never used to
 // decide whether transcribe terminates, leaks children or writes to a terminal.
 class Child {
@@ -31,10 +34,12 @@ public:
         if (pid == 0) {
             setpgid(0, 0);
             if (dup2(out, STDOUT_FILENO) < 0 || dup2(err, STDERR_FILENO) < 0) _exit(126);
-            close(out); close(err);
+            close(out);
+            close(err);
             if (!cwd.empty() && chdir(cwd.c_str())) _exit(126);
             for (const auto& [key, value] : env) {
-                if (value.empty()) unsetenv(key.c_str()); else setenv(key.c_str(), value.c_str(), 1);
+                if (value.empty()) unsetenv(key.c_str());
+                else setenv(key.c_str(), value.c_str(), 1);
             }
             if (const char* limit = std::getenv("TEST_FILE_LIMIT")) {
                 const rlim_t size = static_cast<rlim_t>(std::strtoull(limit, nullptr, 10));
@@ -45,7 +50,8 @@ public:
             execvp(argv[0], argv.data());
             _exit(127);
         }
-        close(out); close(err);
+        close(out);
+        close(err);
         if (pid < 0) throw std::runtime_error("fork");
         setpgid(pid, pid);
     }
@@ -105,16 +111,20 @@ inline fs::path which(std::string_view tool) {
 inline void manifest(const fs::path& source, const fs::path& destination, std::string_view payload) { // NOLINT(bugprone-easily-swappable-parameters)
     Temp temp;
     write(temp.path / "model", payload);
-    const auto hash = invoke({which("sha256sum").string(), (temp.path / "model").string()}); success(hash);
+    const auto hash = invoke({which("sha256sum").string(), (temp.path / "model").string()});
+    success(hash);
     const std::string digest = hash.out.substr(0, 64);
-    std::istringstream in(read(source)); std::ostringstream out; std::string line;
+    std::istringstream in(read(source));
+    std::ostringstream out;
+    std::string line;
     while (std::getline(in, line)) {
         if (!line.empty() && line.front() != '#') {
-            std::istringstream row(line); std::string key, file, repo, rev, old;
+            std::istringstream row(line);
+            std::string key, file, repo, rev, old;
             CHECK(static_cast<bool>(row >> key >> file >> repo >> rev >> old));
             out << key << ' ' << file << ' ' << repo << ' ' << rev << ' ' << digest << '\n';
         } else out << line << '\n';
     }
     write(destination, out.str());
 }
-}
+} // namespace test

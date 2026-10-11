@@ -80,11 +80,13 @@ int main() {
         const std::string url = "https://example.org/video?literal=$(touch%20PWNED)&name='lecture'";
         success(f.invoke({"--no-cache", url}));
         size_t metadata = 0, downloads = 0;
-        for (const auto& call : f.calls()) if (call.kind == "yt-dlp") {
-            CHECK(has(call.args, "--ignore-config") && has(call.args, "--no-plugin-dirs"));
-            CHECK(call.args[call.args.size() - 2] == "--" && call.args.back() == url);
-            if (has(call.args, "--simulate")) ++metadata; else ++downloads;
-        }
+        for (const auto& call : f.calls())
+            if (call.kind == "yt-dlp") {
+                CHECK(has(call.args, "--ignore-config") && has(call.args, "--no-plugin-dirs"));
+                CHECK(call.args[call.args.size() - 2] == "--" && call.args.back() == url);
+                if (has(call.args, "--simulate")) ++metadata;
+                else ++downloads;
+            }
         CHECK(metadata == 1 && downloads == 1 && !fs::exists(f.root / "PWNED"));
     });
     add("cache_repeat_url_without_downloader_or_network", [](Fixture& f) {

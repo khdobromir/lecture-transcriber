@@ -100,7 +100,8 @@ int main() {
         CacheFixture f;
         MediaCache cache(f.root, 8);
         CHECK(cache.publish(f.source, "anonymous", "url", f.media));
-        const auto entry = cache.lookup_url("url", "anonymous"); CHECK(entry);
+        const auto entry = cache.lookup_url("url", "anonymous");
+        CHECK(entry);
         write(entry->directory / "media", "");
         CHECK(!cache.lookup_url("url", "anonymous"));
     });

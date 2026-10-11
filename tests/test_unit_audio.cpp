@@ -17,7 +17,9 @@ struct Exports {
     void add(int64_t begin, std::string_view text, std::string_view srt, std::string_view vtt) { // NOLINT(bugprone-easily-swappable-parameters)
         const auto prefix = result / "audio/parts" / std::to_string(chunks.size() + 1) / "transcript";
         chunks.push_back({begin, begin + 16000, {}, prefix});
-        write(suffixed(prefix, ".txt"), text); write(suffixed(prefix, ".srt"), srt); write(suffixed(prefix, ".vtt"), vtt);
+        write(suffixed(prefix, ".txt"), text);
+        write(suffixed(prefix, ".srt"), srt);
+        write(suffixed(prefix, ".vtt"), vtt);
     }
     void merge() { transcribe::merge_exports(chunks, result, result / "audio/final"); }
 };
@@ -99,7 +101,7 @@ int main() {
             std::string times = interval;
             if (!web) std::replace(times.begin(), times.end(), '.', ',');
             write(suffixed(f.chunks[0].prefix, web ? ".vtt" : ".srt"),
-                std::string(web ? "WEBVTT\n\n" : "1\n") + times + "\ntext\n\n");
+                  std::string(web ? "WEBVTT\n\n" : "1\n") + times + "\ntext\n\n");
             write(f.result / "transcript.txt", "partial\n"); rejected([&] { f.merge(); });
             CHECK(read(f.result / "transcript.txt") == "partial\n");
             CHECK(!fs::exists(f.result / "transcript.srt") && !fs::exists(f.result / "transcript.vtt"));

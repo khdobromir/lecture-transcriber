@@ -27,6 +27,26 @@ static analysis, sanitizers, real ASR and final package gates. Run installers on
 with isolated temporary data/bin paths, without sudo. Ordinary CTest needs no
 models or account credentials. Report tests not run and platform limitations.
 
+## Formatting
+
+Use clang-format **18.1.8**, pinned with Linux x86_64/Windows x64 wheel hashes.
+Install it into a task-local virtual environment, not the application runtime:
+
+```sh
+python3 -m venv /tmp/transcribe-format-tool
+/tmp/transcribe-format-tool/bin/python -m pip install --no-cache-dir --only-binary=:all: --no-deps --require-hashes -r scripts/format-requirements.txt
+CLANG_FORMAT=/tmp/transcribe-format-tool/bin/clang-format python3 scripts/check-format.py --base origin/master
+```
+
+On Windows use `py -m venv out/format-tool` and its `Scripts/python.exe` for pip;
+pass `--clang-format out/format-tool/Scripts/clang-format.exe` to the checker.
+Add `--fix` to apply the selected ranges, review the diff, then rerun the check.
+Only changed lines in directly owned `src`, `gui` and `tests` C++ files are
+considered; vendor/generated/nested trees and unchanged legacy formatting are
+excluded. Stage new C++ files before checking so Git includes them. With no
+explicit base the script uses the merge-base with `origin/master`.
+Keep style-only edits separate from logic and avoid full-tree formatting.
+
 ## Pull requests
 
 - Use Conventional Commits for every new commit, including merges:

@@ -109,10 +109,19 @@ jobs:
       - name: Dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates git make cmake g++ clang-18 clang-tidy-18 cppcheck ffmpeg shellcheck util-linux python3
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y ca-certificates git make cmake g++ clang-18 clang-tidy-18 cppcheck ffmpeg shellcheck util-linux python3 python3-venv
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Check changed owned C++ lines
+        env:
+          FORMAT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CLANG_FORMAT: /tmp/transcribe-format-tool/bin/clang-format
+        run: |
+          python3 -m venv /tmp/transcribe-format-tool
+          /tmp/transcribe-format-tool/bin/python -m pip install --no-cache-dir --only-binary=:all: --no-deps --require-hashes -r scripts/format-requirements.txt
+          /tmp/transcribe-format-tool/bin/python scripts/check-format.py
       - name: Configure
         run: |
           useradd --create-home tester

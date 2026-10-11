@@ -34,6 +34,12 @@ cases; equal suite counts are not a portability requirement.
 
 ## Static analysis and sanitizers
 
+Static CI also checks changed owned C++ ranges with clang-format 18.1.8.
+The local command and tool setup are in [CONTRIBUTING](../../CONTRIBUTING.md#formatting).
+PR uses its base SHA, push uses the previous SHA, manual dispatch uses the
+merge-base with `origin/master`. Vendor/generated trees and untouched old code
+are excluded. Formatting does not replace compilation or static analysis.
+
 `dependency_pins` compares the installer, CLI smoke, GUI workflow fetch/checkout
 and both platform Whisper manifests offline. Fixture tests reject one changed
 declaration and accept a consistent update. This complements existing source/hash
