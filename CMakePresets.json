@@ -1,0 +1,224 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "TRANSCRIBE_WARNINGS_AS_ERRORS": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "TRANSCRIBE_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "linux-cli-debug",
+      "displayName": "Linux CLI Debug",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "OFF",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-cli-release",
+      "displayName": "Linux CLI Release",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "OFF",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-gui-debug",
+      "displayName": "Linux GUI Debug",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-gui-release",
+      "displayName": "Linux GUI Release",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "ON",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-cli-debug",
+      "displayName": "Windows CLI Debug",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "OFF"
+      }
+    },
+    {
+      "name": "windows-cli-release",
+      "displayName": "Windows CLI Release",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "OFF"
+      }
+    },
+    {
+      "name": "windows-gui-debug",
+      "displayName": "Windows GUI Debug",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "ON"
+      }
+    },
+    {
+      "name": "windows-gui-release",
+      "displayName": "Windows GUI Release",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "TRANSCRIBE_BUILD_GUI": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux-cli-debug",
+      "configurePreset": "linux-cli-debug"
+    },
+    {
+      "name": "linux-cli-release",
+      "configurePreset": "linux-cli-release"
+    },
+    {
+      "name": "linux-gui-debug",
+      "configurePreset": "linux-gui-debug"
+    },
+    {
+      "name": "linux-gui-release",
+      "configurePreset": "linux-gui-release"
+    },
+    {
+      "name": "windows-cli-debug",
+      "configurePreset": "windows-cli-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-cli-release",
+      "configurePreset": "windows-cli-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-gui-debug",
+      "configurePreset": "windows-gui-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-gui-release",
+      "configurePreset": "windows-gui-release",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "linux-cli-debug",
+      "configurePreset": "linux-cli-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "linux-cli-release",
+      "configurePreset": "linux-cli-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "linux-gui-debug",
+      "configurePreset": "linux-gui-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "linux-gui-release",
+      "configurePreset": "linux-gui-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "windows-cli-debug",
+      "configurePreset": "windows-cli-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      },
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-cli-release",
+      "configurePreset": "windows-cli-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      },
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-gui-debug",
+      "configurePreset": "windows-gui-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      },
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-gui-release",
+      "configurePreset": "windows-gui-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      },
+      "configuration": "Release"
+    }
+  ]
+}
