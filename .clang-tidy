@@ -1,4 +1,4 @@
 Checks: '-*,clang-analyzer-*,bugprone-*,performance-*'
 WarningsAsErrors: '*'
-HeaderFilterRegex: '(^|/)(src|tests)/'
+HeaderFilterRegex: '(^|/)(src|tests|gui)/[a-zA-Z0-9_-]+[.]hpp$'
 SystemHeaders: false

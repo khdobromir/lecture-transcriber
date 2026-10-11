@@ -129,8 +129,8 @@ int main(int argc, char** argv) {
             if (!test::getenv("MALFORMED_EXPORT").empty()) write(prefix.string() + ".srt", "1\ninvalid times\ntext\n");
             if (test::getenv("OUT_OF_BOUNDS_PART") == std::to_string(part)) {
                 const auto ext = test::getenv("OUT_OF_BOUNDS_EXPORT");
-                if (ext == "srt") write(prefix.string() + ".srt", "1\n00:00:00,000 --> 00:00:20,000\n" + text + '\n');
-                if (ext == "vtt") write(prefix.string() + ".vtt", "WEBVTT\n\n00:00:00.000 --> 00:00:20.000\n" + text + '\n');
+                if (ext == "srt") write(prefix.string() + ".srt", "1\n00:00:20,000 --> 00:00:20,000\n" + text + '\n');
+                if (ext == "vtt") write(prefix.string() + ".vtt", "WEBVTT\n\n00:00:20.000 --> 00:00:20.000\n" + text + '\n');
             }
             if (!test::getenv("SLOW_CLEANUP").empty())
                 for (int i = 0; i < 4000; ++i) fs::create_directory(prefix.parent_path() / ("cleanup-" + std::to_string(i)));

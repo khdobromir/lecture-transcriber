@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+app_root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+if [ ! -f "$app_root/usr/bin/tools/.transcribe-bundle" ]; then
+    printf 'Повреждён переносимый комплект Transcribe. Замените файл приложения.\n' >&2
+    exit 1
+fi
+# Set only the child environment. Never depend on a Qt SDK or tools from PATH.
+export LD_LIBRARY_PATH="$app_root/usr/lib"
+export QT_PLUGIN_PATH="$app_root/usr/plugins"
+export QML_IMPORT_PATH="$app_root/usr/qml"
+export QML2_IMPORT_PATH="$app_root/usr/qml"
+export FONTCONFIG_FILE="$app_root/usr/share/transcribe/fonts.conf"
+export QT_QPA_FONTDIR="$app_root/usr/share/fonts"
+export TRANSCRIBE_CA_BUNDLE="$app_root/usr/share/transcribe/ca-certificates.crt"
+export QT_QPA_PLATFORMTHEME=generic
+export QT_QUICK_BACKEND="${QT_QUICK_BACKEND:-software}"
+unset QT_QPA_PLATFORM_PLUGIN_PATH
+export PATH="$app_root/usr/bin/tools:/usr/bin:/bin"
+# Passing --transcribe-cli is useful for diagnostics and package smoke only.
+if [ "${1:-}" = --transcribe-cli ]; then
+    shift
+    exec "$app_root/usr/bin/transcribe" "$@"
+fi
+exec "$app_root/usr/bin/transcribe-gui" "$@"

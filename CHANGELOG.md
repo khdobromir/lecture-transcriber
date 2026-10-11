@@ -1,5 +1,74 @@
 # Изменения
 
+## 0.4.0 — кандидат, не опубликован
+
+- Windows portable mode запрещает fallback к PATH/cwd и установленному Whisper;
+  child tools получают доверенный cwd и очищенный GGML environment.
+- Windows Whisper ограничивает загрузку CPU backends каталогом tools, а поиск
+  их DLL dependencies — каталогом загружаемой DLL и System32; runtime dispatch сохранён.
+  Package smoke содержит безопасную native DLL с положительным marker-контролем.
+- Linux portable CI проверяет один выбранный AppImage и SHA-256 во всех этапах;
+  real mode передаёт одинаковые public speech/model в offline Ubuntu/Debian.
+  Отдельный Real Whisper workflow явно устанавливает Python 3.
+- Упаковщики сверяют source SHA/fingerprint до сборки и перед публикацией;
+  release mode запрещает dirty tree и SkipTests. Windows ZIP проверяется в staging.
+
+- Linux AppImage собирается одной командой в Ubuntu 24.04: Qt/QML, CPU Whisper,
+  FFmpeg/ffprobe и standalone yt-dlp упакованы внутрь; системная установка не нужна.
+  Проверяются pins/SHA-256, glibc baseline, состав пакета и запуск без FUSE.
+- Linux backend и GUI preflight находят встроенные инструменты относительно
+  исполняемого файла; неполный переносимый комплект не использует системный fallback.
+  Модели и результаты сохраняются отдельно; обычная CLI-установка совместима.
+- Qt Test больше не требуется при сборке GUI с `BUILD_TESTING=OFF`.
+
+- Windows Unicode-патч Whisper исправляет также предварительную проверку
+  существования WAV; model-free regression проверяет её в каждом итоговом ZIP.
+- История объединяет относительные, абсолютные и native Windows пути одного
+  результата; legacy timestamps и недоступные известные записи сохраняются.
+- Итоговый Windows ZIP проверяется после упаковки: все file hashes, CRT,
+  manifests, Unicode unpack и запуск с минимальным PATH; evidence сохраняется отдельно.
+- Linux install prefix проходит startup smoke; candidate workflow_dispatch
+  выполняет QML → установленный CLI → реальный Whisper с pinned public speech/model.
+- Конечные предсказанные timestamps пересекающихся аудио ASR-сегментов
+  ограничиваются длительностью части с предупреждением; wholly out-of-range
+  сегменты по-прежнему отклоняются. Допуск timestamp token исправлен до 20 ms.
+- `TRANSCRIBE_BIN_DIR` позволяет проверить CLI upgrade в отдельном prefix,
+  сохраняя обычную установку `install.sh` в `~/.local/bin`.
+
+- Portable GUI integration запускает настоящий CLI с mock внешними tools;
+  проверяет live preview, экспорты, URL/cache, cancel/tree cleanup и retry.
+- CI проверяет GUI также с Qt 6.11.2 на Linux, запускает ASan/UBSan и включает
+  GUI compilation database в static analysis; диагностики сохраняются в artifacts.
+
+- GUI разделяет текущую задачу и выбранный результат; ошибки preflight не меняют
+  историю. Добавлены повтор задачи, отдельные каталоги/журналы и контексты ошибок.
+- Состояния задачи/модели имеют guards; workers отменяются кооперативно,
+  устаревшие callback отбрасываются, закрытие ждёт операции асинхронно.
+- Публикация модели выполняется в worker под installation lock. Повреждённую
+  модель можно явно восстановить после сохранения резервной копии.
+
+- GUI и CLI используют общий типизированный валидатор protocol v1; GUI
+  проверяет порядок событий, пути, прогресс и итог, читает поток порциями.
+- Linux supervisor завершает и собирает управляемые дочерние группы даже
+  после принудительной остановки CLI; исходный exit code инструмента сохранён.
+- Загрузка моделей восстанавливается после HTTP 416 одним сбросом непригодного
+  .part; диапазоны проверяются полностью, временные файлы привязаны к SHA-256.
+- История выбирает последние 2000 результатов после поиска по всем roots,
+  сохраняет время недоступных записей и вытесняет старые пути из QSettings.
+
+- Собственные читатели TXT/result.json разрешают атомарную замену на Windows;
+  временные sharing/locking ошибки публикации имеют ограниченные отменяемые повторы.
+- Нарезка 1–256 частей использует filter graph в файле и ограниченные группы
+  выходов; Windows-предел проверяется по итоговой quoted UTF-16 команде с NUL.
+
+- Windows 11 x64 backend: Unicode argv/пути, Job Objects, межпроцессные блокировки,
+  приватные ACL и атомарная публикация результатов; Linux API вынесен в адаптеры.
+- Qt Quick GUI для Linux/Windows: одна задача, прогресс/ETA, частичный текст,
+  отмена и подтверждение закрытия, история и загрузка/импорт моделей с SHA-256.
+- Общее ядро pipeline, JSONL `--machine` и версионированный `result.json`.
+- Windows ZIP builder с закреплёнными инструментами, Unicode-патчем whisper.cpp,
+  Qt deployment, лицензиями, манифестом и package smoke; новые CI jobs и тесты.
+
 ## 0.3.0 — 2026-10-03
 
 - Каталог результата называется по названию видео и локальной дате/времени

@@ -18,7 +18,7 @@ struct Fixture {
         for (const char* tool : {"dirname", "mkdir", "mv", "rm", "mktemp", "install", "sha256sum", "flock"}) test::link(which(tool), bin / tool);
         for (const char* tool : {"git", "cmake", "curl", "g++", "ffmpeg", "yt-dlp"}) test::link(MOCK_BINARY, bin / tool);
         env = {{"HOME", home.string()}, {"TRANSCRIBE_HOME", root.string()}, {"PATH", bin.string()},
-               {"MOCK_LOG", log.string()}, {"TRANSCRIBE_BUILD_JOBS", ""}};
+               {"MOCK_LOG", log.string()}, {"TRANSCRIBE_BUILD_JOBS", ""}, {"TRANSCRIBE_BIN_DIR", ""}};
     }
     Capture invoke(const std::string& script = "install.sh", std::vector<std::string> args = {"small"}, const Env& extra = {}) {
         auto variables = env; for (const auto& [key, value] : extra) variables[key] = value;
@@ -47,6 +47,13 @@ int main() {
         const auto git = f.calls("git"); CHECK(std::count_if(git.begin(), git.end(), [](const auto& args) { return args[0] == "clone"; }) == 1);
         CHECK(read(f.model()) == payload);
         for (const auto& file : fs::directory_iterator(f.root)) if (file.path().filename().string().starts_with(".install.")) CHECK(file.path().filename() == ".install.lock");
+    });
+    add("isolated_binary_prefix_preserves_user_command", [](Fixture& f) {
+        f.previous();
+        const auto directory = f.directory / "Отдельный CLI prefix";
+        success(f.invoke("install.sh", {"small"}, {{"TRANSCRIBE_BIN_DIR", directory.string()}}));
+        CHECK(read(f.command) == "old command"); CHECK(access((directory / "transcribe").c_str(), X_OK) == 0);
+        CHECK(read(f.default_model) == "small\n" && read(f.model()) == payload);
     });
     add("invalid_arguments_create_no_directories", [](Fixture& f) {
         for (const auto& args : std::vector<std::vector<std::string>>{{"bad"}, {"small", "extra"}}) { CHECK(f.invoke("install.sh", args).code == 2); CHECK(!fs::exists(f.home)); }

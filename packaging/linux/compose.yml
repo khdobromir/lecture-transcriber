@@ -1,0 +1,14 @@
+services:
+  builder:
+    platform: linux/amd64
+    build:
+      context: .
+    user: "${TRANSCRIBE_BUILD_UID:?}:${TRANSCRIBE_BUILD_GID:?}"
+    working_dir: /source
+    environment:
+      HOME: /work/home
+    volumes:
+      - "${TRANSCRIBE_PROJECT_DIR:?}:/source:ro"
+      - "${TRANSCRIBE_PROJECT_DIR:?}/.cache/linux-package-container:/work"
+      - "${TRANSCRIBE_PROJECT_DIR:?}/dist:/output"
+    command: ["python3", "/source/scripts/package-linux.py", "--qt-root", "/opt/Qt/6.8.3/gcc_64", "--work-directory", "/work", "--destination", "/output"]

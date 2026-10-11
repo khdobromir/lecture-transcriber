@@ -1,0 +1,49 @@
+name: Linux portable GUI
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      real_smoke:
+        description: 'Also verify public Russian speech and model with bundled Whisper'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: linux-portable-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and verify one final AppImage
+        env:
+          REAL_SMOKE: ${{ github.event_name == 'workflow_dispatch' && inputs.real_smoke }}
+        run: |
+          options=(--release --result-file /output/candidate.json)
+          if [ "$REAL_SMOKE" = true ]; then options+=(--real-smoke); fi
+          bash scripts/package-linux.sh --container "${options[@]}"
+      - name: Verify that exact checksum in offline clean Ubuntu and Debian
+        run: python3 tests/check_linux_candidate.py dist/candidate.json
+      - name: Retain verified package and build evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Transcribe-linux-x86_64
+          path: |
+            dist/*.AppImage
+            dist/*.sha256
+            dist/*.json
+            dist/*.tar.gz
+            dist/clean-evidence/**
+            .cache/linux-package-container/run-*/*.log
+            .cache/linux-package-container/run-*/build/Testing/Temporary/*.log
+            .cache/linux-package-container/run-*/smoke-evidence/*
+          if-no-files-found: warn
+          retention-days: 14

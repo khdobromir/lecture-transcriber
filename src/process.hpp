@@ -8,7 +8,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <sys/types.h>
 
 namespace transcribe {
 struct ProcessError : std::runtime_error {
@@ -23,6 +22,9 @@ void check_cancelled();
 // A cancellation received before this transition still throws.
 void commit_completion();
 int physical_cpus();
+// Includes resolved executable, quoting and terminating NUL on Windows.
+std::size_t command_line_size(const std::vector<std::string>& args);
+bool command_line_fits(const std::vector<std::string>& args);
 
 // Each child owns a process group, two drained pipes and a diagnostic log.
 // Callbacks receive bytes, not necessarily complete UTF-8 characters or lines.
@@ -39,12 +41,18 @@ public:
     int exit_code() const;
     void require_success() const;
 private:
+#ifdef _WIN32
+    struct Native;
+    std::unique_ptr<Native> native_;
+#else
     void drain(int& fd, const Output& callback, bool callbacks);
     bool group_alive() const;
-    pid_t pid_ = -1;
+    int pid_ = -1;
+    int group_ = -1, lease_ = -1;
     int out_ = -1, err_ = -1, status_ = 0;
     bool reaped_ = false, stopping_ = false, killed_ = false, released_ = false;
     std::chrono::steady_clock::time_point deadline_{};
+#endif
     std::string name_;
     std::filesystem::path log_path_;
     std::ofstream log_;

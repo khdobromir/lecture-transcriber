@@ -1,6 +1,7 @@
 #pragma once
 #include "cli.hpp"
 #include "result.hpp"
+#include "platform.hpp"
 #include <optional>
 #include <vector>
 
@@ -30,7 +31,7 @@ public:
                  const std::filesystem::path& media);
     void invalidate(const Entry& entry) const;
 private:
-    struct Lock { int fd = -1; ~Lock(); } lock_;
+    std::unique_ptr<FileLock> lock_;
     std::filesystem::path root_;
     uint64_t capacity_;
     std::vector<Entry> entries() const;

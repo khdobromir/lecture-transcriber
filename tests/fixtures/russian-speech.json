@@ -1,0 +1,12 @@
+{
+  "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Ru-Russian_language_%28intro%29.ogg",
+  "source_sha256": "42c8024dfa45d275ffb47820decafd8d84540f642da0c30a11c6fc2113c5477e",
+  "source_page": "https://commons.wikimedia.org/w/index.php?title=File:Ru-Russian_language_(intro).ogg&oldid=1157054605",
+  "license": "CC BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "attribution": "Andrew Krizhanovsky and Nataly Lugovaya (voices); Andrei Rybak (noise reduction); Russian Wikipedia article authors (text)",
+  "clip_start_seconds": 30,
+  "clip_duration_seconds": 30,
+  "transformations": "30–60 second excerpt, mono PCM s16le at 16000 Hz; metadata removed",
+  "reference_wav_sha256": "3a2de982221381bf7d51e228bb8d47da90cce7e6b1d4e841c2f24f433223869f"
+}

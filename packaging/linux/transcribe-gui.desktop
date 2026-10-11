@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Transcribe
+Comment=Local speech transcription
+Comment[ru]=Локальная расшифровка речи
+Exec=transcribe-gui
+Icon=transcribe-gui
+Terminal=false
+Categories=AudioVideo;Audio;
+StartupWMClass=transcribe-gui
