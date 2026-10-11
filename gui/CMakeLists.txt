@@ -12,6 +12,8 @@ qt_add_qml_module(transcribe_gui_logic URI Transcribe VERSION 1.0
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Transcribe"
     SOURCES backend.hpp history.hpp models.hpp)
 qt_add_executable(transcribe-gui main.cpp)
+qt_add_resources(transcribe-gui app_icon PREFIX "/icons" BASE "${PROJECT_SOURCE_DIR}"
+    FILES "${PROJECT_SOURCE_DIR}/icon.png")
 set_target_properties(transcribe-gui PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 qt_add_qml_module(transcribe-gui URI Transcribe.App VERSION 1.0
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Transcribe/App"
@@ -20,6 +22,8 @@ qt_add_qml_module(transcribe-gui URI Transcribe.App VERSION 1.0
 target_link_libraries(transcribe-gui PRIVATE transcribe_gui_logic transcribe_gui_logicplugin Qt6::QuickControls2)
 transcribe_warnings(transcribe-gui)
 if(WIN32)
+    target_sources(transcribe-gui PRIVATE ../packaging/windows/transcribe-icon.rc)
+    target_include_directories(transcribe-gui PRIVATE ../packaging/windows)
     set_target_properties(transcribe-gui PROPERTIES WIN32_EXECUTABLE TRUE)
     if(MSVC)
         target_sources(transcribe-gui PRIVATE ../packaging/windows/transcribe.manifest)
@@ -32,7 +36,7 @@ add_dependencies(transcribe-gui transcribe)
 install(TARGETS transcribe-gui RUNTIME DESTINATION bin)
 if(NOT WIN32)
 install(FILES ../packaging/linux/transcribe-gui.desktop DESTINATION share/applications)
-install(FILES ../packaging/linux/transcribe-gui.svg DESTINATION share/icons/hicolor/scalable/apps)
+install(FILES ../packaging/linux/transcribe-gui.png DESTINATION share/icons/hicolor/512x512/apps)
 endif()
 if(WIN32)
     qt_generate_deploy_qml_app_script(TARGET transcribe-gui OUTPUT_SCRIPT deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)

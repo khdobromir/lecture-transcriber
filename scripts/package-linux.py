@@ -331,7 +331,7 @@ def main():
         EXTRA_QT_MODULES="waylandclient", PATH=str(cache) + os.pathsep + env["PATH"])
     command = [dependencies["linuxdeploy"], "--appdir", appdir, "--executable", appdir / "usr/bin/transcribe-gui",
         "--executable", appdir / "usr/bin/transcribe", "--desktop-file", PROJECT / "packaging/linux/transcribe-gui.desktop",
-        "--icon-file", PROJECT / "packaging/linux/transcribe-gui.svg", "--plugin", "qt"]
+        "--icon-file", PROJECT / "packaging/linux/transcribe-gui.png", "--plugin", "qt"]
     # Qt's platform plugins also load these integration plugins dynamically.
     # Deploy their dependencies explicitly; they aren't ELF DT_NEEDED entries
     # of the GUI and the pinned Qt plugin does not deploy them for waylandclient.
@@ -375,7 +375,7 @@ def main():
     with (appdir / "transcribe-gui.desktop").open("a") as desktop:
         desktop.write("X-AppImage-Version=" + identity["source"][:12] + "\n")
     (appdir / ".DirIcon").unlink(missing_ok=True)
-    (appdir / ".DirIcon").symlink_to("transcribe-gui.svg")
+    (appdir / ".DirIcon").symlink_to("transcribe-gui.png")
     for name, source_path in [("Transcribe-MIT.txt", PROJECT / "LICENSE"),
                              ("nlohmann-json-MIT.txt", PROJECT / "third_party/nlohmann/LICENSE.MIT")]:
         shutil.copy2(source_path, licenses / name)
