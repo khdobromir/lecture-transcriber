@@ -19,10 +19,10 @@ Windows ZIP готовит `scripts/package-windows.ps1`; его runtime-про�
 Распознавание выполняет локальный whisper.cpp; загрузку видео — yt-dlp,
 подготовку аудио — FFmpeg. Команды запускаются через POSIX API на Linux и Win32 API на Windows, без shell.
 
-Версия исходников: **0.4.0 (кандидат, выпуск ещё не опубликован)**; разработка ведётся в ветке **dev**.
+Версия исходников: **0.4.0**; разработка ведётся в ветке **dev**.
 Изменения и переход с 0.3.0 — в [заметках к выпуску](docs/release-notes-v0.4.0.md).
 Целевые платформы — **Linux (включая Arch / Omarchy) и Windows 11 x64**.
-Интерфейс и язык распознавания — русский. Релиз распространяется исходниками;
+Интерфейс и язык распознавания — русский. Выпуск содержит исходники, Linux AppImage и Windows ZIP.
 Linux-установщик собирает движок под CPU пользователя; Windows ZIP использует
 переносимые CPU-бэкенды. Модели скачиваются отдельно.
 
@@ -33,8 +33,8 @@ Linux-установщик собирает движок под CPU пользо
 - Linux AppImage: x86_64, glibc 2.39+ (Ubuntu 24.04 / Debian 13 / Arch).
   Запуск: `chmod +x Transcribe.AppImage`, затем `./Transcribe.AppImage`;
   без FUSE: `./Transcribe.AppImage --appimage-extract-and-run`.
-  Windows 11 и native desktop приёмка кандидата пока не завершены:
-  [текущий отчёт](docs/release-validation-v0.4.0.md).
+  Проверки Windows 11 24H2 и native Omarchy/Hyprland описаны в
+  [отчёте приёмки](docs/release-validation-v0.4.0.md).
 - Модели не входят в ZIP/AppImage; перед первым офлайн запуском импортируйте
   recognition model и VAD через GUI. GPU, ARM, macOS и musl не входят в scope.
 

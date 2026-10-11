@@ -1,5 +1,6 @@
 """Build a relocatable AppImage without modifying the user's installation."""
 import argparse
+import errno
 import hashlib
 import json
 import os
@@ -90,6 +91,15 @@ def fetch(record, cache):
                     if status not in {502, 503, 504} or attempt == 2:
                         raise RuntimeError(f"Download failed for {target.name}: HTTP {status} (attempt {attempt + 1}/3)") from error
                     print(f"Retry download {target.name}: HTTP {status} (attempt {attempt + 2}/3)", flush=True)
+                    time.sleep(attempt + 1)
+                except urllib.error.URLError as error:
+                    transient = {errno.ENETUNREACH, errno.EHOSTUNREACH, errno.ETIMEDOUT,
+                                 errno.ECONNRESET, errno.ECONNREFUSED}
+                    if not isinstance(error.reason, OSError) or error.reason.errno not in transient:
+                        raise
+                    if attempt == 2:
+                        raise RuntimeError(f"Download failed for {target.name}: network error (attempt 3/3)") from error
+                    print(f"Retry download {target.name}: network error (attempt {attempt + 2}/3)", flush=True)
                     time.sleep(attempt + 1)
             stream.close()
             if record.get("canonical_tar") is True:

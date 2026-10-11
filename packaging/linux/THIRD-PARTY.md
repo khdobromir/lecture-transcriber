@@ -54,8 +54,9 @@ recipe updates the cc build tool, so this baseline is not claimed to establish
 the exact final build-tool resolution of the upstream binary.
 The upstream `lgpl` variant name does not describe every dependency's terms:
 its pinned Chromaprint recipe uses FFTW, whose original GPL notices are retained.
-Remaining libraries, nested inputs and SDK build settings/tool versions still
-require mapping.
+Actual SDK settings and the retained nested inputs accompany the build-inputs
+archive. See docs/binary-source-coverage-v0.4.0.md in the Transcribe source archive
+for the source/notice coverage and rebuild limitations.
 `licenses/yt-dlp-embedded-notices` retains the standalone tool's original license
 texts and distribution metadata together with its binary hash and archive inventory.
 
@@ -79,3 +80,9 @@ AppDir. The current source-only release workflow does not publish AppImages.
 
 Model weights are not bundled. They are downloaded or imported by the GUI, checked
 against the pinned model manifest, and stored outside the read-only AppImage.
+
+The build-inputs archive also retains curl-impersonate 2.0.0 sources/patches and
+its eight pinned native dependency archives. The Linux input additionally retains
+libidn2 2.3.7 with its included libunistring sources for rebuilding/relinking
+the curl wrapper, and the matching Readline source RPM. Original standalone
+notices remain in licenses/yt-dlp-embedded-notices.

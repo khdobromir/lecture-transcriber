@@ -57,6 +57,33 @@ class LinuxPackageTests(unittest.TestCase):
             sleep.assert_not_called()
             self.assertEqual(list(root.iterdir()), [])
 
+    def test_temporary_network_failure_retries_and_removes_partials(self):
+        import errno
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); data = b"Verified network retry input"
+            record = dict(filename="network-source.tar", url="https://example.invalid/source.tar",
+                          sha256=builder.hashlib.sha256(data).hexdigest())
+            response = io.BytesIO(data); response.geturl = lambda: record["url"]
+            def unavailable():
+                return builder.urllib.error.URLError(OSError(errno.ENETUNREACH, "Network is unreachable"))
+            with patch.object(builder.urllib.request, "urlopen", side_effect=[unavailable(), response]) as request, patch("time.sleep"):
+                target = builder.fetch(record, root)
+            self.assertEqual(request.call_count, 2)
+            self.assertEqual(target.read_bytes(), data)
+            target.unlink()
+            with patch.object(builder.urllib.request, "urlopen", side_effect=[unavailable()] * 3) as request, patch("time.sleep"):
+                with self.assertRaisesRegex(RuntimeError, r"network-source\.tar.*attempt 3/3"):
+                    builder.fetch(record, root)
+            self.assertEqual(request.call_count, 3)
+            self.assertEqual(list(root.iterdir()), [])
+            import ssl
+            with patch.object(builder.urllib.request, "urlopen", side_effect=builder.urllib.error.URLError(ssl.SSLCertVerificationError("Untrusted certificate"))) as request, patch("time.sleep") as sleep:
+                with self.assertRaises(builder.urllib.error.URLError):
+                    builder.fetch(record, root)
+            self.assertEqual(request.call_count, 1)
+            sleep.assert_not_called()
+            self.assertEqual(list(root.iterdir()), [])
+
     def test_download_verifies_canonical_content_and_discards_failed_partials(self):
         from package_canonical_sources import canonicalize_tar
         with tempfile.TemporaryDirectory() as temporary:

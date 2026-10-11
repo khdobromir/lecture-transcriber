@@ -24,8 +24,9 @@ The librsvg registry source bundle retains all 357 original Cargo.lock crates,
 their SHA-256 values, original notices and package metadata without executing Cargo.
 The rav1e bundle retains 273 baseline lockfile crates; the recipe's cc build-tool
 update is recorded separately and its final resolution is not inferred from that baseline.
-Remaining libraries, nested inputs and SDK build settings/tool versions still
-require mapping.
+Actual SDK settings and the retained nested inputs accompany the build-inputs
+archive. See docs/binary-source-coverage-v0.4.0.md in the Transcribe source archive
+for the source/notice coverage and rebuild limitations.
 
 | Component | Pinned input | License / source |
 | --- | --- | --- |
@@ -46,3 +47,9 @@ redistributing a binary ZIP, supply the corresponding source and build material
 for the actual Qt, FFmpeg (including its linked dependencies), and yt-dlp bundled
 components under their license terms. A link to this MIT project alone is not that
 source distribution. Preserve notices and verify the exact package on Windows.
+
+The build-inputs archive also retains curl-impersonate 2.0.0 sources/patches and
+its eight pinned native dependency archives. The Linux input additionally retains
+libidn2 2.3.7 with its included libunistring sources for rebuilding/relinking
+the curl wrapper, and the matching Readline source RPM. Original standalone
+notices remain in licenses/yt-dlp-embedded-notices.

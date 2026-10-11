@@ -1,6 +1,6 @@
-# Transcribe v0.4.0 — кандидат
+# Transcribe v0.4.0
 
-Выпуск ещё не опубликован. Допуск бинарных пакетов отслеживается в
+Допуск бинарных пакетов отслеживается в
 [отчёте приёмки](release-validation-v0.4.0.md).
 
 ## Изменения
@@ -31,12 +31,14 @@ Linux: разрешите исполнение AppImage и запустите е
 `--appimage-extract-and-run`. Для CLI из исходников используйте README/install.sh.
 
 Целевая матрица: Windows 11 x64; Linux x86_64, glibc 2.39+, Ubuntu 24.04,
-Debian 13 и Arch/Omarchy. Native Windows 11 приёмка ещё открыта; ручная Ubuntu
-desktop приёмка по решению пользователя не является обязательным условием выпуска.
+Debian 13 и Arch/Omarchy. Windows 11 24H2: пользователь подтвердил GUI, историю,
+отмену/повтор, локальные файлы и VK, кэш и пятиминутную запись; ZIP SHA сверён.
+Ручная Ubuntu desktop приёмка, cookies и запись на 10–15 минут исключены
+пользователем из обязательных условий выпуска.
 CPU-only; GPU, macOS/ARM, musl, diarization, resume ASR и автоматическое обновление
 не входят в выпуск. Дробление остаётся опциональным (`chunks=1` по умолчанию).
 Технический smoke не измеряет WER или качество длинных лекций.
 
-Перед публикацией ZIP/AppImage должны быть готовы corresponding sources,
-build materials и notices всех фактически включённых компонентов. Исходный
-архив Transcribe сам по себе это требование не закрывает.
+Комплект corresponding sources, build materials и notices описан в
+[перечне материалов](binary-source-coverage-v0.4.0.md). Вместе с бинарным
+пакетом доступны его build-inputs archive и полный исходный архив Transcribe.

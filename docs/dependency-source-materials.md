@@ -62,3 +62,30 @@ GNU build ID `16414a5fb6f903c12c28a12e2d2c3806f78bf097`. Source lock
 фиксирует оба RPM URL/hashes и payload evidence. Лицензия GPLv3+ уже
 сохранена в оригинальном `yt-dlp-embedded-notices/THIRD_PARTY_LICENSES.txt`.
 Windows yt-dlp этой библиотеки не содержит и этот input не получает.
+
+## Curl-impersonate внутри yt-dlp
+
+Оба комплекта сохраняют curl-impersonate 2.0.0
+(`ec41b71ce888806bfec56ada7a7258d333eb3d19`), его patches, CMake/CI
+recipes и все восемь source inputs из `CMakeLists.txt`: curl 8.21.0,
+BoringSSL `156c7b75ae9b8c3b3f847acf264f17594c3859fb`, Brotli 1.2.0,
+nghttp2 1.63.0, ngtcp2 1.20.0, nghttp3 1.15.0, zlib 1.3.1, zstd 1.5.7.
+Каждый archive hash совпал с original CMake `URL_HASH`; original ZIP
+BoringSSL сохраняется без преобразования. Рецепты не исполнялись при сборе.
+
+Для Linux отдельно сохраняется libidn2 2.3.7: `build-libidn2.sh` задаёт
+`--disable-shared --enable-static --with-pic --disable-nls
+--with-included-libunistring`. Его source archive содержит используемые
+libunistring sources и LGPL notices. Linux `_wrapper.abi3.so` экспортирует
+`idn2_*`; исходники Python wrapper и CFFI уже находятся в retained
+`curl_cffi-0.16.0.tar.gz` и `cffi-2.1.1.tar.gz`. Для пересборки/перелинковки
+используйте эти sources, curl-impersonate patches, CMake/Makefile и сохранённые
+dependency archives; upstream scripts/build.py показывает порядок linking.
+Windows recipe использует Win32 IDN и не требует этого Linux input.
+
+Build-inputs archive сам по себе не является всем source offer: полный
+исходный архив Transcribe распространяется отдельно и содержит application
+code, упаковщики, тесты и инструкции. Общий комплект для конкретного payload
+состоит из обоих архивов и manifest/checksums; поле
+`corresponding_sources_complete=false` в retained-input metadata не является
+автоматическим утверждением о полноте всего такого комплекта.

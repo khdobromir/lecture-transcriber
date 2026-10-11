@@ -931,6 +931,30 @@ Windows Qt SDK settings в hosted ZIP. Linux portable 38132654036 ещё вып�
 `--appimage-extract-and-run --transcribe-cli --version` вернул 0 и
 `transcribe 0.4.0`. Изолированное тестовое GUI окно закрыто штатно.
 
+## Материалы curl и исправление сетевого отказа упаковки
+
+Добавлены десять source inputs: curl-impersonate 2.0.0, восемь native archives
+с original CMake URL_HASH и Linux libidn2 2.3.7 с included libunistring sources.
+Windows DLL и Linux wrapper статически сверены с pinned binaries; обе содержат
+libcurl/8.21.0-IMPERSONATE. Native code при инспекции не исполнялся. Подробное
+покрытие источников/notices и границы воспроизводимости зафиксированы в
+[binary-source-coverage-v0.4.0.md](binary-source-coverage-v0.4.0.md).
+F7 закрыт для перечисленного состава; source offer при раздаче состоит из
+Transcribe source archive и соответствующего verified build-inputs archive.
+Final artifact identity/acceptance и publication checks остаются обязательными.
+
+Real Whisper smoke 38136307929 прошёл на 4c06ff0. Linux portable real run
+38136306064 остановился при скачивании source input с URLError/ENETUNREACH;
+AppImage в этом запуске ещё не собирался. Сетевые errno ENETUNREACH,
+EHOSTUNREACH, ETIMEDOUT, ECONNRESET и ECONNREFUSED теперь получают максимум три
+попытки; сообщения содержат имя input. TLS certificate errors, постоянные
+HTTP ошибки, SHA mismatch и downgrade HTTPS не обходятся. Регрессия на
+наблюдавшемся ENETUNREACH упала до исправления и прошла после него; проверены
+последующий успех, исчерпание трёх попыток, удаление partial и отказ TLS без retry.
+Source suite 18/18, Linux packaging 16/16, static project 1/1 прошли.
+Все десять actual curl source archive hashes сверены; platform selector включает
+10 inputs для Linux и 9 для Windows.
+
 ## Самопроверка изменений кандидата
 
 Смысл изменения: ограничить Windows tools/backend доверенным комплектом и
@@ -940,10 +964,10 @@ Windows Qt SDK settings в hosted ZIP. Linux portable 38132654036 ещё вып�
 | --- | --- |
 | Summary | 95 FFmpeg inputs: libplacebo Git submodules и два проверяемых registry source bundles дополняют прежние sources; Windows manual report и native AppImage medium/VAD/turbo evidence записаны |
 | Critical issues | Подтверждённых критических дефектов в проверенной части не найдено; final SHA/artifact приёмка открыта |
-| Major issues | P1: полные corresponding sources и остальные неотменённые manual gates открыты; Windows 11 приёмка зачтена для проверенного ZIP 6030674 |
-| Minor issues | CI 10/10 и Linux portable прошли на b83f2d3; final real dispatch и приёмка окончательных пакетов ещё требуются |
+| Major issues | Материалы F7 подготовлены; final SHA/artifact приёмка ещё открыта. Windows 11 приёмка зачтена для проверенного ZIP 6030674 |
+| Minor issues | CI 10/10 и Linux portable прошли на 4c06ff0; на final freeze требуются real runs и сверка окончательных пакетов |
 | Positive feedback | Native DLL имеет positive control; PE imports проверяются до исполнения; archives проверяют retained bytes; публикация не заменяет предыдущий AppImage |
-| Questions for author | Windows 11 доступна, проверяет пользователь; обязательная Ubuntu desktop приёмка отменена пользователем |
+| Questions for author | Windows 11 24H2 report принят; Ubuntu desktop, cookies и запись 10–15 минут исключены из обязательной приёмки |
 | Verdict | Comment: кандидат для продолжения CI/приёмки; разрешением на релиз этот отчёт не является |
 
 WTF audit: tracked build/cache/media/model/secret artifacts не обнаружены;
