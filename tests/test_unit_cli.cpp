@@ -123,7 +123,11 @@ int main() {
     suite.add("preflight_engine_directory_is_rejected", [] {
         Files f;
         fs::remove(f.engine); fs::create_directory(f.engine);
+#ifdef _WIN32
+        rejected([&] { (void)f.validate(); }, "Нет tools/whisper-cli.exe");
+#else
         rejected([&] { (void)f.validate(); }, "Нет whisper-cli");
+#endif
         CHECK(!fs::exists(f.temp.path / "transcripts"));
     });
     suite.add("missing_engine_and_default_selection", [] {
