@@ -1,4 +1,5 @@
 #pragma once
+#include "message.hpp"
 #ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -12,7 +13,7 @@ namespace transcribe {
 inline std::wstring wide_utf8(std::string_view bytes) {
     if (bytes.empty()) return {};
     const int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, bytes.data(), static_cast<int>(bytes.size()), nullptr, 0);
-    if (!count) throw std::runtime_error("Некорректный UTF-8");
+    if (!count) throw transcribe::LocalizedError(transcribe::Message{"Некорректный UTF-8", "Invalid UTF-8"});
     std::wstring result(static_cast<size_t>(count), L'\0');
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, bytes.data(), static_cast<int>(bytes.size()), result.data(), count);
     return result;
@@ -20,7 +21,7 @@ inline std::wstring wide_utf8(std::string_view bytes) {
 inline std::string narrow_utf8(std::wstring_view text) {
     if (text.empty()) return {};
     const int count = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
-    if (!count) throw std::runtime_error("Некорректный UTF-16");
+    if (!count) throw transcribe::LocalizedError(transcribe::Message{"Некорректный UTF-16", "Invalid UTF-16"});
     std::string result(static_cast<size_t>(count), '\0');
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), result.data(), count, nullptr, nullptr);
     return result;
@@ -34,10 +35,17 @@ public:
     WinHandle(const WinHandle&) = delete;
     WinHandle& operator=(const WinHandle&) = delete;
     WinHandle(WinHandle&& other) noexcept : value_(std::exchange(other.value_, INVALID_HANDLE_VALUE)) {}
-    WinHandle& operator=(WinHandle&& other) noexcept { if (this != &other) reset(std::exchange(other.value_, INVALID_HANDLE_VALUE)); return *this; }
+    WinHandle& operator=(WinHandle&& other) noexcept {
+        if (this != &other) reset(std::exchange(other.value_, INVALID_HANDLE_VALUE));
+        return *this;
+    }
     HANDLE get() const { return value_; }
     explicit operator bool() const { return value_ && value_ != INVALID_HANDLE_VALUE; }
-    void reset(HANDLE value = INVALID_HANDLE_VALUE) { if (*this) CloseHandle(value_); value_ = value; }
+    void reset(HANDLE value = INVALID_HANDLE_VALUE) {
+        if (*this) CloseHandle(value_);
+        value_ = value;
+    }
+
 private:
     HANDLE value_ = INVALID_HANDLE_VALUE;
 };
@@ -46,14 +54,18 @@ inline std::wstring quote_windows(std::wstring_view argument) {
     std::wstring result = L"\"";
     size_t backslashes = 0;
     for (wchar_t ch : argument) {
-        if (ch == L'\\') { ++backslashes; continue; }
+        if (ch == L'\\') {
+            ++backslashes;
+            continue;
+        }
         result.append(backslashes * (ch == L'\"' ? 2 : 1), L'\\');
         if (ch == L'\"') result += L'\\';
         result += ch;
         backslashes = 0;
     }
-    result.append(backslashes * 2, L'\\'); result += L'\"';
+    result.append(backslashes * 2, L'\\');
+    result += L'\"';
     return result;
 }
-}
+} // namespace transcribe
 #endif

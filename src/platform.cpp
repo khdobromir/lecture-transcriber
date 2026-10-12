@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "platform.hpp"
 #include <atomic>
 #include <cstdlib>
@@ -21,7 +22,7 @@ fs::path app_home() {
     const auto configured = windows_environment_path(L"TRANSCRIBE_HOME");
     if (!configured.empty()) return fs::absolute(configured);
     const auto local = windows_environment_path(L"LOCALAPPDATA");
-    if (local.empty()) throw std::runtime_error("Не задан LOCALAPPDATA или TRANSCRIBE_HOME");
+    if (local.empty()) throw transcribe::LocalizedError(transcribe::Message{"Не задан LOCALAPPDATA или TRANSCRIBE_HOME", "Neither LOCALAPPDATA nor TRANSCRIBE_HOME is set"});
     return local / "Transcribe";
 #endif
 }
@@ -37,7 +38,7 @@ std::string tool_path(std::string_view name, const fs::path& tools) {
     const auto bundled = directory / utf8_path(filename);
     if (executable_file(bundled)) return path_utf8(bundled);
     if (portable_bundle(directory))
-        throw std::runtime_error("В переносимой сборке отсутствует инструмент " + filename + ". Замените файл приложения исправной сборкой.");
+        throw transcribe::LocalizedError(transcribe::Message{"В переносимой сборке отсутствует инструмент " + filename + ". Замените файл приложения исправной сборкой.", "The portable bundle is missing tool " + filename + ". Replace the application with a working build."});
     return std::string(name);
 }
 fs::path temporary_directory(const fs::path& parent, std::string_view prefix) {
@@ -48,6 +49,6 @@ fs::path temporary_directory(const fs::path& parent, std::string_view prefix) {
         const auto candidate = parent / name;
         if (create_private_directory(candidate)) return candidate;
     }
-    throw std::runtime_error("Не удалось создать уникальный временный каталог");
+    throw transcribe::LocalizedError(transcribe::Message{"Не удалось создать уникальный временный каталог", "Could not create a unique temporary directory"});
 }
-}
+} // namespace transcribe

@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "cli.hpp"
 #include "pipeline.hpp"
 #include "platform.hpp"
@@ -53,15 +54,20 @@ Windows: Ctrl+C/Ctrl+Break или отмена GUI завершают работ
 )";
 }
 
-
 int entry(const std::vector<std::string>& arguments) {
     std::unique_ptr<transcribe::MachineControl> control;
     try {
         transcribe::install_signal_handlers();
         std::vector<std::string_view> args(arguments.begin(), arguments.end());
         const auto action = transcribe::cli_action(args);
-        if (action == transcribe::CliAction::help || action == transcribe::CliAction::usage) { help(); return action == transcribe::CliAction::usage ? 2 : 0; }
-        if (action == transcribe::CliAction::version) { std::cout << "transcribe " << TRANSCRIBE_VERSION << '\n'; return 0; }
+        if (action == transcribe::CliAction::help || action == transcribe::CliAction::usage) {
+            help();
+            return action == transcribe::CliAction::usage ? 2 : 0;
+        }
+        if (action == transcribe::CliAction::version) {
+            std::cout << "transcribe " << TRANSCRIBE_VERSION << '\n';
+            return 0;
+        }
         if (transcribe::machine_requested(args)) control = std::make_unique<transcribe::MachineControl>();
         const auto options = transcribe::parse_arguments(args, transcribe::physical_cpus());
         if (transcribe::oversubscribed(options, transcribe::logical_cpus()))
@@ -69,7 +75,10 @@ int entry(const std::vector<std::string>& arguments) {
         transcribe::Progress progress(options.progress && !options.machine);
         transcribe::Pipeline pipeline([&](const transcribe::Event& event) {
             using transcribe::EventType;
-            if (options.machine) { transcribe::write_machine_event(event); return; }
+            if (options.machine) {
+                transcribe::write_machine_event(event);
+                return;
+            }
             if (event.type != EventType::progress) progress.finish();
             if (event.type == EventType::result) std::cout << (event.stage == "temporary" ? "Временный каталог результата: " : "Каталог результата: ") << transcribe::path_utf8(event.result) << '\n';
             else if (event.type == EventType::stage) {
@@ -82,7 +91,8 @@ int entry(const std::vector<std::string>& arguments) {
                 else if (event.stage == "split" && !event.message.empty()) std::cout << event.message << '\n';
                 else if (event.stage == "merge") std::cout << "Объединение и проверка расшифровок...\n";
             } else if (event.type == EventType::progress) progress.update(event.fraction, event.finished, event.total);
-            else if (event.type == EventType::finalizing) std::cout << "Готово. Распознавание заняло " << std::fixed << std::setprecision(1) << std::stod(event.message) << " мин.\n" << transcribe::path_utf8(event.result) << '\n';
+            else if (event.type == EventType::finalizing) std::cout << "Готово. Распознавание заняло " << std::fixed << std::setprecision(1) << std::stod(event.message) << " мин.\n"
+                                                                    << transcribe::path_utf8(event.result) << '\n';
             else if (event.type == EventType::warning) std::cerr << "Предупреждение: " << event.message << '\n';
             else if (event.type == EventType::failed) {
                 std::cerr << "Ошибка: " << event.message << '\n';
@@ -90,14 +100,17 @@ int entry(const std::vector<std::string>& arguments) {
             }
             std::cout.flush();
             transcribe::check_cancelled();
-            if (!std::cout) throw std::runtime_error("Не удалось вывести итог обработки");
+            if (!std::cout) throw transcribe::LocalizedError(transcribe::Message{"Не удалось вывести итог обработки", "Could not write the processing result"});
         });
         return pipeline.run(options, {transcribe::app_home(), fs::current_path()}).code;
     } catch (const std::exception& error) {
         const int code = transcribe::cancellation_signal() ? 128 + transcribe::cancellation_signal() : 1;
-        if (control) try { transcribe::write_machine_event(transcribe::Event{.type = transcribe::EventType::failed, .message = error.what(), .status = "failed", .code = code}); } catch (...) { // NOLINT(bugprone-empty-catch): the original error survives a lost event channel.
-        }
-        std::cerr << "Ошибка: " << error.what() << '\n'; return code;
+        if (control) try {
+                transcribe::write_machine_event(transcribe::localized_event(transcribe::Event{.type = transcribe::EventType::failed, .status = "failed", .code = code}, transcribe::exception_message(error)));
+            } catch (...) { // NOLINT(bugprone-empty-catch): the original error survives a lost event channel.
+            }
+        std::cerr << "Ошибка: " << error.what() << '\n';
+        return code;
     }
 }
 #ifdef _WIN32

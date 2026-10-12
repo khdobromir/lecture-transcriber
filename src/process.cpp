@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "process.hpp"
 #include "process_guard_linux.hpp"
 #include "cancellation.hpp"
@@ -25,11 +26,16 @@ namespace {
 void on_signal(int signal) {
     cancellation_token().request(signal);
 }
-void close_fd(int& fd) { if (fd >= 0) { close(fd); fd = -1; } }
+void close_fd(int& fd) {
+    if (fd >= 0) {
+        close(fd);
+        fd = -1;
+    }
+}
 void system_error(const char* name, int error) {
     throw std::runtime_error(std::string(name) + ": " + std::strerror(error));
 }
-}
+} // namespace
 void install_signal_handlers() {
     cancellation_token().reset();
     struct sigaction action{};
@@ -70,17 +76,24 @@ Process::Process(const std::vector<std::string>& args, const std::filesystem::pa
     try {
         if (pipe2(out_pipe, O_CLOEXEC) || pipe2(err_pipe, O_CLOEXEC)) system_error("pipe2", errno);
         const auto child = spawn_guarded(args, out_pipe[1], err_pipe[1]);
-        pid_ = child.guardian; group_ = child.group; lease_ = child.lease;
-        out_ = out_pipe[0]; out_pipe[0] = -1;
-        err_ = err_pipe[0]; err_pipe[0] = -1;
+        pid_ = child.guardian;
+        group_ = child.group;
+        lease_ = child.lease;
+        out_ = out_pipe[0];
+        out_pipe[0] = -1;
+        err_ = err_pipe[0];
+        err_pipe[0] = -1;
         if (fcntl(out_, F_SETFL, O_NONBLOCK) || fcntl(err_, F_SETFL, O_NONBLOCK)) system_error("fcntl", errno);
-        close_fd(out_pipe[1]); close_fd(err_pipe[1]);
+        close_fd(out_pipe[1]);
+        close_fd(err_pipe[1]);
     } catch (...) {
         close_fd(lease_); // Supervisor kills/reaps its group before exiting.
-        if (pid_ > 0) while (waitpid(pid_, nullptr, 0) < 0 && errno == EINTR) {}
+        if (pid_ > 0)
+            while (waitpid(pid_, nullptr, 0) < 0 && errno == EINTR) {}
         for (int& fd : out_pipe) close_fd(fd);
         for (int& fd : err_pipe) close_fd(fd);
-        close_fd(out_); close_fd(err_);
+        close_fd(out_);
+        close_fd(err_);
         throw;
     }
 }
@@ -92,7 +105,10 @@ void Process::request_stop(int signal) {
         deadline_ = std::chrono::steady_clock::now() + std::chrono::seconds(2);
         if (group_alive()) kill(-group_, signal);
     }
-    if (cancellation_token().repeated() || signal == SIGKILL) { kill(-group_, SIGKILL); killed_ = true; }
+    if (cancellation_token().repeated() || signal == SIGKILL) {
+        kill(-group_, SIGKILL);
+        killed_ = true;
+    }
 }
 void Process::drain(int& fd, const Output& callback, bool callbacks) {
     std::array<char, 8192> bytes{};
@@ -101,7 +117,10 @@ void Process::drain(int& fd, const Output& callback, bool callbacks) {
         const ssize_t n = read(fd, bytes.data(), bytes.size());
         if (n > 0) {
             const std::string_view text(bytes.data(), static_cast<size_t>(n));
-            if (callbacks && (!callback || fd == err_)) { log_.write(text.data(), static_cast<std::streamsize>(text.size())); log_.flush(); }
+            if (callbacks && (!callback || fd == err_)) {
+                log_.write(text.data(), static_cast<std::streamsize>(text.size()));
+                log_.flush();
+            }
             if (callback && callbacks) callback(text);
         } else if (n == 0) close_fd(fd);
         else if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) system_error("read", errno);
@@ -123,44 +142,61 @@ void Process::tick(bool callbacks) {
         if (group_alive() && !stopping_) request_stop(SIGTERM);
     }
     if (stopping_ && !killed_ && (cancellation_token().repeated() || std::chrono::steady_clock::now() >= deadline_)) {
-        kill(-group_, SIGKILL); killed_ = true;
+        kill(-group_, SIGKILL);
+        killed_ = true;
     }
     if (reaped_ && out_ < 0 && err_ < 0 && !group_alive()) released_ = true;
 }
 bool Process::done() const { return released_; }
 int Process::exit_code() const {
-    if (!reaped_) throw std::logic_error("Процесс ещё выполняется");
+    if (!reaped_) throw transcribe::LocalizedError(transcribe::Message{"Процесс ещё выполняется", "Process is still running"});
     return WIFSIGNALED(status_) ? 128 + WTERMSIG(status_) : (WIFEXITED(status_) ? WEXITSTATUS(status_) : 1);
 }
 void Process::require_success() const {
-    if (exit_code()) throw ProcessError(name_ + " завершился с кодом " + std::to_string(exit_code()) +
-                                       ". Журнал: " + log_path_.string(), exit_code());
+    if (exit_code()) throw ProcessError(transcribe::Message{name_ + " завершился с кодом " + std::to_string(exit_code()) +
+                                                                ". Журнал: " + log_path_.string(),
+                                                            name_ + " exited with code " + std::to_string(exit_code()) +
+                                                                ". Log: " + log_path_.string()},
+                                        exit_code());
 }
 Process::~Process() {
     if (pid_ > 0) {
         // Destruction is a last-resort cleanup; never invoke throwing callbacks.
         try {
             if (!done()) request_stop(SIGTERM);
-            while (!done()) { tick(false); std::this_thread::sleep_for(std::chrono::milliseconds(10)); }
+            while (!done()) {
+                tick(false);
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
         } catch (...) {
             kill(-group_, SIGKILL);
-            if (!reaped_) while (waitpid(pid_, nullptr, 0) < 0 && errno == EINTR) {}
+            if (!reaped_)
+                while (waitpid(pid_, nullptr, 0) < 0 && errno == EINTR) {}
             while (waitpid(-group_, nullptr, WNOHANG) > 0) {}
         }
     }
-    close_fd(lease_); close_fd(out_); close_fd(err_);
+    close_fd(lease_);
+    close_fd(out_);
+    close_fd(err_);
 }
 void stop_all(std::vector<std::unique_ptr<Process>>& processes, int signal) {
-    for (auto& process : processes) if (process && !process->done()) process->request_stop(signal);
+    for (auto& process : processes)
+        if (process && !process->done()) process->request_stop(signal);
     std::vector<bool> usable(processes.size(), true);
     bool waiting;
     do {
         waiting = false;
-        for (size_t i = 0; i < processes.size(); ++i) if (auto& process = processes[i]; process && !process->done()) {
-            // Preserve callbacks (and already received text) when possible.
-            try { process->tick(usable[i]); } catch (...) { usable[i] = false; process->request_stop(SIGKILL); }
-            waiting = true;
-        }
+        for (size_t i = 0; i < processes.size(); ++i)
+            if (auto& process = processes[i]; process && !process->done()) {
+                // Preserve callbacks (and already received text) when possible.
+                try {
+                    process->tick(usable[i]);
+                } catch (...) {
+                    usable[i] = false;
+                    process->request_stop(SIGKILL);
+                }
+                waiting = true;
+            }
         if (waiting) std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } while (waiting);
 }
@@ -173,7 +209,7 @@ void run(const std::vector<std::string>& args, const std::filesystem::path& log,
         while (!processes[0]->done()) {
             check_cancelled();
             if (timeout.count() && std::chrono::steady_clock::now() - start >= timeout)
-                throw ProcessError("Превышено время ожидания " + args[0], 1);
+                throw ProcessError(transcribe::Message{"Превышено время ожидания " + args[0], "Timed out waiting for " + args[0]}, 1);
             processes[0]->tick();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
@@ -184,4 +220,4 @@ void run(const std::vector<std::string>& args, const std::filesystem::path& log,
         throw;
     }
 }
-}
+} // namespace transcribe

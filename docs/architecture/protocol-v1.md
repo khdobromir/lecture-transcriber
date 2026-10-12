@@ -61,3 +61,19 @@ References: [Qt QProcess](https://doc.qt.io/qt-6.8/qprocess.html),
 [Qt QFutureWatcher](https://doc.qt.io/qt-6.8/qfuturewatcher.html),
 [Linux fork](https://man7.org/linux/man-pages/man2/fork.2.html),
 [Linux close_range](https://man7.org/linux/man-pages/man2/close_range.2.html).
+
+## Optional bilingual messages
+
+Current source can include `message_i18n: {"ru": "…", "en": "…"}` on
+messages presented by the GUI. Both values must be strings; `ru` must equal the
+existing `message` field. The event remains subject to the same UTF-8 and
+256 KiB line limits. Invalid translations reject the event without committing
+parser state. This additive extension does not change protocol version 1.
+
+The CLI keeps its existing Russian console output and `message` values. GUI
+consumers retain both translations and select one at display time, including
+when the interface language changes during a task. Consumers that predate the
+extension ignore it; new consumers accept old events without it and display a
+localized diagnostic heading with the original message. Application-owned
+errors are translated at their source. OS and external-tool details remain
+verbatim; paths, URLs and transcripts are never translated.

@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "media.hpp"
 #include "process.hpp"
 #include "platform.hpp"
@@ -17,9 +18,9 @@ namespace transcribe {
 namespace {
 bool regular(const fs::path& file) { return !indirect_path(file) && fs::is_regular_file(fs::symlink_status(file)); }
 void copy_media(const fs::path& source, const fs::path& destination) {
-    if (!regular(source) || fs::exists(fs::symlink_status(destination))) throw std::runtime_error("Некорректный путь копии аудио");
+    if (!regular(source) || fs::exists(fs::symlink_status(destination))) throw transcribe::LocalizedError(transcribe::Message{"Некорректный путь копии аудио", "Invalid audio copy path"});
     std::ifstream in(source, std::ios::binary);
-    if (!in) throw std::runtime_error("Не удалось прочитать аудио");
+    if (!in) throw transcribe::LocalizedError(transcribe::Message{"Не удалось прочитать аудио", "Could not read audio"});
     std::ofstream out(destination, std::ios::binary);
     out.exceptions(std::ios::badbit | std::ios::failbit);
     std::array<char, 65536> buffer{};
@@ -27,15 +28,15 @@ void copy_media(const fs::path& source, const fs::path& destination) {
         check_cancelled();
         out.write(buffer.data(), in.gcount());
     }
-    if (in.bad()) throw std::runtime_error("Ошибка чтения аудио");
+    if (in.bad()) throw transcribe::LocalizedError(transcribe::Message{"Ошибка чтения аудио", "Audio read error"});
     out.close();
     check_cancelled();
 }
 std::string field(const fs::path& file) {
-    if (!regular(file) || fs::file_size(file) > 16384) throw std::runtime_error("Некорректные метаданные yt-dlp: " + path_utf8(file));
+    if (!regular(file) || fs::file_size(file) > 16384) throw transcribe::LocalizedError(transcribe::Message{"Некорректные метаданные yt-dlp: " + path_utf8(file), "Invalid yt-dlp metadata: " + path_utf8(file)});
     std::ifstream stream(file, std::ios::binary);
     std::string text{std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
-    if (stream.bad()) throw std::runtime_error("Не удалось прочитать метаданные yt-dlp");
+    if (stream.bad()) throw transcribe::LocalizedError(transcribe::Message{"Не удалось прочитать метаданные yt-dlp", "Could not read yt-dlp metadata"});
     if (!text.empty() && text.back() == '\n') text.pop_back();
     if (!text.empty() && text.back() == '\r') text.pop_back();
     return text;
@@ -43,7 +44,10 @@ std::string field(const fs::path& file) {
 // yt-dlp interprets output *paths* as templates as well. Escape literal percent signs.
 std::string template_path(const fs::path& path) {
     std::string escaped;
-    for (char ch : path_utf8(path)) { escaped += ch; if (ch == '%') escaped += '%'; }
+    for (char ch : path_utf8(path)) {
+        escaped += ch;
+        if (ch == '%') escaped += '%';
+    }
     return escaped;
 }
 std::vector<std::string> downloader(const Options& o) {
@@ -65,7 +69,7 @@ bool managed_directory(const fs::path& directory) {
     }
     return true;
 }
-}
+} // namespace
 fs::path default_cache() {
 #ifdef _WIN32
     return app_home() / "cache/media";
@@ -73,7 +77,7 @@ fs::path default_cache() {
     if (const char* value = std::getenv("XDG_CACHE_HOME"); value && *value && fs::path(value).is_absolute())
         return fs::path(value) / "transcribe/media";
     const char* home = std::getenv("HOME");
-    if (!home || !*home) throw std::runtime_error("Не задан HOME; укажи --cache-dir или --no-cache");
+    if (!home || !*home) throw transcribe::LocalizedError(transcribe::Message{"Не задан HOME; укажи --cache-dir или --no-cache", "HOME is not set; specify --cache-dir or --no-cache"});
     return fs::absolute(fs::path(home) / ".cache/transcribe/media");
 #endif
 }
@@ -86,7 +90,7 @@ std::string authentication_context(const Options& o) {
         const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(stamp);
         const auto remainder = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp - seconds);
         return "cookies:" + o.cookies + ':' + std::to_string(fs::file_size(utf8_path(o.cookies))) + ':' +
-            std::to_string(seconds.count()) + ':' + std::to_string(remainder.count());
+               std::to_string(seconds.count()) + ':' + std::to_string(remainder.count());
     }
     return o.browser.empty() ? "anonymous" : "browser:" + o.browser;
 }
@@ -103,12 +107,12 @@ SourceInfo probe_source(const Options& o, const ResultPaths& paths) {
 fs::path download_source(const Options& o, const ResultPaths& paths) {
     auto args = downloader(o);
     args.insert(args.end(), {"--no-simulate", "--restrict-filenames", "-o",
-        template_path(paths.work() / "source.") + "%(ext)s", "--print-to-file",
-        "after_move:%(filepath)s", template_path(paths.work() / "download.path"), "--", o.input});
+                             template_path(paths.work() / "source.") + "%(ext)s", "--print-to-file",
+                             "after_move:%(filepath)s", template_path(paths.work() / "download.path"), "--", o.input});
     run(args, paths.logs() / "download.log");
     const fs::path file = utf8_path(field(paths.work() / "download.path"));
     if (!regular(file) || fs::file_size(file) == 0 || fs::canonical(file).parent_path() != fs::canonical(paths.work()))
-        throw std::runtime_error("yt-dlp не сохранил медиа внутри рабочего каталога");
+        throw transcribe::LocalizedError(transcribe::Message{"yt-dlp не сохранил медиа внутри рабочего каталога", "yt-dlp did not save the media inside the working directory"});
     return file;
 }
 MediaCache::MediaCache(const fs::path& root, uint64_t capacity) : root_(fs::absolute(root).lexically_normal()), capacity_(capacity) {
@@ -116,7 +120,7 @@ MediaCache::MediaCache(const fs::path& root, uint64_t capacity) : root_(fs::abso
     fs::path prefix;
     for (const auto& component : root_) {
         prefix /= component;
-        if (indirect_path(prefix)) throw std::runtime_error("Symlink в пути кэша: " + path_utf8(prefix));
+        if (indirect_path(prefix)) throw transcribe::LocalizedError(transcribe::Message{"Symlink в пути кэша: " + path_utf8(prefix), "Symlink in cache path: " + path_utf8(prefix)});
     }
     private_directory(root_);
     lock_ = std::make_unique<FileLock>(root_ / "lock");
@@ -135,37 +139,52 @@ std::vector<MediaCache::Entry> MediaCache::entries() const {
         std::ifstream in(meta, std::ios::binary);
         std::string version;
         size_t aliases{};
-        if (!(in >> version >> entry.bytes >> std::quoted(entry.source.title) >> std::quoted(entry.source.extractor)
-                 >> std::quoted(entry.source.id) >> std::quoted(entry.context) >> aliases) ||
+        if (!(in >> version >> entry.bytes >> std::quoted(entry.source.title) >> std::quoted(entry.source.extractor) >> std::quoted(entry.source.id) >> std::quoted(entry.context) >> aliases) ||
             version != "transcribe-media-v1" || aliases > 64 || !entry.bytes || entry.bytes != fs::file_size(entry.directory / "media")) continue;
-        for (size_t i = 0; i < aliases && in; ++i) { std::string url; in >> std::quoted(url); entry.urls.push_back(std::move(url)); }
+        for (size_t i = 0; i < aliases && in; ++i) {
+            std::string url;
+            in >> std::quoted(url);
+            entry.urls.push_back(std::move(url));
+        }
         if (in) result.push_back(std::move(entry));
     }
     return result;
 }
 std::optional<MediaCache::Entry> MediaCache::lookup_url(const std::string& url, const std::string& context) const {
-    for (const auto& entry : entries()) if (entry.context == context && std::ranges::find(entry.urls, url) != entry.urls.end()) return entry;
+    for (const auto& entry : entries())
+        if (entry.context == context && std::ranges::find(entry.urls, url) != entry.urls.end()) return entry;
     return {};
 }
 std::optional<MediaCache::Entry> MediaCache::lookup_source(const SourceInfo& source, const std::string& context) const {
     if (source.live || source.id.empty() || source.extractor.empty() || source.id == "NA" || source.extractor == "NA" || source.extractor == "Generic") return {};
-    for (const auto& entry : entries()) if (entry.context == context && entry.source.id == source.id && entry.source.extractor == source.extractor) return entry;
+    for (const auto& entry : entries())
+        if (entry.context == context && entry.source.id == source.id && entry.source.extractor == source.extractor) return entry;
     return {};
 }
 void MediaCache::write_entry(const Entry& entry) const {
     std::ostringstream text;
-    text << "transcribe-media-v1\n" << entry.bytes << '\n' << std::quoted(entry.source.title) << '\n'
-         << std::quoted(entry.source.extractor) << '\n' << std::quoted(entry.source.id) << '\n' << std::quoted(entry.context) << '\n' << entry.urls.size() << '\n';
+    text << "transcribe-media-v1\n"
+         << entry.bytes << '\n'
+         << std::quoted(entry.source.title) << '\n'
+         << std::quoted(entry.source.extractor) << '\n'
+         << std::quoted(entry.source.id) << '\n'
+         << std::quoted(entry.context) << '\n'
+         << entry.urls.size() << '\n';
     for (const auto& url : entry.urls) text << std::quoted(url) << '\n';
-    if (text.str().size() > 65536) throw std::runtime_error("Слишком большие метаданные кэша");
+    if (text.str().size() > 65536) throw transcribe::LocalizedError(transcribe::Message{"Слишком большие метаданные кэша", "Cache metadata is too large"});
     const auto temp = entry.directory / ".meta.tmp";
     create_private_file(temp);
     try {
         std::ofstream out(temp, std::ios::binary);
         out.exceptions(std::ios::badbit | std::ios::failbit);
-        out << text.str(); out.close();
+        out << text.str();
+        out.close();
         replace_file(temp, entry.directory / "meta");
-    } catch (...) { std::error_code error; fs::remove(temp, error); throw; }
+    } catch (...) {
+        std::error_code error;
+        fs::remove(temp, error);
+        throw;
+    }
 }
 void MediaCache::copy(Entry& entry, const fs::path& destination, const std::string& url) {
     check_cancelled();
@@ -179,7 +198,7 @@ void MediaCache::copy(Entry& entry, const fs::path& destination, const std::stri
 }
 void MediaCache::invalidate(const Entry& entry) const {
     if (entry.directory.parent_path() != root_ / "entries" || !path_utf8(entry.directory.filename()).starts_with("entry-") || !managed_directory(entry.directory))
-        throw std::runtime_error("Некорректный путь записи кэша");
+        throw transcribe::LocalizedError(transcribe::Message{"Некорректный путь записи кэша", "Invalid cache entry path"});
     fs::remove_all(entry.directory);
 }
 void MediaCache::prune(const fs::path& keep) const {
@@ -188,24 +207,31 @@ void MediaCache::prune(const fs::path& keep) const {
     for (const auto& directory : fs::directory_iterator(root_ / "entries")) {
         const auto name = path_utf8(directory.path().filename());
         if (!managed_directory(directory.path())) continue;
-        if (name.starts_with(".pending-")) { fs::remove_all(directory.path()); continue; }
+        if (name.starts_with(".pending-")) {
+            fs::remove_all(directory.path());
+            continue;
+        }
         if (name.starts_with("entry-") && regular(directory.path() / "media")) {
             if (regular(directory.path() / ".meta.tmp")) fs::remove(directory.path() / ".meta.tmp");
             Entry entry;
-            entry.directory = directory.path(); entry.bytes = fs::file_size(directory.path() / "media");
+            entry.directory = directory.path();
+            entry.bytes = fs::file_size(directory.path() / "media");
             records.push_back(std::move(entry));
         }
     }
     uint64_t total = 0;
     for (const auto& entry : records) {
-        if (entry.bytes > UINT64_MAX - total) throw std::runtime_error("Переполнение размера кэша");
+        if (entry.bytes > UINT64_MAX - total) throw transcribe::LocalizedError(transcribe::Message{"Переполнение размера кэша", "Cache size overflow"});
         total += entry.bytes;
     }
     const auto accessed = [](const Entry& entry) { return fs::last_write_time(entry.directory / (regular(entry.directory / "meta") ? "meta" : "media")); };
     std::ranges::sort(records, [&](const Entry& a, const Entry& b) { return accessed(a) < accessed(b); });
-    for (const auto& entry : records) if (total > capacity_ && entry.directory != keep) {
-        check_cancelled(); invalidate(entry); total -= entry.bytes;
-    }
+    for (const auto& entry : records)
+        if (total > capacity_ && entry.directory != keep) {
+            check_cancelled();
+            invalidate(entry);
+            total -= entry.bytes;
+        }
 }
 bool MediaCache::publish(const SourceInfo& source, const std::string& context, const std::string& url, const fs::path& media) { // NOLINT(bugprone-easily-swappable-parameters): explicit cache context and source URL, matched to Entry fields.
     const auto bytes = fs::file_size(media);
@@ -230,9 +256,13 @@ bool MediaCache::publish(const SourceInfo& source, const std::string& context, c
         const auto destination = pending.parent_path() / ("entry-" + path_utf8(pending.filename()).substr(9));
         fs::rename(pending, destination);
         entry.directory = destination;
-    } catch (...) { std::error_code error; fs::remove_all(pending, error); throw; }
+    } catch (...) {
+        std::error_code error;
+        fs::remove_all(pending, error);
+        throw;
+    }
     if (previous) invalidate(*previous);
     prune(entry.directory);
     return true;
 }
-}
+} // namespace transcribe

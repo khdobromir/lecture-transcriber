@@ -1,4 +1,5 @@
 #pragma once
+#include "message.hpp"
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -10,9 +11,9 @@
 #include <vector>
 
 namespace transcribe {
-struct ProcessError : std::runtime_error {
+struct ProcessError : LocalizedError {
     int code;
-    ProcessError(const std::string& message, int value) : std::runtime_error(message), code(value) {}
+    ProcessError(Message message, int value) : LocalizedError(std::move(message)), code(value) {}
 };
 using Output = std::function<void(std::string_view)>;
 void install_signal_handlers();
@@ -40,6 +41,7 @@ public:
     bool done() const;
     int exit_code() const;
     void require_success() const;
+
 private:
 #ifdef _WIN32
     struct Native;
@@ -61,4 +63,4 @@ private:
 void stop_all(std::vector<std::unique_ptr<Process>>& processes, int signal);
 void run(const std::vector<std::string>& args, const std::filesystem::path& log,
          Output output = {}, Output errors = {}, std::chrono::seconds timeout = {});
-}
+} // namespace transcribe
