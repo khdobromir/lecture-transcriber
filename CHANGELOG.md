@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add English GUI localization with automatic language selection, saved Russian/English
+  overrides and immediate switching without restarting tasks or model operations.
+- Translate application-owned backend diagnostics through an optional JSONL v1
+  extension while preserving Russian CLI output and existing result formats.
+- Provide Russian README.md and English README.en.md with a centered logo/title.
+
 ## v0.4.1 — 2026-10-12
 
 See [release notes](docs/releases/v0.4.1/notes.md) and

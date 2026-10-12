@@ -1,4 +1,5 @@
 #pragma once
+#include "message.hpp"
 #include <filesystem>
 #include <cstdint>
 #include <span>
@@ -13,7 +14,10 @@ struct Options {
     int threads = 0, chunks = 1, jobs = 0;
     bool machine = false, vad = true, keep = false, progress = true, cache = true, refresh_cache = false;
 };
-enum class CliAction : std::uint8_t { run, help, version, usage };
+enum class CliAction : std::uint8_t { run,
+                                      help,
+                                      version,
+                                      usage };
 // args excludes argv[0]. This scan preserves help/version precedence and skips values.
 CliAction cli_action(std::span<const std::string_view> args);
 bool machine_requested(std::span<const std::string_view> args);
@@ -33,5 +37,5 @@ struct ValidationPaths {
 };
 Inputs validate_inputs(const Options& options, const ValidationPaths& paths);
 std::string read_line(const std::filesystem::path& path);
-void require_file(const std::filesystem::path& path, const std::string& hint);
-}
+void require_file(const std::filesystem::path& path, const Message& hint);
+} // namespace transcribe

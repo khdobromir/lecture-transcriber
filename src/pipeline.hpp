@@ -6,7 +6,13 @@
 #include <optional>
 
 namespace transcribe {
-enum class EventType : std::uint8_t { stage, result, progress, warning, finalizing, completed, failed };
+enum class EventType : std::uint8_t { stage,
+                                      result,
+                                      progress,
+                                      warning,
+                                      finalizing,
+                                      completed,
+                                      failed };
 struct Event {
     EventType type = EventType::stage;
     std::string stage{}, message{}, status{};
@@ -15,7 +21,13 @@ struct Event {
     size_t finished = 0, total = 0;
     std::optional<double> eta{};
     int code = 0;
+    std::optional<Message> message_i18n{};
 };
+inline Event localized_event(Event event, Message message) {
+    event.message = message.ru;
+    event.message_i18n = std::move(message);
+    return event;
+}
 using EventSink = std::function<void(const Event&)>;
 struct RunResult {
     std::filesystem::path directory;
@@ -30,7 +42,8 @@ class Pipeline {
 public:
     explicit Pipeline(EventSink sink) : sink_(std::move(sink)) {}
     RunResult run(Options options, const ToolPaths& paths);
+
 private:
     EventSink sink_;
 };
-}
+} // namespace transcribe

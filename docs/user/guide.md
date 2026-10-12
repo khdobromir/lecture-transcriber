@@ -7,6 +7,12 @@
 Supply one local audio/video file or one plain HTTP(S) URL. Conversion uses
 FFmpeg; URLs use yt-dlp and depend on the site's current extractor/access rules.
 Only use material you are authorized to process. Live streams are rejected.
+Current-source GUI builds support **Автоматически / Automatic**, **Русский**
+and **English** in the top language selector. Automatic chooses Russian for a
+Russian system and English otherwise; explicit selection is saved. Switching is
+immediate and preserves the current task, inputs, downloads and results. Native
+OS dialogs may use the system language. Published v0.4.1 has a Russian-only GUI.
+
 The recognition language is Russian. `--prompt`/the terms field supplies
 context to the model; it does not guarantee correct terminology.
 
@@ -15,7 +21,7 @@ The presets map to quantized models: `small` → `small-q5_1`, `medium` →
 a valid prior selection exists. Speed, memory and accuracy depend on the CPU
 and input; small is a useful first test, not an accuracy guarantee.
 
-Select a preset on **Расшифровка**, then download it with VAD on **Модели**.
+Select a preset on **Transcription / Расшифровка**, then download it with VAD on **Models / Модели**.
 Download and import verify the exact SHA-256 in [models.tsv](../../scripts/models.tsv).
 Import recognition and VAD files separately, matching the selected preset.
 An arbitrary GGML file cannot be imported as a known preset. Advanced GUI/CLI
@@ -35,19 +41,19 @@ terms, cookies, cache and working-audio retention. GUI thread/worker value `0`
 means automatic; CLI explicit `--threads`/`--jobs` require positive integers.
 
 Live TXT grows in recording order, even with parallel chunks. The GUI shows up
-to the last 512 KiB; **Полный TXT** opens the complete file on disk. Subtitles
+to the last 512 KiB; **Full TXT / Полный TXT** opens the complete file on disk. Subtitles
 are finalized after successful recognition/merge. The result is complete only
 after the backend, manifest and all three exports agree. A progress bar at 100%
 can still be followed by export/validation failure.
 
-Use **Отменить** or CLI Ctrl+C. Cancellation before completion preserves partial
+Use **Cancel / Отменить** or CLI Ctrl+C. Cancellation before completion preserves partial
 text and working files when available; it does not resume ASR at the previous
 position. Retry starts a fresh task with the same in-memory settings. Late cancel
 cannot undo a saved success. Forced termination, OS shutdown and Windows console
 close do not guarantee final file publication.
 
 History scans the selected output roots in the background. Selecting an older
-result does not change the current task; **Показать результат текущей задачи**
+result does not change the current task; **Show current task result / Показать результат текущей задачи**
 returns to it. Removed results appear unavailable. History also understands older
 `source.txt` results; it does not duplicate the transcript in settings.
 Keyboard shortcuts: Ctrl+O opens input, Ctrl+Enter starts, Ctrl+Q closes, F5
@@ -80,7 +86,7 @@ Long-path manifests do not remove these deliberate integration limits.
 ## URL cache and authentication
 
 Downloaded media is reused by default, with a 10 GiB managed-cache limit.
-**Скачать заново** / `--refresh-cache` bypasses a hit and refreshes it;
+**Download again / Скачать заново** / `--refresh-cache` bypasses a hit and refreshes it;
 `--no-cache` disables reads/writes. The cache is local media, not a recognition
 resume store. Source files are never deleted by working-file cleanup.
 

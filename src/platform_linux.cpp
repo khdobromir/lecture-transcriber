@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "platform.hpp"
 #include "process.hpp"
 #include <cerrno>
@@ -20,7 +21,7 @@ std::string environment_utf8(std::string_view name) {
 }
 fs::path user_home() {
     const char* value = std::getenv("HOME");
-    if (!value || !*value) throw std::runtime_error("Не задан HOME; укажи каталог явно");
+    if (!value || !*value) throw transcribe::LocalizedError(transcribe::Message{"Не задан HOME; укажи каталог явно", "HOME is not set; specify a directory explicitly"});
     return fs::absolute(value);
 }
 fs::path executable_directory() { return fs::read_symlink("/proc/self/exe").parent_path(); }
@@ -38,29 +39,35 @@ int terminal_columns() {
 bool create_private_directory(const fs::path& path) {
     if (mkdir(path.c_str(), 0700) == 0) return true;
     if (errno == EEXIST) return false;
-    throw std::runtime_error("Не удалось создать каталог: " + path_utf8(path));
+    throw transcribe::LocalizedError(transcribe::Message{"Не удалось создать каталог: " + path_utf8(path), "Could not create directory: " + path_utf8(path)});
 }
 void require_private_directory(const fs::path& path) {
     struct stat info{};
     if (lstat(path.c_str(), &info) || !S_ISDIR(info.st_mode) || info.st_uid != geteuid() || (info.st_mode & 0077U))
-        throw std::runtime_error("Каталог должен принадлежать пользователю, иметь права 0700 и не быть ссылкой: " + path_utf8(path));
+        throw transcribe::LocalizedError(transcribe::Message{"Каталог должен принадлежать пользователю, иметь права 0700 и не быть ссылкой: " + path_utf8(path), "Directory must belong to the current user, have permissions 0700 and not be a symlink: " + path_utf8(path)});
 }
 bool indirect_path(const fs::path& path) { return fs::is_symlink(fs::symlink_status(path)); }
 void create_private_file(const fs::path& path) {
     const int fd = open(path.c_str(), O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC | O_NOFOLLOW, 0600);
-    if (fd < 0) throw std::runtime_error("Не удалось создать файл: " + path_utf8(path));
+    if (fd < 0) throw transcribe::LocalizedError(transcribe::Message{"Не удалось создать файл: " + path_utf8(path), "Could not create file: " + path_utf8(path)});
     close(fd);
 }
 void replace_file(const fs::path& source, const fs::path& destination, const std::function<void()>& cancellation) {
     if (cancellation) cancellation();
     fs::rename(source, destination);
 }
-struct SharedReader::Native { int fd = -1; std::uint64_t bytes = 0; ~Native() { if (fd >= 0) close(fd); } };
+struct SharedReader::Native {
+    int fd = -1;
+    std::uint64_t bytes = 0;
+    ~Native() {
+        if (fd >= 0) close(fd);
+    }
+};
 SharedReader::SharedReader(const fs::path& path) : native_(std::make_unique<Native>()) {
     native_->fd = open(path.c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
     struct stat info{};
     if (native_->fd < 0 || fstat(native_->fd, &info) || !S_ISREG(info.st_mode) || info.st_size < 0)
-        throw std::runtime_error("Не удалось открыть файл для чтения: " + path_utf8(path));
+        throw transcribe::LocalizedError(transcribe::Message{"Не удалось открыть файл для чтения: " + path_utf8(path), "Could not open file for reading: " + path_utf8(path)});
     native_->bytes = static_cast<std::uint64_t>(info.st_size);
 }
 SharedReader::~SharedReader() = default;
@@ -72,26 +79,32 @@ std::string SharedReader::read(std::uint64_t offset, std::size_t limit) {
     while (done < result.size()) {
         const auto count = pread(native_->fd, result.data() + done, result.size() - done, static_cast<off_t>(offset + done));
         if (count < 0 && errno == EINTR) continue;
-        if (count < 0) throw std::runtime_error("Ошибка чтения файла");
+        if (count < 0) throw transcribe::LocalizedError(transcribe::Message{"Ошибка чтения файла", "File read error"});
         if (count == 0) break;
         done += static_cast<std::size_t>(count);
     }
-    result.resize(done); return result;
+    result.resize(done);
+    return result;
 }
 bool rename_directory(const fs::path& source, const fs::path& destination) {
     if (renameat2(AT_FDCWD, source.c_str(), AT_FDCWD, destination.c_str(), RENAME_NOREPLACE) == 0) return true;
     if (errno == EEXIST) return false;
-    throw std::runtime_error("Не удалось переименовать каталог: " + path_utf8(destination));
+    throw transcribe::LocalizedError(transcribe::Message{"Не удалось переименовать каталог: " + path_utf8(destination), "Could not rename directory: " + path_utf8(destination)});
 }
-struct FileLock::Native { int fd = -1; ~Native() { if (fd >= 0) close(fd); } };
+struct FileLock::Native {
+    int fd = -1;
+    ~Native() {
+        if (fd >= 0) close(fd);
+    }
+};
 FileLock::FileLock(const fs::path& path, std::function<void()> cancellation) : native_(std::make_unique<Native>()) {
     const auto check = [&] { if (cancellation) cancellation(); else check_cancelled(); };
     native_->fd = open(path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK, 0600);
     struct stat info{};
     if (native_->fd < 0 || fstat(native_->fd, &info) || !S_ISREG(info.st_mode) || info.st_uid != geteuid() || info.st_nlink != 1)
-        throw std::runtime_error("Некорректный файл блокировки: " + path_utf8(path));
+        throw transcribe::LocalizedError(transcribe::Message{"Некорректный файл блокировки: " + path_utf8(path), "Invalid lock file: " + path_utf8(path)});
     while (flock(native_->fd, LOCK_EX | LOCK_NB)) {
-        if (errno != EWOULDBLOCK && errno != EINTR) throw std::runtime_error("Не удалось заблокировать кэш");
+        if (errno != EWOULDBLOCK && errno != EINTR) throw transcribe::LocalizedError(transcribe::Message{"Не удалось заблокировать кэш", "Could not lock the cache"});
         check();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -102,14 +115,14 @@ bool read_control(std::string& pending) {
     pollfd descriptor{STDIN_FILENO, POLLIN, 0};
     if (poll(&descriptor, 1, 0) < 0) {
         if (errno == EINTR) return true;
-        throw std::runtime_error("Ошибка управляющего канала");
+        throw transcribe::LocalizedError(transcribe::Message{"Ошибка управляющего канала", "Control channel error"});
     }
     if (!(static_cast<unsigned>(descriptor.revents) & static_cast<unsigned>(POLLIN | POLLHUP | POLLERR))) return true;
     char bytes[4096];
     const auto count = read(STDIN_FILENO, bytes, sizeof(bytes));
     if (count > 0) pending.append(bytes, static_cast<size_t>(count));
     else if (count == 0) return false;
-    else if (errno != EINTR) throw std::runtime_error("Ошибка чтения управляющего канала");
+    else if (errno != EINTR) throw transcribe::LocalizedError(transcribe::Message{"Ошибка чтения управляющего канала", "Control channel read error"});
     return true;
 }
-}
+} // namespace transcribe

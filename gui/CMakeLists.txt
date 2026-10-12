@@ -1,16 +1,16 @@
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Network Concurrent)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Network Concurrent LinguistTools)
 if(BUILD_TESTING)
     find_package(Qt6 6.8 REQUIRED COMPONENTS Test)
 endif()
 qt_standard_project_setup(REQUIRES 6.8)
-qt_add_library(transcribe_gui_logic STATIC backend.cpp backend.hpp history.cpp history.hpp models.cpp models.hpp)
+qt_add_library(transcribe_gui_logic STATIC backend.cpp backend.hpp history.cpp history.hpp models.cpp models.hpp language.cpp language.hpp text.hpp)
 target_link_libraries(transcribe_gui_logic PUBLIC transcribe_core Qt6::Quick Qt6::Network Qt6::Concurrent)
 target_include_directories(transcribe_gui_logic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 transcribe_warnings(transcribe_gui_logic)
 qt_add_resources(transcribe_gui_logic model_manifest PREFIX "/models" BASE "${PROJECT_SOURCE_DIR}/scripts" FILES "${PROJECT_SOURCE_DIR}/scripts/models.tsv")
 qt_add_qml_module(transcribe_gui_logic URI Transcribe VERSION 1.0
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Transcribe"
-    SOURCES backend.hpp history.hpp models.hpp)
+    SOURCES backend.hpp history.hpp models.hpp language.hpp)
 qt_add_executable(transcribe-gui main.cpp)
 target_compile_definitions(transcribe-gui PRIVATE TRANSCRIBE_VERSION="${PROJECT_VERSION}")
 qt_add_resources(transcribe-gui app_icon PREFIX "/icons" BASE "${PROJECT_SOURCE_DIR}"
@@ -44,6 +44,10 @@ if(WIN32)
     install(SCRIPT ${deploy_script})
 endif()
 if(BUILD_TESTING)
+    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME gui_translations COMMAND ${Python3_EXECUTABLE}
+        ${PROJECT_SOURCE_DIR}/tests/check_translations.py $<TARGET_FILE:Qt6::lupdate>)
+    set_tests_properties(gui_translations PROPERTIES TIMEOUT 30 LABELS "gui;unit")
     # Candidate-only smoke; external speech/model prerequisites are deliberate.
     # Build it on every PR, run explicitly against the installed prefix/ZIP.
     execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
@@ -104,3 +108,25 @@ if(BUILD_TESTING)
             ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=${qml_test_theme};QT_SCALE_FACTOR=${scale_factor}")
     endforeach()
 endif()
+
+# Compile catalogs into every GUI executable; installed packages need no SDK catalogs.
+qt_add_translations(TARGETS transcribe-gui
+    SOURCE_TARGETS transcribe_gui_logic transcribe-gui
+    TS_FILES i18n/transcribe_en.ts
+    QM_FILES_OUTPUT_VARIABLE transcribe_qm
+    NO_GENERATE_PLURALS_TS_FILE)
+get_target_property(qt_qmake Qt6::qmake IMPORTED_LOCATION)
+execute_process(COMMAND "${qt_qmake}" -query QT_INSTALL_TRANSLATIONS
+    OUTPUT_VARIABLE qt_translations_dir OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
+set(transcribe_translation_targets transcribe-gui)
+if(BUILD_TESTING)
+    list(APPEND transcribe_translation_targets test_gui test_qml test_gui_integration test_gui_real)
+endif()
+foreach(gui_target IN LISTS transcribe_translation_targets)
+    qt_add_resources(${gui_target} ${gui_target}_translations PREFIX "/i18n"
+        BASE "${CMAKE_CURRENT_BINARY_DIR}" FILES ${transcribe_qm})
+    qt_add_resources(${gui_target} ${gui_target}_qt_translations PREFIX "/i18n"
+        BASE "${qt_translations_dir}"
+        FILES "${qt_translations_dir}/qtbase_ru.qm" "${qt_translations_dir}/qtdeclarative_ru.qm")
+endforeach()

@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "cli.hpp"
 #include <algorithm>
 #include <charconv>
@@ -20,7 +21,7 @@ std::string read_line(const fs::path& path) {
     std::ifstream stream(path);
     std::string line;
     if (!std::getline(stream, line))
-        throw std::runtime_error("Не удалось прочитать " + path_utf8(path));
+        throw transcribe::LocalizedError(transcribe::Message{"Не удалось прочитать " + path_utf8(path), "Could not read " + path_utf8(path)});
     if (!line.empty() && line.back() == '\r') line.pop_back();
     return line;
 }
@@ -29,22 +30,22 @@ int positive_integer(std::string_view text) {
     int value{};
     const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
     if (error != std::errc{} || end != text.data() + text.size() || value < 1 || value > 256)
-        throw std::runtime_error("Число должно быть целым от 1 до 256");
+        throw transcribe::LocalizedError(transcribe::Message{"Число должно быть целым от 1 до 256", "Expected an integer from 1 to 256"});
     return value;
 }
 
-void require_file(const fs::path& path, const std::string& hint) {
+void require_file(const fs::path& path, const Message& hint) {
     if (!fs::is_regular_file(path) || fs::file_size(path) == 0)
-        throw std::runtime_error("Нет файла: " + path_utf8(path) + "\n" + hint);
+        throw transcribe::LocalizedError(transcribe::Message{"Нет файла: " + path_utf8(path) + "\n" + hint.ru, "Missing file: " + path_utf8(path) + "\n" + hint.en});
 }
 
 namespace {
 bool consumes_value(std::string_view arg) {
     return arg == "--model" || arg == "--threads" || arg == "--chunks" || arg == "--jobs" ||
-            arg == "--out" || arg == "--cache-dir" || arg == "--cache-limit-gib" ||
-            arg == "--prompt" || arg == "--cookies" || arg == "--cookies-from-browser";
+           arg == "--out" || arg == "--cache-dir" || arg == "--cache-limit-gib" ||
+           arg == "--prompt" || arg == "--cookies" || arg == "--cookies-from-browser";
 }
-}
+} // namespace
 bool machine_requested(std::span<const std::string_view> args) {
     for (size_t i = 0; i < args.size(); ++i) {
         if (args[i] == "--") break;
@@ -88,44 +89,46 @@ Inputs validate_inputs(const Options& o, const ValidationPaths& paths) {
 #endif
     if (!executable_file(files.engine)) {
 #ifdef _WIN32
-        throw std::runtime_error("Нет tools/whisper-cli.exe. Распакуйте весь Windows ZIP заново");
+        throw transcribe::LocalizedError(transcribe::Message{"Нет tools/whisper-cli.exe. Распакуйте весь Windows ZIP заново", "Missing tools/whisper-cli.exe. Extract the entire Windows ZIP again"});
 #else
-        if (portable) throw std::runtime_error("Нет встроенного whisper-cli. Замените файл приложения исправной сборкой.");
-        throw std::runtime_error("Нет whisper-cli. Сначала выполни bash install.sh");
+        if (portable) throw transcribe::LocalizedError(transcribe::Message{"Нет встроенного whisper-cli. Замените файл приложения исправной сборкой.", "Missing bundled whisper-cli. Replace the application with a working build."});
+        throw transcribe::LocalizedError(transcribe::Message{"Нет whisper-cli. Сначала выполни bash install.sh", "Missing whisper-cli. Run bash install.sh first"});
 #endif
     }
     const std::string selected = o.model.empty() ? read_line(absolute(root) / "default-model") : o.model;
     files.model_selection = selected;
     files.model = selected == "small" || selected == "medium" || selected == "turbo"
-        ? absolute(root) / "models" / ("ggml-" + preset(selected) + ".bin") : absolute(utf8_path(selected));
+                      ? absolute(root) / "models" / ("ggml-" + preset(selected) + ".bin")
+                      : absolute(utf8_path(selected));
 #ifdef _WIN32
-    require_file(files.model, "Скачайте или импортируйте модель на вкладке «Модели» в GUI");
+    require_file(files.model, Message{"Скачайте или импортируйте модель на вкладке «Модели» в GUI", "Download or import a model on the Models tab in the GUI"});
 #else
-    require_file(files.model, portable || o.machine ? "Скачайте или импортируйте модель на вкладке «Модели» в GUI" :
-                 "Скачай модель: bash scripts/download-model.sh small|medium|turbo");
+    require_file(files.model, portable || o.machine ? Message{"Скачайте или импортируйте модель на вкладке «Модели» в GUI", "Download or import a model on the Models tab in the GUI"} : Message{"Скачай модель: bash scripts/download-model.sh small|medium|turbo", "Download a model: bash scripts/download-model.sh small|medium|turbo"});
 #endif
     files.vad_model = absolute(root) / "models/ggml-silero-v6.2.0.bin";
-    if (o.vad) require_file(files.vad_model, portable || o.machine ?
-        "Скачайте или импортируйте VAD на вкладке «Модели» либо отключите VAD" : "Повтори установку или добавь --no-vad");
+    if (o.vad) require_file(files.vad_model, portable || o.machine ? Message{"Скачайте или импортируйте VAD на вкладке «Модели» либо отключите VAD", "Download or import VAD on the Models tab, or disable VAD"} : Message{"Повтори установку или добавь --no-vad", "Repeat installation or add --no-vad"});
     files.url = o.input.starts_with("https://") || o.input.starts_with("http://");
     if (portable) {
         (void)tool_path("ffmpeg", bundled);
-        if (files.url) { (void)tool_path("yt-dlp", bundled); (void)tool_path("ffprobe", bundled); }
+        if (files.url) {
+            (void)tool_path("yt-dlp", bundled);
+            (void)tool_path("ffprobe", bundled);
+        }
     }
     if (!files.url) {
         files.input = absolute(utf8_path(o.input));
-        require_file(files.input, "Проверь имя локального видео/аудиофайла");
+        require_file(files.input, Message{"Проверь имя локального видео/аудиофайла", "Check the local video/audio filename"});
     }
     if (!o.cookies.empty()) {
         files.cookies = path_utf8(absolute(utf8_path(o.cookies)));
-        require_file(utf8_path(files.cookies), "Проверь путь к файлу cookies");
+        require_file(utf8_path(files.cookies), Message{"Проверь путь к файлу cookies", "Check the cookies file path"});
     }
 #ifdef _WIN32
     if (!files.url && files.input.native().size() > 240)
-        throw std::runtime_error("Путь входного файла превышает поддерживаемый предел 240 UTF-16 единиц; перенесите файл в более короткий каталог");
+        throw transcribe::LocalizedError(transcribe::Message{"Путь входного файла превышает поддерживаемый предел 240 UTF-16 единиц; перенесите файл в более короткий каталог", "Input path exceeds the supported limit of 240 UTF-16 units; move the file to a shorter directory"});
     // Reserve fixed worker options/output paths before conversion or download.
     if (command_line_size({path_utf8(files.engine), "--model", path_utf8(files.model), "--prompt", o.prompt}) > 30000)
-        throw std::runtime_error("Параметры распознавания превышают поддерживаемую длину Windows-команды; сократите prompt и пути");
+        throw transcribe::LocalizedError(transcribe::Message{"Параметры распознавания превышают поддерживаемую длину Windows-команды; сократите prompt и пути", "Recognition arguments exceed the supported Windows command length; shorten the prompt and paths"});
 #endif
     return files;
 }
@@ -136,7 +139,7 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
         const std::string arg(args[i]);
         const auto value = [&]() -> std::string {
             ++i;
-            if (i >= args.size() || args[i].empty()) throw std::runtime_error("Нужно значение для " + arg);
+            if (i >= args.size() || args[i].empty()) throw transcribe::LocalizedError(transcribe::Message{"Нужно значение для " + arg, "A value is required for " + arg});
             return std::string(args[i]);
         };
         if (!positional && arg == "--") positional = true;
@@ -151,10 +154,9 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
             uint64_t gib{};
             const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), gib);
             if (error != std::errc{} || end != text.data() + text.size() || gib == 0 || gib > UINT64_MAX / (uint64_t{1024} * 1024 * 1024))
-                throw std::runtime_error("--cache-limit-gib: нужно положительное целое число ГиБ без переполнения");
+                throw transcribe::LocalizedError(transcribe::Message{"--cache-limit-gib: нужно положительное целое число ГиБ без переполнения", "--cache-limit-gib: expected a positive integer number of GiB without overflow"});
             o.cache_limit = gib * 1024 * 1024 * 1024;
-        }
-        else if (!positional && arg == "--cookies-from-browser") o.browser = value();
+        } else if (!positional && arg == "--cookies-from-browser") o.browser = value();
         else if (!positional && arg == "--cookies") o.cookies = value();
         else if (!positional && arg == "--prompt") o.prompt = value();
         else if (!positional && arg == "--no-vad") o.vad = false;
@@ -164,20 +166,20 @@ Options parse_arguments(std::span<const std::string_view> args, int physical_cpu
         else if (!positional && arg == "--no-cache") o.cache = false;
         else if (!positional && arg == "--refresh-cache") o.refresh_cache = true;
         else if (!positional && arg.starts_with('-'))
-            throw std::runtime_error("Неизвестный параметр: " + arg);
+            throw transcribe::LocalizedError(transcribe::Message{"Неизвестный параметр: " + arg, "Unknown option: " + arg});
         else if (o.input.empty()) o.input = arg;
-        else throw std::runtime_error("За один запуск можно передать один файл или URL");
+        else throw transcribe::LocalizedError(transcribe::Message{"За один запуск можно передать один файл или URL", "Only one file or URL can be processed per run"});
     }
-    if (o.input.empty()) throw std::runtime_error("Укажи URL или путь к файлу; справка: transcribe --help");
+    if (o.input.empty()) throw transcribe::LocalizedError(transcribe::Message{"Укажи URL или путь к файлу; справка: transcribe --help", "Specify a URL or file path; help: transcribe --help"});
     if (o.input.starts_with('[') && o.input.find("](") != std::string::npos)
-        throw std::runtime_error("Вставь обычный URL, без Markdown-разметки [ссылка](ссылка)");
+        throw transcribe::LocalizedError(transcribe::Message{"Вставь обычный URL, без Markdown-разметки [ссылка](ссылка)", "Enter a plain URL without Markdown [link](link) markup"});
     if (!o.browser.empty() && !o.cookies.empty())
-        throw std::runtime_error("Выбери --cookies либо --cookies-from-browser");
-    if (!o.cache && o.refresh_cache) throw std::runtime_error("--no-cache и --refresh-cache несовместимы");
-    if (o.jobs > o.chunks) throw std::runtime_error("--jobs не должен превышать --chunks");
+        throw transcribe::LocalizedError(transcribe::Message{"Выбери --cookies либо --cookies-from-browser", "Choose either --cookies or --cookies-from-browser"});
+    if (!o.cache && o.refresh_cache) throw transcribe::LocalizedError(transcribe::Message{"--no-cache и --refresh-cache несовместимы", "--no-cache and --refresh-cache cannot be combined"});
+    if (o.jobs > o.chunks) throw transcribe::LocalizedError(transcribe::Message{"--jobs не должен превышать --chunks", "--jobs must not exceed --chunks"});
     const int cpus = std::clamp(physical_cpus, 1, 256);
     if (!o.jobs) o.jobs = std::min({2, o.chunks, cpus});
     if (!o.threads) o.threads = std::max(1, cpus / o.jobs);
     return o;
 }
-}
+} // namespace transcribe

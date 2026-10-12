@@ -6,7 +6,9 @@
 ## Prerequisites
 
 - Linux or Windows, C++23 compiler and CMake 3.20+ for the standalone CLI.
-- GUI: CMake 3.24+, Qt 6.8+ Quick, QuickControls2, Network and Concurrent.
+- GUI: CMake 3.24+, Qt 6.8+ Quick, QuickControls2, Network, Concurrent and LinguistTools.
+  The SDK must include `qtbase_ru.qm` and `qtdeclarative_ru.qm` translation catalogs;
+  they and the compiled application catalog are embedded during the build.
   Qt Test is needed only with `BUILD_TESTING=ON` (the default).
 - Tests: Python 3.11+ Interpreter. Linux tests require FFmpeg; the portable split
   test is registered when FFmpeg is found. Runtime ASR/model dependencies are

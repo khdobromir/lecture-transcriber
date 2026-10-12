@@ -1,3 +1,4 @@
+#include "message.hpp"
 #include "result.hpp"
 #include "platform.hpp"
 #include <cerrno>
@@ -19,7 +20,10 @@ std::string safe_title(std::string_view title) {
     // Keep valid UTF-8 code points, without splitting the 180-byte title budget.
     for (size_t i = 0; i < title.size();) {
         const auto ch = static_cast<unsigned char>(title[i]);
-        size_t length = ch < 0x80 ? 1 : ch >= 0xc2 && ch <= 0xdf ? 2 : ch >= 0xe0 && ch <= 0xef ? 3 : ch >= 0xf0 && ch <= 0xf4 ? 4 : 0;
+        size_t length = ch < 0x80 ? 1 : ch >= 0xc2 && ch <= 0xdf ? 2
+                                    : ch >= 0xe0 && ch <= 0xef   ? 3
+                                    : ch >= 0xf0 && ch <= 0xf4   ? 4
+                                                                 : 0;
         bool valid = length && i + length <= title.size();
         for (size_t j = 1; valid && j < length; ++j)
             valid = (static_cast<unsigned char>(title[i + j]) & 0xc0U) == 0x80;
@@ -31,11 +35,12 @@ std::string safe_title(std::string_view title) {
         if (!valid) length = 1;
         const bool replace = !valid || ch < 32 || ch == 127 || ch == '/' || ch == '\\' ||
 #ifdef _WIN32
-            ch == '<' || ch == '>' || ch == ':' || ch == '"' || ch == '|' || ch == '?' || ch == '*' ||
+                             ch == '<' || ch == '>' || ch == ':' || ch == '"' || ch == '|' || ch == '?' || ch == '*' ||
 #endif
-            (valid && length == 2 && ch == 0xc2 && static_cast<unsigned char>(title[i + 1]) <= 0x9f);
+                             (valid && length == 2 && ch == 0xc2 && static_cast<unsigned char>(title[i + 1]) <= 0x9f);
         if (result.size() + (replace ? 1 : length) > 180) break;
-        if (replace) result += '_'; else result.append(title.substr(i, length));
+        if (replace) result += '_';
+        else result.append(title.substr(i, length));
         i += length;
     }
     while (!result.empty() && (result.back() == ' ' || result.back() == '.')) result.pop_back();
@@ -53,7 +58,7 @@ std::string safe_title(std::string_view title) {
 void validate_result_parent(const fs::path& parent) {
 #ifdef _WIN32
     if (fs::absolute(parent).native().size() > 169)
-        throw std::runtime_error("Каталог результатов слишком длинный: выберите более короткий путь (до 169 UTF-16 единиц)");
+        throw transcribe::LocalizedError(transcribe::Message{"Каталог результатов слишком длинный: выберите более короткий путь (до 169 UTF-16 единиц)", "Result directory is too long: choose a shorter path (up to 169 UTF-16 units)"});
 #else
     (void)parent;
 #endif
@@ -77,7 +82,7 @@ std::string result_title(const fs::path& parent, std::string_view title) {
 #endif
     return result.empty() ? "video" : result;
 }
-}
+} // namespace
 ResultPaths ResultPaths::create(const fs::path& parent, std::string_view title, std::chrono::system_clock::time_point now) {
     const auto titlePart = result_title(parent, title);
     fs::create_directories(parent);
@@ -88,7 +93,7 @@ ResultPaths ResultPaths::create(const fs::path& parent, std::string_view title, 
 #else
     if (!localtime_r(&time, &local))
 #endif
-        throw std::runtime_error("Не удалось определить дату запуска");
+        throw transcribe::LocalizedError(transcribe::Message{"Не удалось определить дату запуска", "Could not determine the start date"});
     std::ostringstream date;
     date << std::put_time(&local, "%Y-%m-%d_%H-%M-%S");
     ResultPaths paths{{}, date.str()};
@@ -96,7 +101,10 @@ ResultPaths ResultPaths::create(const fs::path& parent, std::string_view title, 
     const auto base = titlePart + '_' + paths.date;
     for (unsigned suffix = 1;; ++suffix) {
         const auto candidate = parent / utf8_path(base + (suffix == 1 ? "" : '_' + std::to_string(suffix)));
-        if (create_private_directory(candidate)) { paths.root = candidate; break; }
+        if (create_private_directory(candidate)) {
+            paths.root = candidate;
+            break;
+        }
     }
     for (const auto& dir : {paths.logs(), paths.transcripts(), paths.work()}) fs::create_directory(dir);
     return paths;
@@ -108,8 +116,9 @@ void ResultPaths::name(std::string_view title) {
         if (candidate == root) return;
         // Linux no-replace rename also protects against a concurrently created empty directory.
         if (rename_directory(root, candidate)) {
-            root = candidate; return;
+            root = candidate;
+            return;
         }
     }
 }
-}
+} // namespace transcribe

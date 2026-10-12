@@ -58,6 +58,23 @@ class MachineTests(unittest.TestCase):
         self.addCleanup(child.stderr.close)
         return child
 
+    def test_bilingual_preflight_preserves_plain_cli(self):
+        child = self.launch(("--chunks", "1", "--jobs", "2"))
+        output, _ = child.communicate(timeout=10)
+        self.assertEqual(child.returncode, 1)
+        events = [json.loads(line) for line in output.splitlines()]
+        failure = events[-1]
+        self.assertEqual(failure["type"], "failed")
+        self.assertEqual(failure["message"], "--jobs не должен превышать --chunks")
+        self.assertEqual(failure["message_i18n"], {
+            "ru": failure["message"], "en": "--jobs must not exceed --chunks"})
+        plain = subprocess.run([str(self.binary), "--chunks", "1", "--jobs", "2", str(self.audio)],
+                               cwd=self.root, env=self.env, capture_output=True, timeout=10)
+        self.assertEqual(plain.returncode, 1)
+        self.assertIn(failure["message"], plain.stderr.decode("utf-8"))
+        self.assertNotIn(b"message_i18n", plain.stdout)
+        self.assertNotIn(b"must not exceed", plain.stderr)
+
     def test_portable_missing_tools_refuse_before_processing(self):
         tools = self.root / "tools"
         (tools / ".transcribe-bundle").write_text("1\n")

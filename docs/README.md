@@ -1,6 +1,6 @@
 # Documentation
 
-Start with the [project README](../README.md) for downloads and a short product
+Start with the [English project README](../README.en.md) ([Русский](../README.md)) for downloads and a short product
 tour. The guides below separate current instructions from dated evidence.
 
 | Area | Entry points |

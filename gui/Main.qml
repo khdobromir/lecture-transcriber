@@ -86,6 +86,15 @@ ApplicationWindow {
             Label { text: qsTr("Transcribe"); font.pointSize: window.font.pointSize + 8; font.bold: true }
             Item { Layout.fillWidth: true }
             Label { text: qsTr("Русская речь · локально · CPU"); opacity: 0.7 }
+            ComboBox {
+                id: languagePicker
+                objectName: "languagePicker"
+                visible: window.backend.language !== null
+                model: ["Автоматически / Automatic", "Русский", "English"]
+                currentIndex: window.backend.language ? Math.max(0, ["auto", "ru", "en"].indexOf(window.backend.language.selection)) : 0
+                Accessible.name: qsTr("Язык интерфейса")
+                onActivated: if (window.backend.language) window.backend.language.selection = ["auto", "ru", "en"][currentIndex]
+            }
         }
         TabBar {
             id: tabs
@@ -210,6 +219,7 @@ ApplicationWindow {
                         }
                     }
                     Label { text: qsTr("Текст расшифровки"); font.bold: true }
+                    Label { text: window.backend.transcriptNotice; visible: text.length > 0; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     ScrollView {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 260
