@@ -106,7 +106,8 @@ void localizedMessages() {
     require(good(parser, greeting()));
     const auto decoded = parser.accept(json.dump());
     require(std::holds_alternative<ProtocolMessage>(decoded));
-    require(std::get<ProtocolMessage>(decoded).event.message_i18n->en == text.en);
+    const auto& localized = std::get<ProtocolMessage>(decoded).event.message_i18n;
+    require(localized && localized->en == text.en);
     for (const auto& value : std::vector<Json>{nullptr, "text", Json::array(), Json{{"ru", text.ru}},
                                                Json{{"ru", 4}, {"en", text.en}}, Json{{"ru", text.ru}, {"en", 4}},
                                                Json{{"ru", "mismatch"}, {"en", text.en}}}) {
