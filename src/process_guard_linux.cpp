@@ -74,7 +74,7 @@ void close_extra(unsigned first, unsigned limit) {
     const auto failure = launch.channels.failure;
     if (prctl(PR_SET_PDEATHSIG, SIGKILL) || getppid() != owner) exec_failed(failure, ESRCH);
     if (setpgid(0, 0)) exec_failed(failure, errno);
-    struct sigaction defaults{};
+    struct sigaction defaults {};
     defaults.sa_handler = SIG_DFL;
     sigemptyset(&defaults.sa_mask);
     for (const auto signal : {SIGINT, SIGTERM, SIGHUP, SIGPIPE})
@@ -98,7 +98,7 @@ void close_extra(unsigned first, unsigned limit) {
 bool group_alive(pid_t group) { return kill(-group, 0) == 0 || errno == EPERM; }
 [[noreturn]] void supervise(const Launch& launch) {
     const auto ready = launch.channels.ready;
-    struct sigaction ignored{};
+    struct sigaction ignored {};
     ignored.sa_handler = SIG_IGN;
     sigemptyset(&ignored.sa_mask);
     for (const auto signal : {SIGINT, SIGTERM, SIGHUP, SIGPIPE}) sigaction(signal, &ignored, nullptr);
