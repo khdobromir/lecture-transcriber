@@ -113,3 +113,21 @@ on the exact final source SHA with real checks enabled and confirm actual steps
 ran, rather than inferring success from workflow files or old green runs.
 Merge/release/publication require separate maintainer authorization and the
 [release procedure](../build/releasing.md).
+
+## GUI localization
+
+`gui_translations` checks every extracted GUI string against the English TS
+catalog, including finished translations and matching placeholders; extraction
+uses a temporary directory and does not rewrite source files. `gui_controller`
+checks locale selection, persisted preferences, preflight diagnostics and model
+operations across language changes. `gui_cli_integration` switches languages
+while actual CLI workers are held at a fixture barrier, then confirms the same
+workers finish and publish TXT/SRT/VTT. `gui_qml` checks retained messages,
+history, input text and keyboard focus. Minimum-window/palette scenarios run in
+both languages at normal, 150% and 200% scale.
+
+`protocol_contract` and `machine_protocol` check the optional bilingual JSONL
+extension, malformed fields, size limits, old events and unchanged Russian CLI
+output. Native OS dialogs and external-tool/OS diagnostic details may retain
+their original language; transcript content is never translated. These tests use
+fixtures and do not establish native desktop acceptance or ASR accuracy.
