@@ -49,3 +49,28 @@ broader platform/GUI checks. [Testing](../testing/README.md) explains static
 analysis, sanitizers, QML lint and real/package checks. Record the exact
 commit/configuration and any tests not run. Use Conventional Commits and small
 reviewable changes; update user-facing docs/changelog for behavior changes.
+
+## GUI translations and README languages
+
+The main [README](../../README.md) is Russian; [README.en.md](../../README.en.md)
+is its English counterpart. Update both when changing user-facing behavior.
+Technical guides remain English, with short Russian user guides maintained in
+parallel. Historical release records describe their original versions.
+
+GUI source strings remain Russian. Qt LinguistTools extracts QML `qsTr`, C++
+`tr` and `QT_TRANSLATE_NOOP` strings into the English TS catalog. After changing
+GUI strings, run `cmake --build <gui-build> --target update_translations`, translate
+new messages in `gui/i18n/transcribe_en.ts`, then rebuild normally. The normal
+build compiles QM files and embeds them; it never updates tracked TS files.
+The `gui_translations` CTest extracts strings into a temporary file and checks
+coverage, finished translations and matching placeholders. No translator service
+or runtime network access is needed.
+
+Language selection is `ui/language=auto|ru|en` in the existing GUI settings file.
+`LanguageController` owns application translators; `UiText` retains translatable
+messages until display. Language changes retranslate the existing QML engine,
+notify controller properties and update history status roles without rescanning
+files or restarting workers. Backend diagnostics carry both variants in the
+optional [JSONL extension](../architecture/protocol-v1.md#optional-bilingual-messages).
+Do not infer translations by replacing substrings in paths, transcripts or
+already-rendered messages. OS and external-tool details stay verbatim.

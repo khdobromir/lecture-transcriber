@@ -1,86 +1,93 @@
-<p align="center"><img src="icon.png" alt="Transcribe application icon" width="112"></p>
+<p align="center"><img src="icon.png" alt="Иконка приложения Transcribe" width="112"></p>
 
-# Transcribe
+<h1 align="center">Transcribe</h1>
 
-Local transcription of Russian lectures, audio and video on your **CPU**.
-Use the native desktop GUI or the independent CLI to produce TXT, SRT and VTT.
-Recognition runs locally through whisper.cpp; URL downloads use yt-dlp and media
-conversion uses FFmpeg. The application interface and recognition language are Russian.
+<p align="center"><strong>Русский</strong> · <a href="README.en.md">English</a></p>
+
+Локальная транскрипция русскоязычных лекций, аудио и видео на **CPU**.
+Нативный графический интерфейс и независимый CLI создают TXT, SRT и VTT.
+Распознавание выполняется локально через whisper.cpp, загрузка по URL — через
+yt-dlp, обработка медиа — через FFmpeg. В текущих исходниках GUI поддерживает
+русский и английский языки, автоматический выбор и переключение без перезапуска.
+Язык распознавания остаётся русским; консольный интерфейс CLI также остаётся
+русским. Опубликованные пакеты v0.4.1 содержат прежний GUI только на русском;
+для локализованного интерфейса пока требуется сборка текущих исходников.
 
 **C++23 · Qt Quick / QML · CMake · Linux / Windows · CPU-only**
 
-[Download v0.4.1](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.1)
-· [Changelog](CHANGELOG.md) · [Documentation](docs/README.md)
-· [Contributing](CONTRIBUTING.md)
+[Скачать v0.4.1](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.1)
+· [История изменений](CHANGELOG.md) · [Документация](docs/README.md)
+· [Участие в разработке](CONTRIBUTING.md)
 
-See [v0.4.1 release notes](docs/releases/v0.4.1/notes.md) and
-[verification record](docs/releases/v0.4.1/validation.md).
+[Описание v0.4.1](docs/releases/v0.4.1/notes.md) и
+[результаты проверок](docs/releases/v0.4.1/validation.md).
 
-## Demo
+## Демонстрация
 
-![Transcribe desktop interface](docs/assets/gui.png)
+![Графический интерфейс Transcribe](docs/assets/gui.png)
 
-Actual Qt Quick interface, captured by the isolated QML startup test with empty
-models and temporary settings; this is not a recognition or performance result.
+Реальный Qt Quick интерфейс, снятый изолированным тестом запуска QML с пустым
+каталогом моделей и временными настройками. Это не результат распознавания
+или измерения производительности; снимок показывает предыдущий русский интерфейс.
 
 ```sh
 transcribe --version
-# transcribe 0.4.1 (current source)
+# transcribe 0.4.1 (версия текущих исходников)
 transcribe --model small "lecture.wav"
 transcribe --chunks 10 --jobs 2 --threads 3 --out "results" "lecture.mp4"
 ```
 
-The last two examples require installed tools/models and your own media file.
-[Recorded CLI help session](docs/assets/cli-session.txt).
+Для двух последних примеров нужны установленные инструменты, модели и собственная запись.
+[Записанный вывод справки CLI](docs/assets/cli-session.txt).
 
-## Features
+## Возможности
 
-- Local audio/video files and one URL supported by the installed yt-dlp.
-- Live partial text, progress and estimated remaining recognition time.
-- TXT, SRT and VTT exports with one result directory per run.
-- Cancellation, preserved partial results and per-tool diagnostic logs.
-- Model download/import with SHA-256 verification; small, medium and turbo presets.
-- Downloaded-media cache with a size limit; explicit CPU threads/chunks/jobs.
-- GUI history and separate model/data storage across application upgrades.
+- Локальные аудио- и видеофайлы либо один URL, поддерживаемый установленным yt-dlp.
+- Частичный текст во время распознавания, прогресс и приблизительное оставшееся время.
+- Экспорт TXT, SRT и VTT с отдельным каталогом результатов каждого запуска.
+- Отмена, сохранение частичных результатов и отдельные диагностические журналы инструментов.
+- Загрузка и импорт моделей с проверкой SHA-256; пресеты small, medium и turbo.
+- Кэш скачанного медиа с ограничением размера; настройка потоков CPU, частей и работников.
+- История GUI; модели и пользовательские данные сохраняются отдельно при обновлении приложения.
+- Русский и английский GUI с сохранением выбора языка и немедленным переключением в текущих исходниках.
 
-## Quick Start
+## Быстрый старт
 
-[English guide](docs/user/quick-start.md) · [Краткая инструкция на русском](docs/user/ru/quick-start.md)
+[Краткая инструкция на русском](docs/user/ru/quick-start.md) · [English guide](docs/user/quick-start.md)
 
-1. Download the application from [Releases](https://github.com/khdobromir/lecture-transcriber/releases/latest) and compare its SHA-256 with the digest shown for that asset.
-2. Linux: make the AppImage executable and launch it. Windows: extract the **whole**
-   ZIP and launch `bin/transcribe-gui.exe`.
-3. Open **Модели** (Models), download or import a recognition model and Silero VAD.
-4. Select a local file on **Расшифровка** (Transcription), choose an output directory and start.
-5. Open the result directory; transcripts are under `transcripts/` and logs under `logs/`.
+1. Скачайте приложение из [Releases](https://github.com/khdobromir/lecture-transcriber/releases/latest) и сравните SHA-256 с digest этого файла.
+2. Linux: разрешите запуск AppImage и откройте его. Windows: распакуйте **весь** ZIP и запустите `bin/transcribe-gui.exe`.
+3. Откройте **Модели / Models**, скачайте или импортируйте модель распознавания и Silero VAD.
+4. На вкладке **Расшифровка / Transcription** выберите локальный файл, каталог результатов и запустите обработку.
+5. Откройте каталог результата: расшифровки находятся в `transcripts/`, журналы — в `logs/`.
 
 ```sh
 chmod +x Transcribe-X.Y.Z-linux-x86_64.AppImage
 ./Transcribe-X.Y.Z-linux-x86_64.AppImage
-# If FUSE is unavailable:
+# Если FUSE недоступен:
 ./Transcribe-X.Y.Z-linux-x86_64.AppImage --appimage-extract-and-run
 ```
 
-Replace `X.Y.Z` with the downloaded version. From 0.4.1, separate `.sha256` files
-are no longer published; uploaded-file digests are available on GitHub Releases.
+Замените `X.Y.Z` версией скачанного файла. Начиная с 0.4.1 отдельные `.sha256`
+не публикуются: digests загруженных файлов доступны непосредственно в GitHub Releases.
 
-Models are not bundled. For a fully offline first run, import them beforehand.
-URL downloads and downloading models need network access; local recognition does not.
+Модели не входят в пакет. Для первого запуска полностью без интернета импортируйте
+их заранее. Загрузка по URL и скачивание моделей требуют сети; локальное распознавание — нет.
 
-## Installation
+## Установка
 
-| Route | Supported target | Application dependencies |
+| Способ | Поддерживаемая платформа | Зависимости приложения |
 |---|---|---|
-| Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg and standalone yt-dlp included |
-| Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp and runtime included |
-| Linux source installer | C++23 toolchain and CLI prerequisites | Builds the CLI and CPU engine; uses system FFmpeg/yt-dlp |
-| Developer build | Linux/Windows; optional Qt GUI | [Build requirements and commands](docs/build/from-source.md) |
+| Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg и standalone yt-dlp включены |
+| Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp и runtime включены |
+| Установщик CLI из исходников для Linux | Инструменты C++23 и зависимости CLI | Собирает CLI и CPU-движок; использует системные FFmpeg/yt-dlp |
+| Сборка разработчика | Linux/Windows; GUI на Qt опционален | [Требования и команды сборки](docs/build/from-source.md) |
 
-No separate Python, Qt SDK or compiler is needed to run the binary packages.
-Models, settings and results are user data outside the packages. GPU acceleration,
-macOS, ARM and musl/Alpine are outside the current package support.
+Для запуска бинарных пакетов не нужны отдельные Python, Qt SDK или компилятор.
+Модели, настройки и результаты хранятся вне пакетов. GPU, macOS, ARM и musl/Alpine
+не входят в текущую поддержку пакетов.
 
-For the Linux CLI source installer, after installing the prerequisites:
+Для установки CLI из исходников в Linux после установки зависимостей:
 
 ```sh
 git clone https://github.com/khdobromir/lecture-transcriber.git
@@ -90,30 +97,32 @@ export PATH="$HOME/.local/bin:$PATH"
 transcribe --help
 ```
 
-Run the installer as a regular user. [Linux portable details](docs/build/linux-portable.md)
-and the [user guide](docs/user/guide.md) explain the separate routes.
+Запускайте установщик от обычного пользователя. [Описание Linux AppImage](docs/build/linux-portable.md)
+и [руководство пользователя](docs/user/ru/guide.md) объясняют различия способов установки.
 
-## Usage
+## Использование
 
 ```sh
 transcribe --model medium --prompt "Tensor, covariant, basis" "lecture.wav"
 transcribe --no-progress --out "results" "https://example.org/your-video"
 ```
 
-The URL is a placeholder; extractor availability depends on the site and yt-dlp.
-Downloads ignore yt-dlp configuration. Current source also disables plugin
-directories starting with 0.4.1; published v0.4.0 is unchanged. Updated source
-installs need `--no-plugin-dirs` support (available in pinned 2026.08.19);
-custom extractor plugins are outside the supported configuration.
-One chunk is the default. Increasing jobs starts more model-owning processes and
-uses more memory. Live TXT preserves recording order; final subtitles appear
-when export completes. Use GUI Cancel or CLI Ctrl+C rather than killing the process.
+URL приведён для примера; доступность извлечения зависит от сайта и yt-dlp.
+Системная конфигурация yt-dlp игнорируется. Начиная с 0.4.1 отключены и каталоги
+плагинов; опубликованная v0.4.0 не изменяется. Обновлённой установке из исходников
+нужна поддержка `--no-plugin-dirs`, доступная в закреплённой версии 2026.08.19.
+Пользовательские плагины извлечения не поддерживаются.
 
-Use `transcribe --help` or the [CLI reference](docs/user/cli.md) for all flags.
-The GUI exposes task, history and model
-management; machine consumers use the [JSONL v1 contract](docs/architecture/protocol-v1.md).
+По умолчанию используется одна часть. Большее число работников запускает больше
+процессов с собственными моделями и требует больше памяти. Частичный TXT сохраняет
+порядок записи; итоговые субтитры появляются после экспорта. Для остановки используйте
+кнопку отмены GUI или Ctrl+C в CLI.
 
-## How it works
+Все параметры доступны через `transcribe --help` и в [справочнике CLI](docs/user/cli.md).
+GUI управляет задачей, историей и моделями; для интеграций предусмотрен
+[контракт JSONL v1](docs/architecture/protocol-v1.md).
+
+## Как это устроено
 
 ```mermaid
 flowchart LR
@@ -124,40 +133,34 @@ flowchart LR
     Core --> Results[TXT / SRT / VTT / result.json]
 ```
 
-The GUI owns presentation and background model/history operations. A backend
-process runs one transcription task and supervises its external tools.
-See [architecture and decisions](docs/architecture/overview.md) for ownership,
-media flow and the completion/cancellation boundary.
+GUI отвечает за отображение и фоновые операции с моделями и историей.
+Отдельный backend-процесс выполняет одну задачу и управляет внешними инструментами.
+[Архитектура и решения](docs/architecture/overview.md) описывают владение ресурсами,
+поток обработки медиа и границу завершения/отмены.
 
-## Engineering Highlights
+## Инженерные решения
 
-- **Native process lifecycle:** [Linux supervisor](src/process_guard_linux.cpp)
-  and [Windows Job Objects / handle policy](src/process_windows.cpp).
-- **Checked completion:** [typed protocol validation](src/protocol.cpp) and
-  [GUI process/result confirmation](gui/backend.cpp), with [contract tests](tests/test_protocol.cpp).
-- **Owned asynchronous work:** [model verification, import and publication](gui/models.cpp)
-  use worker cancellation and locks, with [GUI regressions](tests/test_gui.cpp).
-- **Export correctness:** [audio pipeline](src/audio.cpp), [timestamp bounds](tests/test_export_bounds.cpp)
-  and [real FFmpeg split tests](tests/test_split.cpp).
-- **Distribution checks:** [Linux AppImage builder](scripts/package-linux.py),
-  [Windows ZIP builder](scripts/package-windows.ps1), exact input hashes,
-  retained source materials and clean-environment package smoke.
+- **Жизненный цикл процессов:** [Linux supervisor](src/process_guard_linux.cpp) и [Windows Job Objects / политика дескрипторов](src/process_windows.cpp).
+- **Подтверждённое завершение:** [типизированная проверка протокола](src/protocol.cpp), [проверка процесса и результатов в GUI](gui/backend.cpp), [контрактные тесты](tests/test_protocol.cpp).
+- **Владение фоновой работой:** [проверка, импорт и публикация моделей](gui/models.cpp) с отменой и блокировками; [регрессионные тесты GUI](tests/test_gui.cpp).
+- **Корректность экспорта:** [аудиопайплайн](src/audio.cpp), [границы временных меток](tests/test_export_bounds.cpp), [реальная нарезка через FFmpeg](tests/test_split.cpp).
+- **Проверки распространения:** [сборщик Linux AppImage](scripts/package-linux.py), [сборщик Windows ZIP](scripts/package-windows.ps1), точные хеши входов сборки, сохранённые исходные материалы и smoke-проверки пакетов в чистом окружении.
 
-ASR and model development belong to upstream Whisper/whisper.cpp; Transcribe's
-contribution is native integration, lifecycle, validation and the application.
+Модели и ASR разработаны проектами Whisper/whisper.cpp. Вклад Transcribe — нативная
+интеграция, управление жизненным циклом, верификация и само приложение.
 
-## Performance and limitations
+## Производительность и ограничения
 
-Speed and RAM depend on CPU, model, duration and parallelism. Medium may run slower
-than real time. ASR mistakes, especially terms, names and formulas, need review.
-ETA is approximate; partial text is not a completed result. Interrupted tasks
-can be retried but do not resume recognition at the previous position.
+Скорость и расход RAM зависят от CPU, модели, длительности записи и параллелизма.
+Medium может работать медленнее реального времени. Ошибки ASR, особенно в терминах,
+именах и формулах, требуют проверки. ETA приблизительна; частичный текст не является
+завершённым результатом. Повтор прерванной задачи начинает распознавание заново.
 
-[Historical development measurements and methodology](docs/benchmarks/README.md)
-are hardware/input specific; they are neither current 0.4.0 benchmarks nor a WER study.
-Do not publish cookies, private URLs, recordings or unredacted diagnostic logs.
+[Исторические измерения и методика](docs/benchmarks/README.md) относятся к конкретным
+записям и оборудованию; это не актуальные бенчмарки 0.4.0 и не исследование WER.
+Не публикуйте cookies, приватные URL, записи и диагностические журналы без удаления личных данных.
 
-## Development and testing
+## Разработка и тестирование
 
 ```sh
 cmake --preset linux-cli-debug
@@ -165,26 +168,27 @@ cmake --build --preset linux-cli-debug --parallel 2
 ctest --preset linux-cli-debug
 ```
 
-CLI: CMake 3.20+ and C++23. GUI: CMake 3.24+, Qt 6.8+ and
-`-DTRANSCRIBE_BUILD_GUI=ON`. Tests need Python 3.11+ and Linux suites need FFmpeg.
-Use `-DBUILD_TESTING=OFF` for an application-only build.
+CLI: CMake 3.20+ и C++23. GUI: CMake 3.24+, Qt 6.8+ с LinguistTools и
+`-DTRANSCRIBE_BUILD_GUI=ON`. Для тестов нужен Python 3.11+, для Linux-наборов — FFmpeg.
+Для сборки только приложения используйте `-DBUILD_TESTING=OFF`.
 
-[CI](.github/workflows/ci.yml) covers Linux GCC/Clang, Windows MSVC, Qt,
-static analysis and ASan/UBSan. [Real Whisper smoke](.github/workflows/real-smoke.yml)
-and [portable package checks](.github/workflows/linux-portable.yml) are separate.
-[Published 0.4.0 validation](docs/releases/v0.4.0/validation.md) describes that release,
-not every later source revision. See the [developer guide](docs/developer/getting-started.md)
-and [testing guide](docs/testing/README.md) for the source map and verification levels.
+[CI](.github/workflows/ci.yml) проверяет Linux GCC/Clang, Windows MSVC, Qt,
+статический анализ и ASan/UBSan. [Real Whisper smoke](.github/workflows/real-smoke.yml)
+и [проверки переносимых пакетов](.github/workflows/linux-portable.yml) выполняются отдельно.
+[Проверки опубликованной 0.4.0](docs/releases/v0.4.0/validation.md) относятся к тому релизу,
+а не ко всем последующим изменениям. [Руководство разработчика](docs/developer/getting-started.md)
+и [руководство по тестированию](docs/testing/README.md) содержат карту исходников и уровни проверки.
 
-## Contributing
+## Участие в разработке
 
-Report the version, OS, installation route and a minimal reproducible example.
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing process or packaging contracts.
-For vulnerabilities use the [private reporting route](SECURITY.md).
-The [approved modernization roadmap](docs/development-roadmap.md) and
-[implementation report](docs/development-report.md) record completed modernization work.
+При сообщении об ошибке укажите версию, ОС, способ установки и минимальный пример.
+Перед изменением контрактов процессов или упаковки прочтите [CONTRIBUTING.md](CONTRIBUTING.md).
+Для уязвимостей используйте [конфиденциальный канал](SECURITY.md).
+[Утверждённая дорожная карта](docs/development-roadmap.md) и
+[отчёт о реализации](docs/development-report.md) описывают завершённую модернизацию.
 
-## License
+## Лицензия
 
-Transcribe's own code is [MIT](LICENSE). Bundled libraries, tools and downloaded
-models retain their own terms; see [THIRD_PARTY.md](THIRD_PARTY.md).
+Собственный код Transcribe распространяется под [MIT](LICENSE). Библиотеки,
+инструменты и скачиваемые модели сохраняют собственные условия;
+см. [THIRD_PARTY.md](THIRD_PARTY.md).

@@ -1,6 +1,6 @@
 # Contributing
 
-Read the [README](README.md), [developer guide](docs/developer/getting-started.md)
+Read the [English README](README.en.md) ([Русский](README.md)), [developer guide](docs/developer/getting-started.md)
 and relevant existing issues first. English and Russian contributions/reports are
 welcome. This is a small native CPU-first application; keep changes focused and
 avoid new frameworks or user features without discussing their purpose.
@@ -64,3 +64,6 @@ Keep style-only edits separate from logic and avoid full-tree formatting.
 [Release preparation](docs/build/releasing.md) has separate exact-SHA, manual and
 artifact/source evidence. A successful PR/build is not authorization to merge,
 move a tag or publish assets.
+
+Keep both README languages synchronized. For GUI text changes, update the English
+Qt catalog and run `gui_translations`; see the [translation workflow](docs/developer/getting-started.md#gui-translations-and-readme-languages).
