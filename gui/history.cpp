@@ -23,24 +23,36 @@ QVariant HistoryModel::data(const QModelIndex& index, int role) const {
     if (!index.isValid() || index.row() < 0 || index.row() >= rows_.size()) return {};
     const auto& row = rows_[index.row()];
     switch (role) {
-    case Title: return row.title;
-    case Status: return historyStatus(row.status);
-    case Model: return row.model;
-    case Directory: return row.directory;
-    case Date: return row.date;
-    case Available: return row.available;
-    default: return {};
+    case Title:
+        return row.title;
+    case Status:
+        return historyStatus(row.status);
+    case Model:
+        return row.model;
+    case Directory:
+        return row.directory;
+    case Date:
+        return row.date;
+    case Available:
+        return row.available;
+    default:
+        return {};
     }
 }
 QHash<int, QByteArray> HistoryModel::roleNames() const { return {{Title, "title"}, {Status, "status"}, {Model, "modelName"}, {Directory, "directory"}, {Date, "date"}, {Available, "available"}}; }
-void HistoryModel::replace(QVector<HistoryRow> rows) { beginResetModel(); rows_ = std::move(rows); endResetModel(); }
+void HistoryModel::replace(QVector<HistoryRow> rows) {
+    beginResetModel();
+    rows_ = std::move(rows);
+    endResetModel();
+}
 QString HistoryModel::statusFor(const QString& directory) const {
-    for (const auto& row : rows_) if (row.directory == historyPath(directory)) return row.status;
+    for (const auto& row : rows_)
+        if (row.directory == historyPath(directory)) return row.status;
     return "unknown";
 }
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters): scan roots first, restore known result directories second.
 QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringList& known, const QVariantMap& timestamps,
-    const std::shared_ptr<std::atomic<bool>>& cancel) {
+                                       const std::shared_ptr<std::atomic<bool>>& cancel) {
     QSet<QString> directories;
     for (const auto& directory : known) {
         if (cancel && cancel->load()) return {};
@@ -73,7 +85,9 @@ QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringLi
                 const auto doc = QJsonDocument::fromJson(*bytes);
                 const auto json = doc.object();
                 if (json.value("version").toInt() == 1) {
-                    row.title = json.value("title").toString(row.title); row.status = json.value("status").toString(); row.model = json.value("model").toString();
+                    row.title = json.value("title").toString(row.title);
+                    row.status = json.value("status").toString();
+                    row.model = json.value("model").toString();
                     const auto created = json.value("created_unix_ms").toInteger(-1);
                     if (created >= 0) row.created = created;
                 }
@@ -92,4 +106,8 @@ QVector<HistoryRow> HistoryModel::scan(const QStringList& roots, const QStringLi
     std::sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) { return a.created != b.created ? a.created > b.created : a.directory < b.directory; });
     if (rows.size() > 2000) rows.resize(2000);
     return rows;
+}
+
+void HistoryModel::retranslate() {
+    if (!rows_.isEmpty()) emit dataChanged(index(0), index(rowCount() - 1), {Status});
 }

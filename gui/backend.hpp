@@ -1,5 +1,7 @@
 #pragma once
 #include "history.hpp"
+#include "text.hpp"
+#include "language.hpp"
 #include "models.hpp"
 #include "protocol.hpp"
 #include "states.hpp"
@@ -13,6 +15,7 @@
 class Backend : public QObject {
     Q_OBJECT
     QML_ELEMENT
+    Q_PROPERTY(LanguageController* language READ language CONSTANT)
     Q_PROPERTY(bool busy READ busy NOTIFY changed)
     Q_PROPERTY(bool active READ active NOTIFY changed)
     Q_PROPERTY(QString status READ status NOTIFY changed)
@@ -27,6 +30,7 @@ class Backend : public QObject {
     Q_PROPERTY(QString error READ error NOTIFY changed)
     Q_PROPERTY(QString resultDirectory READ resultDirectory NOTIFY changed)
     Q_PROPERTY(QString transcript READ transcript NOTIFY transcriptChanged)
+    Q_PROPERTY(QString transcriptNotice READ transcriptNotice NOTIFY transcriptChanged)
     Q_PROPERTY(double progress READ progress NOTIFY changed)
     Q_PROPERTY(QString eta READ eta NOTIFY changed)
     Q_PROPERTY(QString outputDirectory READ outputDirectory NOTIFY changed)
@@ -40,15 +44,20 @@ class Backend : public QObject {
     Q_PROPERTY(QString modelBackupPath READ modelBackupPath NOTIFY changed)
 public:
     explicit Backend(QObject* parent = nullptr);
-    struct Paths { QString binary, settingsFile, dataRoot; QVector<ModelManager::Record> modelRecords = {}; };
+    struct Paths {
+        QString binary, settingsFile, dataRoot;
+        QVector<ModelManager::Record> modelRecords = {};
+    };
     using Cancel = std::shared_ptr<std::atomic<bool>>;
     struct Readers {
-        std::function<QString(const QString&, const Cancel&)> preview, completion;
+        std::function<QString(const QString&, const Cancel&)> preview;
+        std::function<UiText(const QString&, const Cancel&)> completion;
         std::function<QVector<HistoryRow>(const QStringList&, const QStringList&, const QVariantMap&, const Cancel&)> history;
     };
     explicit Backend(Paths paths, QObject* parent = nullptr);
     Backend(Paths paths, Readers readers, QObject* parent = nullptr);
     ~Backend() override;
+    LanguageController* language() const { return language_.get(); }
     bool busy() const { return taskBusy(state_); }
     bool active() const { return busy() || models_.busy(); }
     TaskState state() const { return state_; }
@@ -63,6 +72,9 @@ public:
     QString stage() const { return stage_; }
     QString error() const { return error_; }
     QString resultDirectory() const { return selected_; }
+    QString transcriptNotice() const;
+    void retranslate();
+    void initializeLanguage();
     QString transcript() const { return transcript_; }
     double progress() const { return progress_; }
     QString eta() const { return eta_; }
@@ -90,9 +102,12 @@ public:
 signals:
     void changed();
     void transcriptChanged();
+
 private:
     QString modelSelection_ = "medium";
-    QString binary_, dataRoot_, output_, stage_, error_, warning_, result_, selected_, selectedStatus_ = "unknown", transcript_, eta_, previewError_, historyError_, lastInput_;
+    QString binary_, dataRoot_, output_, result_, selected_, selectedStatus_ = "unknown", transcript_, lastInput_;
+    UiText stage_, error_, warning_, eta_, previewError_, historyError_;
+    bool transcriptTail_ = false;
     QVariantMap lastValues_;
     TaskState state_ = TaskState::idle;
     bool hello_ = false, terminal_ = false, protocolFailure_ = false, historyDirty_ = false, previewDirty_ = false, followingTask_ = true, closing_ = false;
@@ -107,6 +122,7 @@ private:
     QProcess process_;
     QTimer previewTimer_, cancelTimer_;
     QSettings settings_;
+    std::unique_ptr<LanguageController> language_;
     transcribe::ProtocolParser parser_;
     bool eventsScheduled_ = false;
     std::optional<std::pair<int, QProcess::ExitStatus>> exit_;
@@ -114,12 +130,12 @@ private:
     ModelManager models_;
     QFutureWatcher<QVector<HistoryRow>> historyWatcher_;
     QFutureWatcher<QString> previewWatcher_;
-    QFutureWatcher<QString> completionWatcher_;
+    QFutureWatcher<UiText> completionWatcher_;
     QStringList roots_, known_;
     QVariantMap knownTimes_;
     void readEvents();
     void acceptEvent(const transcribe::ProtocolMessage& message);
-    void protocolError(const QString& message);
+    void protocolError(const UiText& message);
     void exited(int code, QProcess::ExitStatus exitStatus);
     void finishExit();
     void readPreview();
