@@ -15,6 +15,12 @@ qt_add_qml_module(transcribe_gui_logic URI Transcribe VERSION 1.0
     SOURCES backend.hpp history.hpp models.hpp language.hpp theme.hpp
     QML_FILES UiStyle.qml)
 qt_add_executable(transcribe-gui main.cpp)
+if(MSVC)
+    # Qt 6.8 script-to-C++ output instantiates SDK templates that trigger C4702.
+    # Keep cached QML bytecode and /W4 /WX for all application C++ sources.
+    set_target_properties(transcribe_gui_logic transcribe-gui PROPERTIES
+        QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode")
+endif()
 target_compile_definitions(transcribe-gui PRIVATE TRANSCRIBE_VERSION="${TRANSCRIBE_VERSION}")
 qt_add_resources(transcribe_gui_logic app_icon PREFIX "/icons" BASE "${PROJECT_SOURCE_DIR}"
     FILES "${PROJECT_SOURCE_DIR}/icon.png")

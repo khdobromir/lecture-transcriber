@@ -81,6 +81,11 @@ the existing controller, process, translation and real-speech suites. The
 `TRANSCRIBE_GUI_VISUAL_DIRECTORY` variable saves reproducible component/page
 screenshots using synthetic input.
 
+MSVC builds retain compiled QML bytecode and use Qt's public `--only-bytecode`
+cache-generator option. Qt 6.8's script-to-C++ output otherwise triggers C4702
+inside SDK conversion templates. Application C++ still uses `/W4` and `/WX`;
+QML lint and runtime tests remain enabled.
+
 The local acceptance platform is Omarchy x86_64 / Wayland. Record the actual OS,
 Hyprland, Qt, display resolution, scale and client size. Exercise both languages,
 both modes, 100/150/200% scaling, 720 × 420, the navigation threshold in both
