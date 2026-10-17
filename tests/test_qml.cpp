@@ -40,6 +40,8 @@ private slots:
         Backend backend({"missing", temp.path() + "/settings.ini", temp.path() + "/data"});
         backend.initializeLanguage();
         backend.language()->setSelection(language);
+        backend.theme()->setMode(dark ? "dark" : "light");
+        backend.theme()->setCustomColor(QColor("#6750a4"));
         QQmlApplicationEngine engine;
         QStringList warnings;
         connect(&engine, &QQmlEngine::warnings, this, [&](const QList<QQmlError>& errors) { for (const auto& error : errors) warnings.append(error.toString()); });
@@ -48,7 +50,7 @@ private slots:
         QVERIFY(!engine.rootObjects().isEmpty());
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         QVERIFY(window);
-        window->resize(720, 600);
+        window->resize(720, 420);
         auto* source = window->findChild<QQuickItem*>("sourceInput");
         QVERIFY(source);
         source->setProperty("text", QString(1024, QChar(0x044f)));
@@ -68,6 +70,95 @@ private slots:
             QVERIFY(screenshot.save(artifact + "/" + language + (dark ? "-dark.png" : "-light.png")));
         }
         QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+    }
+    void responsiveNavigationAndThemePreserveDraft() {
+        QTemporaryDir temp;
+        Backend backend({"missing", temp.path() + "/settings.ini", temp.path() + "/data"});
+        backend.initializeLanguage();
+        QQmlApplicationEngine engine;
+        QStringList warnings;
+        connect(&engine, &QQmlApplicationEngine::warnings, this, [&](const QList<QQmlError>& errors) {
+            for (const auto& error : errors) warnings.append(error.toString());
+        });
+        connect(backend.language(), &LanguageController::changed, &engine, &QQmlEngine::retranslate);
+        engine.setInitialProperties({{"backend", QVariant::fromValue(&backend)}});
+        engine.load(QUrl::fromLocalFile(GUI_QML_SOURCE));
+        QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join('\n')));
+        auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
+        QVERIFY(window);
+        auto* source = window->findChild<QQuickItem*>("sourceInput");
+        QVERIFY(source);
+        auto* navigation = window->findChild<QQuickItem*>("navigationTabs");
+        QVERIFY(navigation);
+        source->setProperty("text", QString("Draft лекция 😀"));
+        QCOMPARE(backend.draft().value("source").toString(), QString("Draft лекция 😀"));
+        const auto artifact = qEnvironmentVariable("TRANSCRIBE_GUI_VISUAL_DIRECTORY");
+        for (const auto* language : {"ru", "en"}) {
+            backend.language()->setSelection(language);
+            for (const auto* mode : {"light", "dark"}) {
+                backend.theme()->setMode(mode);
+                backend.theme()->setCustomColor(QColor("#0061a4"));
+                for (const auto size : {QSize(720, 420), QSize(999, 540), QSize(1000, 540), QSize(1400, 800), QSize(720, 420)}) {
+                    window->resize(size);
+                    QTest::qWait(20);
+                    QCOMPARE(window->property("expandedNavigation").toBool(), size.width() >= 1000);
+                    for (int page = 0; page < 4; ++page) {
+                        navigation->setProperty("currentIndex", page);
+                        QTest::qWait(20);
+                        QCOMPARE(window->findChild<QQuickItem*>("sourceInput"), source);
+                        QCOMPARE(source->property("text").toString(), QString("Draft лекция 😀"));
+                        if (!artifact.isEmpty()) {
+                            QVERIFY(QDir().mkpath(artifact));
+                            const auto name = QString("/%1-%2-%3x%4-page%5.png").arg(language, mode).arg(size.width()).arg(size.height()).arg(page);
+                            QVERIFY(window->grabWindow().save(artifact + name));
+                        }
+                    }
+                }
+            }
+        }
+        backend.theme()->setReducedMotion(true);
+        QVERIFY(backend.theme()->reducedMotion());
+        QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+    }
+    void materialComponentStates() {
+        QTemporaryDir temp;
+        Backend backend({"missing", temp.path() + "/settings.ini", temp.path() + "/data"});
+        QQmlApplicationEngine engine;
+        engine.setInitialProperties({{"backend", QVariant::fromValue(&backend)}});
+        engine.load(QUrl::fromLocalFile(QFileInfo(GUI_QML_SOURCE).absolutePath() + "/ComponentGallery.qml"));
+        QVERIFY(!engine.rootObjects().isEmpty());
+        auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
+        QVERIFY(window);
+        auto* button = window->findChild<QQuickItem*>("probeButton");
+        QVERIFY(button);
+        auto* field = window->findChild<QQuickItem*>("probeField");
+        QVERIFY(field);
+        auto* toggle = window->findChild<QQuickItem*>("probeSwitch");
+        QVERIFY(toggle);
+        for (const auto* mode : {"light", "dark"}) {
+            backend.theme()->setMode(mode);
+            for (const bool reduced : {false, true}) {
+                backend.theme()->setReducedMotion(reduced);
+                field->forceActiveFocus();
+                QVERIFY(field->hasActiveFocus());
+                QMetaObject::invokeMethod(field, "selectAll");
+                QCOMPARE(field->property("selectedTextColor").value<QColor>(), backend.theme()->colors().value("onPrimary").value<QColor>());
+                button->forceActiveFocus();
+                const auto point = button->mapToScene(QPointF(button->width() / 2, button->height() / 2)).toPoint();
+                QTest::mouseMove(window, point);
+                QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, point);
+                QVERIFY(button->property("down").toBool());
+                QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, point);
+                toggle->forceActiveFocus();
+                QTest::keyClick(window, Qt::Key_Space);
+                QTest::qWait(200);
+                const auto artifact = qEnvironmentVariable("TRANSCRIBE_GUI_VISUAL_DIRECTORY");
+                if (!artifact.isEmpty()) {
+                    QVERIFY(QDir().mkpath(artifact));
+                    QVERIFY(window->grabWindow().save(artifact + QString("/components-%1-%2.png").arg(mode).arg(reduced)));
+                }
+            }
+        }
     }
     void liveLanguagePreservesWindowAndMessages() {
         QTemporaryDir temp;
@@ -135,7 +226,7 @@ private slots:
         QTest::qWait(50);
         tabs->setProperty("currentIndex", 2);
         QTest::qWait(50);
-        window->resize(720, 600);
+        window->resize(720, 420);
         QTest::qWait(50);
         tabs->setProperty("currentIndex", 0);
         window->resize(1040, 820);
@@ -224,7 +315,7 @@ private slots:
     }
 };
 int main(int argc, char** argv) {
-    QQuickStyle::setStyle("Fusion");
+    QQuickStyle::setStyle("Material");
     QGuiApplication app(argc, argv);
     QmlTests test;
     return QTest::qExec(&test, argc, argv);

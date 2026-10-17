@@ -15,6 +15,8 @@ if(BUILD_TESTING)
     find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)
     add_test(NAME release_assets COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/test_release_assets.py)
     set_tests_properties(release_assets PROPERTIES TIMEOUT 30 LABELS unit)
+    add_test(NAME retained_inputs COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/test_retained_inputs.py)
+    set_tests_properties(retained_inputs PROPERTIES TIMEOUT 30 LABELS unit)
     add_test(NAME dependency_pins COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/test_dependency_pins.py)
     set_tests_properties(dependency_pins PROPERTIES TIMEOUT 30 LABELS unit)
     add_test(NAME package_archive COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/test_package_archive.py)
@@ -96,7 +98,7 @@ if(BUILD_TESTING AND NOT WIN32)
         target_compile_definitions(test_${suite} PRIVATE
             TRANSCRIBE_BINARY="$<TARGET_FILE:transcribe>" MOCK_BINARY="$<TARGET_FILE:mock_tools>"
             SMOKE_BINARY="$<TARGET_FILE:smoke_real>" PROJECT_SOURCE="${PROJECT_SOURCE_DIR}"
-            TRANSCRIBE_VERSION="${PROJECT_VERSION}")
+            TRANSCRIBE_VERSION="${TRANSCRIBE_VERSION}")
         add_dependencies(test_${suite} transcribe mock_tools smoke_real)
     endforeach()
     target_link_libraries(test_pipeline PRIVATE transcribe_core)

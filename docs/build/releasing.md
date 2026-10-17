@@ -15,6 +15,12 @@ tag messages use only `vX.Y.Z`, for example `v0.4.1`, without the application na
 Tags already follow that format. Versioned package/source filenames retain the
 `Transcribe-` prefix. Do not rename historical releases.
 
+Prereleases use `vX.Y.Z-beta.N` (or `alpha.N` / `rc.N`). The numeric project
+version and `TRANSCRIBE_VERSION_SUFFIX` are defined together in CMakeLists.txt;
+CLI, GUI, package manifests and filenames use the combined version. Mark the
+GitHub release as prerelease, never latest. Stable publication requires removing
+the suffix, rebuilding final packages and completing the recorded open acceptance.
+
 ## Prepare and freeze
 
 1. Finish code, dependency/packaging changes and `project(... VERSION ...)`, the
@@ -49,6 +55,12 @@ final ZIP before publishing it to the output directory. Linux builds once and
 checks that same AppImage SHA-256 in builder and offline clean Ubuntu/Debian,
 without Qt/Python/FFmpeg/yt-dlp installed. Real mode uses the same public input/model
 for local ASR there. No post-acceptance repacking or opportunistic glob selection.
+
+The builders restore still-pinned inputs from the earlier build-input archives
+listed in `packaging/retained-inputs.json`. This preserves exact bytes when an
+upstream autobuild or continuous URL disappears. The whole transport archive
+and every restored member are verified by SHA-256; members with different current
+pins are ignored. Normal downloads cover inputs absent from the retained set.
 
 Retain application/source/dependency/input/model/package hashes, toolchain,
 manifest, test logs and verified build-input bytes. Moving continuous URLs are

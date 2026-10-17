@@ -16,7 +16,7 @@ import zlib
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from package_source import validate_identity
+from package_source import application_version, validate_identity
 from package_inputs import archive_inputs, source_records
 from package_notices import collect_qt_notices
 
@@ -841,6 +841,21 @@ class SourceIdentityTests(unittest.TestCase):
                                     env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.assertEqual(result.returncode, 0, result.stderr.decode("ascii", errors="replace"))
             self.assertEqual(result.stdout.strip(), b"0.4.0")
+
+    def test_prerelease_version_matches_cmake_runtime(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "CMakeLists.txt"
+            for suffix in ("", "-beta.1", "-rc.2"):
+                source.write_text('cmake_minimum_required(VERSION 3.20)\n'
+                                  'project(transcribe VERSION 0.5.0 LANGUAGES NONE)\n'
+                                  f'set(TRANSCRIBE_VERSION_SUFFIX "{suffix}")\n'
+                                  'file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${PROJECT_VERSION}${TRANSCRIBE_VERSION_SUFFIX}")\n')
+                subprocess.run(["cmake", "-S", str(root), "-B", str(root / "build")], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                self.assertEqual(application_version(root), (root / "build/version.txt").read_text())
+            source.write_text('project(transcribe VERSION 0.5.0)\nset(TRANSCRIBE_VERSION_SUFFIX "-beta/1")\n')
+            with self.assertRaisesRegex(ValueError, "Invalid application prerelease suffix"):
+                application_version(root)
 
     def test_build_inputs_preserve_exact_bytes_and_reject_tampering(self):
         with tempfile.TemporaryDirectory() as temporary:

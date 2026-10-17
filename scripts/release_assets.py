@@ -16,8 +16,8 @@ def digest(path):
 
 
 def asset_names(version):
-    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
-        raise ValueError("Expected stable X.Y.Z version")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-(?:alpha|beta|rc)\.[1-9][0-9]*)?", version):
+        raise ValueError("Expected X.Y.Z or X.Y.Z-(alpha|beta|rc).N version")
     prefix = "Transcribe-" + version
     linux = prefix + "-linux-x86_64.AppImage"
     windows = prefix + "-windows-x64.zip"

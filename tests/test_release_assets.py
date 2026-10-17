@@ -24,6 +24,19 @@ class ReleaseAssetTests(unittest.TestCase):
         self.assertEqual(len(self.local), 12)
         verify_github(self.local, self.remote)
 
+    def test_prerelease_inventory_retains_version_and_rejects_unsafe_names(self):
+        version = "0.5.0-beta.1"
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for name in asset_names(version):
+                (directory / name).write_bytes(name.encode())
+            records = inventory(directory, version)
+            self.assertEqual(len(records), 12)
+            self.assertIn("Transcribe-0.5.0-beta.1-linux-x86_64.AppImage", [r["name"] for r in records])
+        for version in ("0.5.0-beta/1", "../0.5.0", "0.5.0-beta.0", "0.5.0-beta.1\n"):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                asset_names(version)
+
     def test_checksum_assets_are_rejected(self):
         for name in ["SHA256SUMS", "SHA256SUMS.txt", "app.sha256", "sources.sha256", "checksums.txt"]:
             with self.subTest(name=name):

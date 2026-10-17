@@ -1,6 +1,18 @@
 # Изменения
 
-## Unreleased
+## v0.5.0-beta.1 — 2026-10-17
+
+Prerelease for the Material You interface. See [notes](docs/releases/v0.5.0-beta.1/notes.md)
+and [verification scope](docs/releases/v0.5.0-beta.1/validation.md).
+Manual Windows acceptance remains open before the stable 0.5.0 release.
+
+- Add adaptive Material 3 components, four persistent pages and shared task progress.
+- Generate local Tonal Spot palettes from wallpaper, an image, presets or a HEX color.
+- Follow Omarchy wallpaper changes and add the primary-monitor Windows adapter;
+  preserve the last usable palette when an image is unavailable.
+- Add light/dark/system modes, reduced motion, bounded image/video processing,
+  palette caching and theme/component/layout regression checks.
+- Keep the CLI, result formats and external model/data locations compatible.
 
 - Add English GUI localization with automatic language selection, saved Russian/English
   overrides and immediate switching without restarting tasks or model operations.

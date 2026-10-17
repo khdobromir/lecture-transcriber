@@ -2,6 +2,7 @@
 #include "history.hpp"
 #include "text.hpp"
 #include "language.hpp"
+#include "theme.hpp"
 #include "models.hpp"
 #include "protocol.hpp"
 #include "states.hpp"
@@ -16,6 +17,8 @@ class Backend : public QObject {
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(LanguageController* language READ language CONSTANT)
+    Q_PROPERTY(ThemeController* theme READ theme CONSTANT)
+    Q_PROPERTY(QVariantMap draft READ draft NOTIFY draftChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY changed)
     Q_PROPERTY(bool active READ active NOTIFY changed)
     Q_PROPERTY(QString status READ status NOTIFY changed)
@@ -58,6 +61,13 @@ public:
     Backend(Paths paths, Readers readers, QObject* parent = nullptr);
     ~Backend() override;
     LanguageController* language() const { return language_.get(); }
+    ThemeController* theme() const { return theme_.get(); }
+    QVariantMap draft() const { return draft_; }
+    Q_INVOKABLE void setDraftValue(const QString& key, const QVariant& value) {
+        if (draft_.value(key) == value) return;
+        draft_.insert(key, value);
+        emit draftChanged();
+    }
     bool busy() const { return taskBusy(state_); }
     bool active() const { return busy() || models_.busy(); }
     TaskState state() const { return state_; }
@@ -102,6 +112,7 @@ public:
 signals:
     void changed();
     void transcriptChanged();
+    void draftChanged();
 
 private:
     QString modelSelection_ = "medium";
@@ -123,6 +134,8 @@ private:
     QTimer previewTimer_, cancelTimer_;
     QSettings settings_;
     std::unique_ptr<LanguageController> language_;
+    std::unique_ptr<ThemeController> theme_;
+    QVariantMap draft_;
     transcribe::ProtocolParser parser_;
     bool eventsScheduled_ = false;
     std::optional<std::pair<int, QProcess::ExitStatus>> exit_;

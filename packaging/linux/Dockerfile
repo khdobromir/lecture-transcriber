@@ -9,4 +9,4 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.s
 # Retain authenticated deb-src indexes matching the installed runtime packages.
 # The packager downloads their exact source versions without unpacking/building.
 RUN python3 -m venv /opt/aqt && /opt/aqt/bin/pip install --no-cache-dir aqtinstall==3.3.0 \
-    && /opt/aqt/bin/python -m aqt install-qt linux desktop 6.8.3 linux_gcc_64 --outputdir /opt/Qt
+    && /opt/aqt/bin/python -m aqt install-qt linux desktop 6.8.3 linux_gcc_64 --modules qtimageformats --outputdir /opt/Qt

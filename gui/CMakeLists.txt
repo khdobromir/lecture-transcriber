@@ -3,26 +3,36 @@ if(BUILD_TESTING)
     find_package(Qt6 6.8 REQUIRED COMPONENTS Test)
 endif()
 qt_standard_project_setup(REQUIRES 6.8)
-qt_add_library(transcribe_gui_logic STATIC backend.cpp backend.hpp history.cpp history.hpp models.cpp models.hpp language.cpp language.hpp text.hpp)
-target_link_libraries(transcribe_gui_logic PUBLIC transcribe_core Qt6::Quick Qt6::Network Qt6::Concurrent)
+add_subdirectory(../third_party/material-color-utilities ${CMAKE_CURRENT_BINARY_DIR}/material-color-utilities)
+qt_add_library(transcribe_gui_logic STATIC backend.cpp backend.hpp history.cpp history.hpp models.cpp models.hpp language.cpp language.hpp theme.cpp theme.hpp text.hpp)
+target_link_libraries(transcribe_gui_logic PUBLIC transcribe_core Qt6::Quick Qt6::Network Qt6::Concurrent material_color_utilities)
 target_include_directories(transcribe_gui_logic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 transcribe_warnings(transcribe_gui_logic)
 qt_add_resources(transcribe_gui_logic model_manifest PREFIX "/models" BASE "${PROJECT_SOURCE_DIR}/scripts" FILES "${PROJECT_SOURCE_DIR}/scripts/models.tsv")
+set_source_files_properties(UiStyle.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 qt_add_qml_module(transcribe_gui_logic URI Transcribe VERSION 1.0
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Transcribe"
-    SOURCES backend.hpp history.hpp models.hpp language.hpp)
+    SOURCES backend.hpp history.hpp models.hpp language.hpp theme.hpp
+    QML_FILES UiStyle.qml)
 qt_add_executable(transcribe-gui main.cpp)
-target_compile_definitions(transcribe-gui PRIVATE TRANSCRIBE_VERSION="${PROJECT_VERSION}")
-qt_add_resources(transcribe-gui app_icon PREFIX "/icons" BASE "${PROJECT_SOURCE_DIR}"
+if(MSVC)
+    # Qt 6.8 script-to-C++ output instantiates SDK templates that trigger C4702.
+    # Keep cached QML bytecode and /W4 /WX for all application C++ sources.
+    set_target_properties(transcribe_gui_logic transcribe-gui PROPERTIES
+        QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode")
+endif()
+target_compile_definitions(transcribe-gui PRIVATE TRANSCRIBE_VERSION="${TRANSCRIBE_VERSION}")
+qt_add_resources(transcribe_gui_logic app_icon PREFIX "/icons" BASE "${PROJECT_SOURCE_DIR}"
     FILES "${PROJECT_SOURCE_DIR}/icon.png")
 set_target_properties(transcribe-gui PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 qt_add_qml_module(transcribe-gui URI Transcribe.App VERSION 1.0
     OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Transcribe/App"
     IMPORT_PATH "${CMAKE_CURRENT_BINARY_DIR}"
-    QML_FILES Main.qml)
+    QML_FILES Main.qml ComponentGallery.qml TranscriptionPage.qml HistoryPage.qml ModelsPage.qml AppearancePage.qml UiButton.qml UiField.qml UiTextArea.qml UiCheck.qml UiSwitch.qml UiCombo.qml UiSpin.qml UiCard.qml UiProgress.qml UiIcon.qml UiStatus.qml)
 target_link_libraries(transcribe-gui PRIVATE transcribe_gui_logic transcribe_gui_logicplugin Qt6::QuickControls2)
 transcribe_warnings(transcribe-gui)
 if(WIN32)
+    target_link_libraries(transcribe_gui_logic PUBLIC ole32 shell32 uuid)
     target_sources(transcribe-gui PRIVATE ../packaging/windows/transcribe-icon.rc)
     target_include_directories(transcribe-gui PRIVATE ../packaging/windows)
     set_target_properties(transcribe-gui PROPERTIES WIN32_EXECUTABLE TRUE)
@@ -78,6 +88,12 @@ if(BUILD_TESTING)
     transcribe_warnings(test_gui)
     add_test(NAME gui_controller COMMAND test_gui -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_controller.log,txt")
     set_tests_properties(gui_controller PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 90 LABELS gui)
+    qt_add_executable(test_theme ../tests/test_theme.cpp)
+    set_target_properties(test_theme PROPERTIES WIN32_EXECUTABLE FALSE)
+    target_link_libraries(test_theme PRIVATE transcribe_gui_logic transcribe_gui_logicplugin Qt6::Test)
+    transcribe_warnings(test_theme)
+    add_test(NAME gui_theme COMMAND test_theme -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_theme.log,txt" -v1)
+    set_tests_properties(gui_theme PROPERTIES TIMEOUT 60 LABELS "gui;unit")
     qt_add_executable(test_qml ../tests/test_qml.cpp)
     set_target_properties(test_qml PROPERTIES WIN32_EXECUTABLE FALSE)
     target_link_libraries(test_qml PRIVATE transcribe_gui_logic transcribe_gui_logicplugin Qt6::Test Qt6::QuickControls2)
@@ -94,6 +110,7 @@ if(BUILD_TESTING)
         # the generic theme does not create that Windows-specific object.
         set(qml_test_theme windows)
     endif()
+    set_tests_properties(gui_theme PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QPA_PLATFORMTHEME=${qml_test_theme}")
     add_test(NAME gui_qml COMMAND test_qml -o "${CMAKE_BINARY_DIR}/Testing/Temporary/gui_qml.log,txt")
     set_tests_properties(gui_qml PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=${qml_test_platform};QT_QUICK_BACKEND=software;QT_QPA_PLATFORMTHEME=${qml_test_theme}" TIMEOUT 30 LABELS gui)
     foreach(scale IN ITEMS 150 200)

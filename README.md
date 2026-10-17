@@ -10,17 +10,19 @@
 yt-dlp, обработка медиа — через FFmpeg. В текущих исходниках GUI поддерживает
 русский и английский языки, автоматический выбор и переключение без перезапуска.
 Язык распознавания остаётся русским; консольный интерфейс CLI также остаётся
-русским. Опубликованные пакеты v0.4.1 содержат прежний GUI только на русском;
-для локализованного интерфейса пока требуется сборка текущих исходников.
+русским. Бета v0.5.0-beta.1 добавляет интерфейс Material You / Material 3,
+палитру по обоям или картинке и адаптивную навигацию. Ручная приёмка Windows
+остаётся открытой; стабильная версия — v0.4.1.
 
 **C++23 · Qt Quick / QML · CMake · Linux / Windows · CPU-only**
 
 [Скачать v0.4.1](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.4.1)
+· [Бета v0.5.0-beta.1](https://github.com/khdobromir/lecture-transcriber/releases/tag/v0.5.0-beta.1)
 · [История изменений](CHANGELOG.md) · [Документация](docs/README.md)
 · [Участие в разработке](CONTRIBUTING.md)
 
-[Описание v0.4.1](docs/releases/v0.4.1/notes.md) и
-[результаты проверок](docs/releases/v0.4.1/validation.md).
+[Описание беты](docs/releases/v0.5.0-beta.1/notes.md) и
+[область проверок](docs/releases/v0.5.0-beta.1/validation.md).
 
 ## Демонстрация
 
@@ -32,7 +34,7 @@ yt-dlp, обработка медиа — через FFmpeg. В текущих �
 
 ```sh
 transcribe --version
-# transcribe 0.4.1 (версия текущих исходников)
+# transcribe 0.5.0-beta.1 (версия текущих исходников)
 transcribe --model small "lecture.wav"
 transcribe --chunks 10 --jobs 2 --threads 3 --out "results" "lecture.mp4"
 ```
@@ -50,6 +52,7 @@ transcribe --chunks 10 --jobs 2 --threads 3 --out "results" "lecture.mp4"
 - Кэш скачанного медиа с ограничением размера; настройка потоков CPU, частей и работников.
 - История GUI; модели и пользовательские данные сохраняются отдельно при обновлении приложения.
 - Русский и английский GUI с сохранением выбора языка и немедленным переключением в текущих исходниках.
+- Material You: светлая/тёмная тема, палитра из обоев или картинки, собственный цвет и уменьшение анимаций.
 
 ## Быстрый старт
 
@@ -78,7 +81,7 @@ chmod +x Transcribe-X.Y.Z-linux-x86_64.AppImage
 
 | Способ | Поддерживаемая платформа | Зависимости приложения |
 |---|---|---|
-| Linux AppImage | x86_64, glibc 2.39+; Ubuntu 24.04+, Debian 13, Arch | Qt, CPU Whisper, FFmpeg и standalone yt-dlp включены |
+| Linux AppImage | x86_64, glibc 2.39+; локальная приёмка беты — Omarchy / Wayland | Qt, CPU Whisper, FFmpeg и standalone yt-dlp включены |
 | Windows ZIP | Windows 11 x64 | Qt, CPU Whisper, FFmpeg, standalone yt-dlp и runtime включены |
 | Установщик CLI из исходников для Linux | Инструменты C++23 и зависимости CLI | Собирает CLI и CPU-движок; использует системные FFmpeg/yt-dlp |
 | Сборка разработчика | Linux/Windows; GUI на Qt опционален | [Требования и команды сборки](docs/build/from-source.md) |
