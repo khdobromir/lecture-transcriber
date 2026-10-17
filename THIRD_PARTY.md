@@ -55,3 +55,10 @@ Compilers, CMake, Git, Bash, Python used by tests/packaging, PowerShell and CI t
 are development/build dependencies, not the application's implementation stack.
 The standalone yt-dlp package includes its own Python runtime; users of the binary
 application do not need to install a separate Python interpreter.
+
+## Material Color Utilities
+
+The GUI embeds the C++ Material Color Utilities library (Apache-2.0), revision
+`dd62982dfdefdfc9232ce8d76e122fb1c6d188ae`. Sources, license, archive digest and
+local portability changes are retained in `third_party/material-color-utilities`.
+It generates local Tonal Spot palettes; no online service is used.

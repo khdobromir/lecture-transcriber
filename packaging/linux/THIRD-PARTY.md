@@ -87,3 +87,10 @@ its eight pinned native dependency archives. The Linux input additionally retain
 libidn2 2.3.7 with its included libunistring sources for rebuilding/relinking
 the curl wrapper, and the matching Readline source RPM. Original standalone
 notices remain in licenses/yt-dlp-embedded-notices.
+
+## Material Color Utilities
+
+The GUI embeds the C++ Material Color Utilities library (Apache-2.0), revision
+`dd62982dfdefdfc9232ce8d76e122fb1c6d188ae`. Sources, license, archive digest and
+local portability changes are retained in `third_party/material-color-utilities`.
+It generates local Tonal Spot palettes; no online service is used.

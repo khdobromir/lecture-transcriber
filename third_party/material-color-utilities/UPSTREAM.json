@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/material-foundation/material-color-utilities",
+  "revision": "dd62982dfdefdfc9232ce8d76e122fb1c6d188ae",
+  "archive_sha256": "d094bc504830a983f7db6541ca21b74a433123361794463a414f45c6f48d6903",
+  "selection": "cpp .h/.cc excluding upstream tests; LICENSE"
+}

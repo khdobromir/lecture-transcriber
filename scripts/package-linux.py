@@ -377,7 +377,8 @@ def main():
     (appdir / ".DirIcon").unlink(missing_ok=True)
     (appdir / ".DirIcon").symlink_to("transcribe-gui.png")
     for name, source_path in [("Transcribe-MIT.txt", PROJECT / "LICENSE"),
-                             ("nlohmann-json-MIT.txt", PROJECT / "third_party/nlohmann/LICENSE.MIT")]:
+                             ("nlohmann-json-MIT.txt", PROJECT / "third_party/nlohmann/LICENSE.MIT"),
+                             ("Material-Color-Utilities-Apache-2.0.txt", PROJECT / "third_party/material-color-utilities/LICENSE")]:
         shutil.copy2(source_path, licenses / name)
     for path in (PROJECT / "packaging/windows/licenses").glob("*"):
         shutil.copy2(path, licenses / path.name)

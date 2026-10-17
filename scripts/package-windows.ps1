@@ -122,6 +122,7 @@ Get-ChildItem "$WhisperBuild\bin\Release" -Filter '*.dll' | Copy-Item -Destinati
 Copy-Item "$Whisper\LICENSE" "$Licenses\whisper-MIT.txt"
 Copy-Item "$Project\packaging\windows\licenses\*" $Licenses
 Copy-Item "$Project\third_party\nlohmann\LICENSE.MIT" "$Licenses\nlohmann-json-MIT.txt"
+Copy-Item "$Project\third_party\material-color-utilities\LICENSE" "$Licenses\Material-Color-Utilities-Apache-2.0.txt"
 Copy-Item "$Project\LICENSE" "$Licenses\Transcribe-MIT.txt"
 foreach ($Dependency in $Lock.downloads) {
     $Archive = Get-Verified $Dependency
