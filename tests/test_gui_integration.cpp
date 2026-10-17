@@ -133,6 +133,7 @@ private slots:
         backend.language()->setSelection("ru");
         backend.start(fixture.audio, fixture.options());
         QTRY_COMPARE_WITH_TIMEOUT(fixture.ready().size(), 2, 5000);
+        QTRY_VERIFY_WITH_TIMEOUT(backend.stage().contains(QStringLiteral("Распознавание")), 5000);
         const auto workers = fixture.ready();
         const auto result = backend.taskResultDirectory();
         const auto state = backend.state();
