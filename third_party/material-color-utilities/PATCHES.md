@@ -8,4 +8,6 @@ Pinned upstream: dd62982dfdefdfc9232ce8d76e122fb1c6d188ae (Apache-2.0).
 
 * Include <optional> explicitly in temperature_cache.h for standalone compilation.
 
+* Use standard C++ aggregate construction, the existing kPi constant and the unsigned Argb fallback type for MSVC.
+
 All other C++ sources are unmodified. See UPSTREAM.json for archive SHA-256.

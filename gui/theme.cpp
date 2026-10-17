@@ -170,7 +170,7 @@ QColor ThemeController::imageSeed(QImage image) {
     const auto quantized = m::QuantizeCelebi(pixels, 128);
     m::ScoreOptions options;
     options.desired = 1;
-    options.fallback_color_argb = static_cast<int>(fallback);
+    options.fallback_color_argb = fallback;
     const auto scored = m::RankedSuggestions(quantized.color_to_count, options);
     return QColor::fromRgba(scored.empty() ? fallback : scored.front());
 }
@@ -207,7 +207,7 @@ ThemeController::ThemeController(QSettings& settings, const QString& tools, QObj
     // This is a decoder allocation ceiling, not a claim about total process RSS.
     QImageReader::setAllocationLimit(128);
 #ifdef Q_OS_WIN
-    qGuiApp->installNativeEventFilter(this);
+    if (auto* app = qobject_cast<QGuiApplication*>(QCoreApplication::instance())) app->installNativeEventFilter(this);
 #endif
     mode_ = settings_.value("ui/appearance/mode", "system").toString();
     if (mode_ != "light" && mode_ != "dark") mode_ = "system";
@@ -229,8 +229,10 @@ ThemeController::ThemeController(QSettings& settings, const QString& tools, QObj
     connect(&poll_, &QTimer::timeout, this, &ThemeController::resolve);
     connect(&files_, &QFileSystemWatcher::fileChanged, this, [this] { schedule(); });
     connect(&files_, &QFileSystemWatcher::directoryChanged, this, [this] { schedule(); });
-    connect(qGuiApp->styleHints(), &QStyleHints::colorSchemeChanged, this, [this] { emit changed(); });
-    connect(qGuiApp, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) { if (state == Qt::ApplicationActive) resolve(); });
+    if (auto* app = qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
+        connect(app->styleHints(), &QStyleHints::colorSchemeChanged, this, [this] { emit changed(); });
+        connect(app, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) { if (state == Qt::ApplicationActive) resolve(); });
+    }
     connect(&watcher_, &QFutureWatcher<ThemeResult>::finished, this, [this] {
         if (stopped_) return;
         const auto result = watcher_.result();
@@ -271,7 +273,7 @@ bool ThemeController::nativeEventFilter(const QByteArray&, void* message, qintpt
 }
 ThemeController::~ThemeController() {
 #ifdef Q_OS_WIN
-    qGuiApp->removeNativeEventFilter(this);
+    if (auto* app = qobject_cast<QGuiApplication*>(QCoreApplication::instance())) app->removeNativeEventFilter(this);
 #endif
     stopped_ = true;
     if (cancelled_) cancelled_->store(true);
@@ -329,7 +331,8 @@ void ThemeController::applySeed(const QColor& color) {
 }
 bool ThemeController::dark() const {
     if (mode_ != "system") return mode_ == "dark";
-    const auto system = qGuiApp->styleHints()->colorScheme();
+    const auto* app = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
+    const auto system = app ? app->styleHints()->colorScheme() : Qt::ColorScheme::Unknown;
     if (system != Qt::ColorScheme::Unknown) return system == Qt::ColorScheme::Dark;
     const auto text = readText(omarchy_ + "/theme/colors.toml");
     auto mode = field(text, "mode");
