@@ -25,8 +25,9 @@ checker_options=()
 moc_revision="$(<"$static_dir/moc-revision.txt")"
 if [[ -n "$moc_revision" ]]; then
   # Model Qt macros and match the SDK's MOC header guards; do not suppress them.
-  # QML's static-plugin registration macro expands to SDK/generated glue.
-  checker_options+=(--library=qt "-DQ_MOC_OUTPUT_REVISION=$moc_revision" '-DQ_IMPORT_QML_PLUGIN(x)=')
+  # QML registration expands to SDK metadata/markers, not application logic.
+  checker_options+=(--library=qt "-DQ_MOC_OUTPUT_REVISION=$moc_revision" '-DQ_IMPORT_QML_PLUGIN(x)='
+    '-DQML_NAMED_ELEMENT(x)=' '-DQML_UNCREATABLE(x)=')
 fi
 # Qt 6.8 MOC also checks a marker declared by qtmochelpers.h. Match the actual
 # SDK header, rather than suppressing generated-header configuration errors.
