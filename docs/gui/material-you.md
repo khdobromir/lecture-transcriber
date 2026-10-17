@@ -22,7 +22,7 @@ subsampling is used where supported. All semantic colors come from the same
 scheme; selected text and keyboard focus have explicit colors.
 
 The cache contains at most 16 successful seeds and no original images. Its
-identity includes content SHA-256, library revision and algorithm version 1.
+identity includes content SHA-256, library revision and algorithm version 2.
 Settings, seed and selected source persist under `ui/appearance`.
 
 Supported images: PNG, JPEG, WebP, GIF, BMP. Animated formats use only frame zero.

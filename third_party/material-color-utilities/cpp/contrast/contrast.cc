@@ -88,7 +88,7 @@ double Lighter(double tone, double ratio) {
   double dark_y = YFromLstar(tone);
   double light_y = ratio * (dark_y + 5.0) - 5.0;
   double real_contrast = RatioOfYs(light_y, dark_y);
-  double delta = abs(real_contrast - ratio);
+  double delta = std::abs(real_contrast - ratio);
   if (real_contrast < ratio && delta > CONTRAST_RATIO_EPSILON) {
     return -1;
   }
@@ -111,7 +111,7 @@ double Darker(double tone, double ratio) {
   double dark_y = ((light_y + 5.0) / ratio) - 5.0;
   double real_contrast = RatioOfYs(light_y, dark_y);
 
-  double delta = abs(real_contrast - ratio);
+  double delta = std::abs(real_contrast - ratio);
   if (real_contrast < ratio && delta > CONTRAST_RATIO_EPSILON) {
     return -1;
   }

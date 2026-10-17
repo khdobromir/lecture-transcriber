@@ -124,12 +124,12 @@ double FindDesiredChromaByTone(double hue, double chroma, double tone,
       if (chroma_peak > potential_solution.get_chroma()) {
         break;
       }
-      if (abs(potential_solution.get_chroma() - chroma) < 0.4) {
+      if (std::abs(potential_solution.get_chroma() - chroma) < 0.4) {
         break;
       }
 
-      double potential_delta = abs(potential_solution.get_chroma() - chroma);
-      double current_delta = abs(closest_to_chroma.get_chroma() - chroma);
+      double potential_delta = std::abs(potential_solution.get_chroma() - chroma);
+      double current_delta = std::abs(closest_to_chroma.get_chroma() - chroma);
       if (potential_delta < current_delta) {
         closest_to_chroma = potential_solution;
       }

@@ -17,6 +17,7 @@
 #include "cpp/cam/hct_solver.h"
 
 #include <math.h>
+#include <cmath>
 
 #include "cpp/cam/viewing_conditions.h"
 #include "cpp/utils/utils.h"
@@ -176,7 +177,7 @@ double TrueDelinearized(double rgb_component) {
 }
 
 double ChromaticAdaptation(double component) {
-  double af = pow(abs(component), 0.42);
+  double af = pow(std::abs(component), 0.42);
   return Signum(component) * 400.0 * af / (af + 27.13);
 }
 
@@ -382,7 +383,7 @@ Vec3 BisectToLimit(double y, double target_hue) {
         r_plane = CriticalPlaneBelow(TrueDelinearized(GetAxis(right, axis)));
       }
       for (int i = 0; i < 8; i++) {
-        if (abs(r_plane - l_plane) <= 1) {
+        if (std::abs(r_plane - l_plane) <= 1) {
           break;
         } else {
           int m_plane = (int)floor((l_plane + r_plane) / 2.0);
@@ -405,7 +406,7 @@ Vec3 BisectToLimit(double y, double target_hue) {
 }
 
 double InverseChromaticAdaptation(double adapted) {
-  double adapted_abs = abs(adapted);
+  double adapted_abs = std::abs(adapted);
   double base = fmax(0, 27.13 * adapted_abs / (400.0 - adapted_abs));
   return Signum(adapted) * pow(base, 1.0 / 0.42);
 }
@@ -471,7 +472,7 @@ Argb FindResultByJ(double hue_radians, double chroma, double y) {
     if (fnj <= 0) {
       return 0;
     }
-    if (iteration_round == 4 || abs(fnj - y) < 0.002) {
+    if (iteration_round == 4 || std::abs(fnj - y) < 0.002) {
       if (linrgb.a > 100.01 || linrgb.b > 100.01 || linrgb.c > 100.01) {
         return 0;
       }

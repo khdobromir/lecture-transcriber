@@ -79,7 +79,7 @@ Hct KeyColor::create() {
     if (sufficient_chroma) {
       // Either range [lower_tone, mid_tone] or [mid_tone, upper_tone] has
       // the answer, so search in the range that is closer the pivot tone.
-      if (abs(lower_tone - pivot_tone) < abs(upper_tone - pivot_tone)) {
+      if (std::abs(lower_tone - pivot_tone) < std::abs(upper_tone - pivot_tone)) {
         upper_tone = mid_tone;
       } else {
         if (lower_tone == mid_tone) {

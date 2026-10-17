@@ -13,7 +13,7 @@
 
 struct ThemeResult {
     ThemeResult(QColor value = {}, QString message = {}, bool retry = false, QString key = {})
-        : seed(std::move(value)), error(std::move(message)), retryable(retry), cacheKey(std::move(key)) {}
+        : seed(value), error(std::move(message)), retryable(retry), cacheKey(std::move(key)) {}
     QColor seed;
     QString error;
     bool retryable = false;
@@ -23,6 +23,7 @@ struct ThemeResult {
 class ThemeController : public QObject, public QAbstractNativeEventFilter {
     Q_OBJECT
     QML_NAMED_ELEMENT(ThemeController)
+    // NOLINTNEXTLINE(performance-enum-size): Qt registration marker is SDK-generated and never stored in objects.
     QML_UNCREATABLE("Owned by Backend")
     Q_PROPERTY(QString mode READ mode WRITE setMode NOTIFY changed)
     Q_PROPERTY(QString source READ source WRITE setSource NOTIFY changed)

@@ -28,9 +28,9 @@
 
 namespace {
 constexpr auto fallback = QRgb{0xff6750a4};
-constexpr auto cacheVersion = "mcu-dd62982-std-rng-v1-srgb-white-128-celebi128-score1-tonal0";
-QString field(const QString& text, const QString& key) {
-    const QRegularExpression expression("(?:^|\\n)\\s*" + key + R"(\s*=\s*["']?([^"'\s#]+))");
+constexpr auto cacheVersion = "mcu-dd62982-std-rng-v2-srgb-white-128-celebi128-score1-tonal0";
+QString field(const QString& text, const char* key) {
+    const QRegularExpression expression("(?:^|\\n)\\s*" + QString::fromLatin1(key) + R"(\s*=\s*["']?([^"'\s#]+))");
     return expression.match(text).captured(1);
 }
 QString readText(const QString& path) {
@@ -76,20 +76,20 @@ Wallpaper windowsWallpaper() {
     return result;
 }
 #endif
-ThemeResult videoFrame(const QString& path, const QString& tools, const std::shared_ptr<std::atomic<bool>>& cancelled) {
+ThemeResult videoFrame(const QString& path, const QDir& tools, const std::shared_ptr<std::atomic<bool>>& cancelled) {
     QElapsedTimer budget;
     budget.start();
     const auto run = [&](const QString& name, const QStringList& args, QByteArray& output) {
         if (cancelled->load()) return false;
         QProcess child;
-        child.setProgram(QString::fromStdString(transcribe::tool_path(name.toStdString(), transcribe::utf8_path(tools.toUtf8().toStdString()))));
+        child.setProgram(QString::fromStdString(transcribe::tool_path(name.toStdString(), transcribe::utf8_path(tools.path().toUtf8().toStdString()))));
         child.setArguments(args);
         child.start();
         child.closeWriteChannel();
         while (!child.waitForFinished(50)) {
             output += child.readAllStandardOutput();
             child.readAllStandardError();
-            if (cancelled->load() || budget.elapsed() > 5000 || output.size() > 1024 * 1024 || child.state() == QProcess::NotRunning) {
+            if (cancelled->load() || budget.elapsed() > 5000 || output.size() > 1024LL * 1024 || child.state() == QProcess::NotRunning) {
                 child.terminate();
                 if (!child.waitForFinished(500)) {
                     child.kill();
@@ -99,7 +99,7 @@ ThemeResult videoFrame(const QString& path, const QString& tools, const std::sha
             }
         }
         output += child.readAllStandardOutput();
-        return child.exitStatus() == QProcess::NormalExit && child.exitCode() == 0 && output.size() <= 1024 * 1024;
+        return child.exitStatus() == QProcess::NormalExit && child.exitCode() == 0 && output.size() <= 1024LL * 1024;
     };
     try {
         QByteArray metadata;
@@ -164,7 +164,7 @@ QColor ThemeController::imageSeed(QImage image) {
     }
     opaque = opaque.scaled(opaque.size().boundedTo(QSize(128, 128)), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     std::vector<m::Argb> pixels;
-    pixels.reserve(static_cast<std::size_t>(opaque.width() * opaque.height()));
+    pixels.reserve(static_cast<std::size_t>(opaque.width()) * static_cast<std::size_t>(opaque.height()));
     for (int y = 0; y < opaque.height(); ++y)
         for (int x = 0; x < opaque.width(); ++x) pixels.push_back(opaque.pixel(x, y));
     const auto quantized = m::QuantizeCelebi(pixels, 128);
@@ -177,11 +177,11 @@ QColor ThemeController::imageSeed(QImage image) {
 ThemeResult ThemeController::readImage(const QString& path) {
     const QFileInfo info(path);
     if (!info.isFile() || !info.isReadable()) return {{}, "unavailable", true};
-    if (info.size() > 64 * 1024 * 1024) return {{}, "limits", false};
+    if (info.size() > 64 * 1024LL * 1024) return {{}, "limits", false};
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) return {{}, "unavailable", true};
-    const auto bytes = file.read(64 * 1024 * 1024 + 1);
-    if (bytes.size() > 64 * 1024 * 1024) return {{}, "limits", false};
+    const auto bytes = file.read(64 * 1024LL * 1024 + 1);
+    if (bytes.size() > 64 * 1024LL * 1024) return {{}, "limits", false};
     return decodeImage(bytes);
 }
 ThemeResult ThemeController::decodeImage(const QByteArray& bytes) {
@@ -443,17 +443,17 @@ void ThemeController::resolve() {
         try {
             if (cancellation->load()) return ThemeResult{};
             const auto suffix = QFileInfo(path).suffix().toLower();
-            if (QStringList{"mp4", "m4v", "mov", "webm", "mkv", "avi"}.contains(suffix)) return videoFrame(path, tools, cancellation);
+            if (QStringList{"mp4", "m4v", "mov", "webm", "mkv", "avi"}.contains(suffix)) return videoFrame(path, QDir(tools), cancellation);
             QFile file(path);
             if (!file.open(QIODevice::ReadOnly)) return ThemeResult{{}, "unavailable", true};
-            if (file.size() > 64 * 1024 * 1024) return ThemeResult{{}, "limits", false};
+            if (file.size() > 64 * 1024LL * 1024) return ThemeResult{{}, "limits", false};
             QByteArray bytes;
             while (!file.atEnd()) {
                 if (cancellation->load()) return ThemeResult{};
                 const auto block = file.read(65536);
                 if (block.isEmpty() && file.error() != QFileDevice::NoError) return ThemeResult{{}, "unavailable", true};
                 bytes += block;
-                if (bytes.size() > 64 * 1024 * 1024) return ThemeResult{{}, "limits", false};
+                if (bytes.size() > 64 * 1024LL * 1024) return ThemeResult{{}, "limits", false};
             }
             QCryptographicHash hash(QCryptographicHash::Sha256);
             hash.addData(QByteArray(cacheVersion));

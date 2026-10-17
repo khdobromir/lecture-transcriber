@@ -174,7 +174,7 @@ QuantizerResult QuantizeWsmeans(const std::vector<Argb>& input_pixels,
       }
       if (new_cluster_index != -1) {
         double distanceChange =
-            abs(sqrt(minimum_distance) - sqrt(previous_distance));
+            std::abs(sqrt(minimum_distance) - sqrt(previous_distance));
         if (distanceChange > kMinDeltaE) {
           color_moved = true;
           cluster_indices[i] = new_cluster_index;

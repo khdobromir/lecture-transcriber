@@ -60,7 +60,7 @@ Hct TemperatureCache::GetComplement() {
     Hct possible_answer = GetHctsByHue().at((int)round(hue));
     double relative_temp =
         (GetTempsByHct().at(possible_answer) - coldest_temp) / range;
-    double error = abs(complement_relative_temp - relative_temp);
+    double error = std::abs(complement_relative_temp - relative_temp);
     if (error < smallest_error) {
       smallest_error = error;
       answer = possible_answer;
@@ -89,7 +89,7 @@ std::vector<Hct> TemperatureCache::GetAnalogousColors(int count,
     int hue = SanitizeDegreesInt(start_hue + i);
     Hct hct = GetHctsByHue().at(hue);
     double temp = GetRelativeTemperature(hct);
-    double temp_delta = abs(temp - last_temp);
+    double temp_delta = std::abs(temp - last_temp);
     last_temp = temp;
     absolute_total_temp_delta += temp_delta;
   }
@@ -102,7 +102,7 @@ std::vector<Hct> TemperatureCache::GetAnalogousColors(int count,
     int hue = SanitizeDegreesInt(start_hue + hue_addend);
     Hct hct = GetHctsByHue().at(hue);
     double temp = GetRelativeTemperature(hct);
-    double temp_delta = abs(temp - last_temp);
+    double temp_delta = std::abs(temp - last_temp);
     total_temp_delta += temp_delta;
 
     double desired_total_temp_delta_for_index = (all_colors.size() * temp_step);

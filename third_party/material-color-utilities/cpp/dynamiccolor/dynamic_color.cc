@@ -64,7 +64,7 @@ double ForegroundTone(double bg_tone, double ratio) {
 
   if (prefer_lighter) {
     double negligible_difference =
-        (abs(lighter_ratio - darker_ratio) < 0.1 && lighter_ratio < ratio &&
+        (std::abs(lighter_ratio - darker_ratio) < 0.1 && lighter_ratio < ratio &&
          darker_ratio < ratio);
     return lighter_ratio >= ratio || lighter_ratio >= darker_ratio ||
                    negligible_difference

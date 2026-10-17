@@ -129,7 +129,7 @@ double SanitizeDegreesDouble(const double degrees) {
 }
 
 double DiffDegrees(const double a, const double b) {
-  return 180.0 - abs(abs(a - b) - 180.0);
+  return 180.0 - std::abs(std::abs(a - b) - 180.0);
 }
 
 double RotationDirection(const double from, const double to) {
