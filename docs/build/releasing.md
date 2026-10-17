@@ -56,6 +56,12 @@ checks that same AppImage SHA-256 in builder and offline clean Ubuntu/Debian,
 without Qt/Python/FFmpeg/yt-dlp installed. Real mode uses the same public input/model
 for local ASR there. No post-acceptance repacking or opportunistic glob selection.
 
+The builders restore still-pinned inputs from the earlier build-input archives
+listed in `packaging/retained-inputs.json`. This preserves exact bytes when an
+upstream autobuild or continuous URL disappears. The whole transport archive
+and every restored member are verified by SHA-256; members with different current
+pins are ignored. Normal downloads cover inputs absent from the retained set.
+
 Retain application/source/dependency/input/model/package hashes, toolchain,
 manifest, test logs and verified build-input bytes. Moving continuous URLs are
 not immutable sources. After a payload/source change, use a new candidate identity and refresh affected

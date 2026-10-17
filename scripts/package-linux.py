@@ -27,6 +27,7 @@ from package_git_sources import fetch_git_source
 from package_svn_sources import fetch_svn_source
 from package_standalone_notices import collect_notices as collect_standalone_notices
 from package_sdk_settings import retain_settings
+from package_retained_inputs import restore
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -253,6 +254,7 @@ def main():
             raise RuntimeError(f"{name} failed ({result.returncode}); see {log}")
 
     identity = validate_identity(PROJECT, release=args.release, skip_tests=args.skip_tests)
+    restore("linux", cache, list(lock["downloads"].values()) + sources)
     dependencies = {name: fetch(record, cache) for name, record in lock["downloads"].items()}
     for record in sources:
         fetch(record, cache)

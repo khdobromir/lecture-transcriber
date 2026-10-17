@@ -30,12 +30,21 @@ $Build = Join-Path $Stage 'build'
 $Whisper = Join-Path $Stage 'whisper-source'
 $WhisperBuild = Join-Path $Stage 'whisper-build'
 $Bundle = Join-Path $Stage 'Transcribe'
+$RetainedCache = Join-Path $Stage 'retained-inputs'
 function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
     & $Executable @Arguments | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "$Executable failed with exit code $LASTEXITCODE" }
 }
 function Get-Verified($Dependency) {
     $Target = Join-Path $Stage $Dependency.filename
+    $Retained = Join-Path $RetainedCache $Dependency.filename
+    if (Test-Path -LiteralPath $Retained) {
+        if ((Get-FileHash -LiteralPath $Retained -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Dependency.sha256) {
+            throw "Retained input checksum mismatch: $($Dependency.filename)"
+        }
+        Copy-Item -LiteralPath $Retained -Destination $Target
+        return $Target
+    }
     if ($Dependency.PSObject.Properties.Name -contains 'cargo_input') {
         Invoke-Checked python @("$Project\scripts\package_cargo_sources.py", $Dependency.url,
             $Dependency.upstream_sha256, $Target, $Dependency.sha256)
@@ -120,6 +129,7 @@ Invoke-Checked cmake @('--build', $WhisperBuild, '--config', 'Release', '--paral
 Copy-Item "$WhisperBuild\bin\Release\whisper-cli.exe" $Tools
 Get-ChildItem "$WhisperBuild\bin\Release" -Filter '*.dll' | Copy-Item -Destination $Tools
 Copy-Item "$Whisper\LICENSE" "$Licenses\whisper-MIT.txt"
+Invoke-Checked python @("$Project\scripts\package_retained_inputs.py", 'windows', $RetainedCache)
 Copy-Item "$Project\packaging\windows\licenses\*" $Licenses
 Copy-Item "$Project\third_party\nlohmann\LICENSE.MIT" "$Licenses\nlohmann-json-MIT.txt"
 Copy-Item "$Project\third_party\material-color-utilities\LICENSE" "$Licenses\Material-Color-Utilities-Apache-2.0.txt"
