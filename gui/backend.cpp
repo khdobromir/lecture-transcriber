@@ -76,6 +76,8 @@ Backend::Backend(Paths paths, Readers readers, QObject* parent)
     : QObject(parent), binary_(std::move(paths.binary)), dataRoot_(std::move(paths.dataRoot)), settings_(paths.settingsFile, QSettings::IniFormat), history_(this), models_(dataRoot_, paths.modelRecords.isEmpty() ? ModelManager::manifest() : std::move(paths.modelRecords), this) {
     QFile selected(dataRoot_ + "/default-model");
     if (selected.size() < 128 && selected.open(QIODevice::ReadOnly)) modelSelection_ = QString::fromUtf8(selected.readLine()).trimmed();
+    Q_INIT_RESOURCE(app_icon);
+    theme_ = std::make_unique<ThemeController>(settings_, QFileInfo(binary_).absolutePath() + "/tools");
     modelSelection_ = settings_.value("model", modelSelection_).toString();
     if (modelSelection_ != "small" && modelSelection_ != "medium" && modelSelection_ != "turbo") modelSelection_ = "medium";
     readers_ = std::move(readers);
@@ -83,6 +85,7 @@ Backend::Backend(Paths paths, Readers readers, QObject* parent)
     if (!readers_.completion) readers_.completion = verifyCompletion;
     if (!readers_.history) readers_.history = HistoryModel::scan;
     output_ = settings_.value("output", pathText(transcribe::default_output())).toString();
+    draft_ = {{"source", ""}, {"output", output_}, {"model", modelSelection_}, {"threads", 0}, {"chunks", 1}, {"jobs", 0}, {"vad", true}, {"cache", true}, {"refreshCache", false}, {"keepAudio", false}, {"cacheLimit", 10}};
     roots_ = settings_.value("roots").toStringList();
     if (!roots_.contains(output_)) roots_.append(output_);
     known_ = settings_.value("history/directories").toStringList();
@@ -563,4 +566,5 @@ void Backend::initializeLanguage() {
     if (language_) return;
     language_ = std::make_unique<LanguageController>(settings_);
     connect(language_.get(), &LanguageController::changed, this, &Backend::retranslate);
+    connect(language_.get(), &LanguageController::changed, theme_.get(), &ThemeController::changed);
 }

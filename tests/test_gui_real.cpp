@@ -147,7 +147,8 @@ private slots:
     }
 };
 int main(int argc, char** argv) {
-    QQuickStyle::setStyle("Fusion"); QGuiApplication app(argc, argv);
+    QQuickStyle::setStyle("Material");
+    QGuiApplication app(argc, argv);
     RealGuiTests tests; return QTest::qExec(&tests, argc, argv);
 }
 #include "test_gui_real.moc"

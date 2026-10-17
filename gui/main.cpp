@@ -9,7 +9,7 @@
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization): Qt requires this generated registration before QML engine startup.
 Q_IMPORT_QML_PLUGIN(TranscribePlugin)
 int main(int argc, char** argv) {
-    QQuickStyle::setStyle("Fusion");
+    QQuickStyle::setStyle("Material");
     QGuiApplication app(argc, argv);
     app.setApplicationVersion(TRANSCRIBE_VERSION);
     app.setWindowIcon(QIcon(":/icons/icon.png"));
