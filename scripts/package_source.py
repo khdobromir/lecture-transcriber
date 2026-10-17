@@ -37,10 +37,15 @@ def source_identity(project):
 
 
 def application_version(project):
-    match = re.search(r"project\(transcribe VERSION (\d+\.\d+\.\d+)\b", (project / "CMakeLists.txt").read_text(encoding="utf-8"))
+    text = (project / "CMakeLists.txt").read_text(encoding="utf-8")
+    match = re.search(r"project\(transcribe VERSION (\d+\.\d+\.\d+)\b", text)
     if not match:
         raise ValueError("Cannot determine application version")
-    return match[1]
+    suffix = re.search(r'set\(TRANSCRIBE_VERSION_SUFFIX "([^"]*)"\)', text)
+    value = suffix[1] if suffix else ""
+    if value and not re.fullmatch(r"-(?:alpha|beta|rc)\.[1-9][0-9]*", value):
+        raise ValueError("Invalid application prerelease suffix")
+    return match[1] + value
 
 
 def validate_identity(project, expected=None, release=False, skip_tests=False):

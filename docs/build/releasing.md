@@ -15,6 +15,12 @@ tag messages use only `vX.Y.Z`, for example `v0.4.1`, without the application na
 Tags already follow that format. Versioned package/source filenames retain the
 `Transcribe-` prefix. Do not rename historical releases.
 
+Prereleases use `vX.Y.Z-beta.N` (or `alpha.N` / `rc.N`). The numeric project
+version and `TRANSCRIBE_VERSION_SUFFIX` are defined together in CMakeLists.txt;
+CLI, GUI, package manifests and filenames use the combined version. Mark the
+GitHub release as prerelease, never latest. Stable publication requires removing
+the suffix, rebuilding final packages and completing the recorded open acceptance.
+
 ## Prepare and freeze
 
 1. Finish code, dependency/packaging changes and `project(... VERSION ...)`, the

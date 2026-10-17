@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from package_source import application_version
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -104,7 +105,7 @@ def main():
                     continue
             info = subprocess.run(['readelf', '--version-info', str(path)], text=True, capture_output=True)
             glibc.update(re.findall(r'GLIBC_(\d+\.\d+)', info.stdout))
-    report = dict(schema=1, diagnostic=True, application_version='0.4.1', qt=version,
+    report = dict(schema=1, diagnostic=True, application_version=application_version(ROOT), qt=version,
                   source=source, source_fingerprint=fingerprint.hexdigest(),
                   base_sha256=args.base_sha256, base_tools_reused=True,
                   glibc_required=max(glibc, key=lambda v: tuple(map(int, v.split('.')))),

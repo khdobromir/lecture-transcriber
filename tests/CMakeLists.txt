@@ -96,7 +96,7 @@ if(BUILD_TESTING AND NOT WIN32)
         target_compile_definitions(test_${suite} PRIVATE
             TRANSCRIBE_BINARY="$<TARGET_FILE:transcribe>" MOCK_BINARY="$<TARGET_FILE:mock_tools>"
             SMOKE_BINARY="$<TARGET_FILE:smoke_real>" PROJECT_SOURCE="${PROJECT_SOURCE_DIR}"
-            TRANSCRIBE_VERSION="${PROJECT_VERSION}")
+            TRANSCRIBE_VERSION="${TRANSCRIBE_VERSION}")
         add_dependencies(test_${suite} transcribe mock_tools smoke_real)
     endforeach()
     target_link_libraries(test_pipeline PRIVATE transcribe_core)

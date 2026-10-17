@@ -49,7 +49,7 @@ def main():
         if link.is_symlink():
             assert link.resolve().is_relative_to(root), link
     version = subprocess.check_output([str(moved), '--appimage-extract-and-run', '--transcribe-cli', '--version'], env=env, cwd=work, text=True, timeout=60).strip()
-    assert version == 'transcribe 0.4.1'
+    assert version == 'transcribe ' + record['application_version']
     startup = args.artifacts.resolve() / 'startup.log'
     with startup.open('w') as output:
         child = subprocess.Popen([str(moved), '--appimage-extract-and-run'], cwd=work, env=dict(env, LD_DEBUG='libs'), stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
